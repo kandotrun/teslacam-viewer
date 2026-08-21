@@ -48,6 +48,27 @@ describe('locatePlaybackTime', () => {
     })
   })
 
+  it('normalizes non-finite shared playback time without changing the finite terminal endpoint', () => {
+    const event = eventWithSegments(3)
+
+    expect(locatePlaybackTime(event, Number.NaN)).toEqual({
+      segmentIndex: 0,
+      offsetSeconds: 0,
+    })
+    expect(locatePlaybackTime(event, Number.NEGATIVE_INFINITY)).toEqual({
+      segmentIndex: 0,
+      offsetSeconds: 0,
+    })
+    expect(locatePlaybackTime(event, Number.POSITIVE_INFINITY)).toEqual({
+      segmentIndex: 2,
+      offsetSeconds: 60,
+    })
+    expect(locatePlaybackTime(event, 180)).toEqual({
+      segmentIndex: 2,
+      offsetSeconds: 60,
+    })
+  })
+
   it('keeps a twelve-segment event in its final nominal window', () => {
     expect(locatePlaybackTime(eventWithSegments(12), 718.25)).toEqual({
       segmentIndex: 11,

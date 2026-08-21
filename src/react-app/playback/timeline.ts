@@ -18,7 +18,8 @@ export function locatePlaybackTime(
   const duration = eventDuration(event)
   if (duration === 0) return { segmentIndex: 0, offsetSeconds: 0 }
 
-  const clampedSeconds = Math.min(Math.max(elapsedSeconds, 0), duration)
+  const normalizedSeconds = Number.isNaN(elapsedSeconds) ? 0 : elapsedSeconds
+  const clampedSeconds = Math.min(Math.max(normalizedSeconds, 0), duration)
   const finalSegmentIndex = event.segments.length - 1
   const segmentIndex = Math.min(
     Math.floor(clampedSeconds / segmentDurationSeconds),
