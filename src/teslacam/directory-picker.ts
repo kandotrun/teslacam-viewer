@@ -72,11 +72,12 @@ function selectionError(error: unknown): DirectorySelectionResult | null {
 export async function pickTeslaCamDirectory(
   report: (progress: ScanProgress) => void,
 ): Promise<DirectorySelectionResult> {
-  if (window.showDirectoryPicker === undefined) return { status: 'unsupported' }
+  const picker = globalThis.showDirectoryPicker
+  if (picker === undefined) return { status: 'unsupported' }
 
   let root: FileSystemDirectoryHandle
   try {
-    root = await window.showDirectoryPicker({ mode: 'read' })
+    root = await picker({ mode: 'read' })
   } catch (error) {
     const result = selectionError(error)
     if (result !== null) return result

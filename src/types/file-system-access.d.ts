@@ -1,13 +1,31 @@
-interface DirectoryPickerOptions {
-  readonly mode?: 'read' | 'readwrite'
+import 'react'
+
+declare module 'react' {
+  interface InputHTMLAttributes<T> {
+    readonly webkitdirectory?: string
+  }
 }
 
-interface File {
-  readonly webkitRelativePath: string
+declare global {
+  interface DirectoryPickerOptions {
+    readonly mode?: 'read' | 'readwrite'
+  }
+
+  interface File {
+    readonly webkitRelativePath: string
+  }
+
+  interface Window {
+    showDirectoryPicker?: (
+      options?: DirectoryPickerOptions,
+    ) => Promise<FileSystemDirectoryHandle>
+  }
+
+  var showDirectoryPicker:
+    | ((
+        options?: DirectoryPickerOptions,
+      ) => Promise<FileSystemDirectoryHandle>)
+    | undefined
 }
 
-interface Window {
-  showDirectoryPicker?: (
-    options?: DirectoryPickerOptions,
-  ) => Promise<FileSystemDirectoryHandle>
-}
+export {}

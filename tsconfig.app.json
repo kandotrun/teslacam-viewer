@@ -20,5 +20,5 @@
     "noEmit": true,
     "types": ["vite/client", "vitest/globals"]
   },
-  "include": ["src/react-app", "src/test"]
+  "include": ["src/react-app", "src/test", "src/teslacam", "src/types"]
 }
