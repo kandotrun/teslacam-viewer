@@ -136,6 +136,18 @@ describe('Theater', () => {
     expect(await screen.findByText('映像を読み込めません')).toBeVisible()
   })
 
+  it('maps an unknown representative getFile rejection to a safe fallback state', async () => {
+    const event: TeslaCamEvent = {
+      ...eventWithCameras([]),
+      representativeFile: fileRef('event.mp4', async () => Promise.reject('unavailable')),
+    }
+
+    render(<Theater event={event} onPrevious={() => undefined} onNext={() => undefined} hasPrevious={false} hasNext={false} />)
+
+    expect(await screen.findByText('代表映像を読み込めません。')).toBeVisible()
+    expect(document.querySelector('.representative-video video')).not.toBeInTheDocument()
+  })
+
   it('does not acquire a Blob URL when file resolution becomes stale after unmount', async () => {
     let resolveFile: (file: File) => void = () => undefined
     const pendingFile = new Promise<File>((resolve) => {

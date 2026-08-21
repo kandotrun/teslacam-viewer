@@ -312,6 +312,15 @@ describe('useSynchronizedPlayback', () => {
 
     expect(hook.result.current.playing).toBe(false)
     expect(hook.result.current.message).toMatch(/再試行/)
+
+    act(() => {
+      hook.result.current.handleVideoEvent('front', front, 'loading')
+      front.play = vi.fn(async () => undefined)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+    })
+    await act(async () => Promise.resolve())
+
+    expect(front.play).not.toHaveBeenCalled()
   })
 
   it('keeps automatic playback active when one new segment rejects and another succeeds', async () => {

@@ -66,6 +66,7 @@ function isShortcutTarget(target: EventTarget | null): boolean {
 
 function RepresentativeVideo({ event, registry }: { readonly event: TeslaCamEvent; readonly registry: ObjectUrlRegistry }) {
   const [url, setUrl] = useState<string | null>(null)
+  const [unavailable, setUnavailable] = useState(false)
   useEffect(() => {
     const fileRef = event.representativeFile
     if (fileRef === undefined) return undefined
@@ -77,9 +78,9 @@ function RepresentativeVideo({ event, registry }: { readonly event: TeslaCamEven
         acquired = file
         setUrl(registry.acquire(file))
       },
-      (error: unknown) => {
-        if (error instanceof Error || error instanceof DOMException) return
-        throw error
+      () => {
+        if (!active) return
+        setUnavailable(true)
       },
     )
     return () => {
@@ -93,6 +94,7 @@ function RepresentativeVideo({ event, registry }: { readonly event: TeslaCamEven
         <strong>代表映像（単独再生）</strong>
         <span>6カメラ同期映像ではありません。</span>
       </div>
+      {unavailable && <span role="status">代表映像を読み込めません。</span>}
       {url !== null && <video controls muted playsInline preload="metadata" src={url} />}
     </section>
   )
