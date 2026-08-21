@@ -26,13 +26,6 @@ function isHidden(name: string): boolean {
   return name.startsWith('.')
 }
 
-function fileType(name: string): string {
-  if (name.endsWith('.mp4')) return 'video/mp4'
-  if (name.endsWith('.json')) return 'application/json'
-  if (name.endsWith('.png')) return 'image/png'
-  return ''
-}
-
 function isFileHandle(entry: FileSystemHandle): entry is FileSystemFileHandle {
   return entry.kind === 'file'
 }
@@ -55,12 +48,13 @@ async function scanDirectory(
     await countEntry(state)
     const relativePath = [...path, entry.name].join('/')
     if (isFileHandle(entry)) {
+      const file = await entry.getFile()
       state.files.push({
-        name: entry.name,
+        name: file.name,
         relativePath,
-        size: 1,
-        type: fileType(entry.name),
-        getFile: () => entry.getFile(),
+        size: file.size,
+        type: file.type,
+        getFile: async () => file,
       })
     } else {
       await scanDirectory(entry, [...path, entry.name], state)

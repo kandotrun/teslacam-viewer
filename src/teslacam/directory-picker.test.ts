@@ -1,5 +1,6 @@
 import { afterEach, vi } from 'vitest'
 
+import { buildTeslaCamLibrary } from './build-library'
 import { pickTeslaCamDirectory } from './directory-picker'
 import type { ScanProgress } from './types'
 
@@ -97,18 +98,14 @@ describe('pickTeslaCamDirectory', () => {
     },
   )
 
-  it('defers reading MP4 bodies until a resulting file is requested', async () => {
-    let reads = 0
+  it('preserves File snapshot metadata and identity from a scanned handle', async () => {
     const file = new File(['clip'], '2026-08-21_14-30-45-front.mp4', {
-      type: 'video/mp4',
+      type: 'video/x-tesla',
     })
     const lazyFile: FakeFileHandle = {
       kind: 'file',
       name: file.name,
-      getFile: async () => {
-        reads += 1
-        return file
-      },
+      getFile: async () => file,
     }
     selectDirectory(directoryHandle('RecentClips', [lazyFile]))
 
@@ -116,9 +113,31 @@ describe('pickTeslaCamDirectory', () => {
 
     expect(result.status).toBe('selected')
     if (result.status === 'selected') {
-      expect(reads).toBe(0)
-      await result.files[0]?.getFile()
-      expect(reads).toBe(1)
+      expect(result.files[0]?.size).toBe(file.size)
+      expect(result.files[0]?.type).toBe(file.type)
+      await expect(result.files[0]?.getFile()).resolves.toBe(file)
+    }
+  })
+
+  it('retains zero-byte File System Access clips for Task 2 empty-media warnings', async () => {
+    const empty = new File([], '2026-08-21_14-30-45-front.mp4', {
+      type: 'video/mp4',
+    })
+    const emptyHandle: FakeFileHandle = {
+      kind: 'file',
+      name: empty.name,
+      getFile: async () => empty,
+    }
+    selectDirectory(directoryHandle('RecentClips', [emptyHandle]))
+
+    const result = await pickTeslaCamDirectory(() => undefined)
+
+    expect(result.status).toBe('selected')
+    if (result.status === 'selected') {
+      const library = await buildTeslaCamLibrary(result.files, () => undefined)
+
+      expect(library.events).toEqual([])
+      expect(library.warnings).toEqual([{ kind: 'empty-media-file', count: 1 }])
     }
   })
 
@@ -133,7 +152,7 @@ describe('pickTeslaCamDirectory', () => {
     const selection = pickTeslaCamDirectory((update) => {
       progress.push(update)
     })
-    for (let index = 0; index < 1000; index += 1) {
+    for (let index = 0; index < 2000; index += 1) {
       await Promise.resolve()
     }
 
