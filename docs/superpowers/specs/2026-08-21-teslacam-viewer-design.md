@@ -4,7 +4,9 @@
 
 本設計は、2026年8月21日に承認された「イベント一覧と6カメラ同期シアター」を具体化する。
 
-公開基盤にはHonoとCloudflare Workers Static Assetsを使用する。
+公開基盤にはReact、Vite、Hono、Cloudflare Workers Static Assetsを使用する。
+
+`@cloudflare/vite-plugin`を使い、ReactクライアントとHono Workerを一つのCloudflare Workersデプロイへ統合する。
 
 クライアント、Worker、共有データモデルはTypeScriptで実装する。
 
@@ -65,9 +67,11 @@ TeslaCamを保存したSSDをMacへ接続した利用者が、ブラウザから
 
 HonoをWorkerのHTTPエントリーポイントに使用する。
 
+Viteと`@cloudflare/vite-plugin`がReactクライアントとHono Workerを同じ開発環境とビルドへ統合する。
+
 Honoは`/api/health`を提供し、デプロイ状態を機械的に検証できるようにする。
 
-Reactのビルド成果物はWorkers Static Assetsとして同じデプロイ単位へ含める。
+Reactのビルド成果物はViteが`dist/client`へ生成し、Workers Static Assetsとして同じデプロイ単位へ含める。
 
 通常の静的アセットはWorkerを経由せずに配信し、`/api/*`だけをWorker優先ルートにする。
 
@@ -77,7 +81,9 @@ WorkerはTeslaCamの映像、ディレクトリ一覧、メタデータを受信
 
 ### 静的クライアント
 
-ReactとTypeScriptをViteでビルドする。
+ReactとTypeScriptを`@vitejs/plugin-react`を設定したViteでビルドする。
+
+Cloudflare公式のReact、Vite、Honoテンプレートと同じく、`vite.config.ts`ではReactプラグインとCloudflareプラグインを併用する。
 
 クライアントはフォルダ選択、走査、イベント構築、一覧表示、再生制御を担当する。
 
@@ -265,13 +271,15 @@ SSDが取り外された場合は読み込み失敗として通知し、再接�
 
 設定ファイルには`wrangler.jsonc`を使用する。
 
+開発、ビルド、プレビューにはViteと`@cloudflare/vite-plugin`を使用する。
+
 `compatibility_date`には実装日の2026年8月21日を使用する。
 
 Node.js互換機能を必要とする依存関係に備えて`nodejs_compat`を有効にする。
 
 Bindings型は設定ファイルから生成し、型生成結果が最新であることをCIで検証する。
 
-静的アセットは`dist`から配信し、未解決パスはSPAの`index.html`へフォールバックする。
+静的アセットはViteが生成する`dist/client`から配信し、未解決パスはSPAの`index.html`へフォールバックする。
 
 Worker優先ルートは`/api/*`に限定する。
 
@@ -314,5 +322,5 @@ TypeScript、ESLint、Vitest、ビルド、Workerのドライラン、Playwright
 - 選択した動画、ファイル名、位置情報が外部へ送信されない。
 - 実際のTeslaCam映像、サムネイル、メタデータをGitへ含めない。
 - TypeScriptで`any`を使用せず、型検査、テスト、ビルドが成功する。
-- HonoのヘルスチェックとWorkers Static Assetsが同じWorkerとして動作する。
+- React、Vite、Hono、Workers Static Assetsが同じCloudflare Workersデプロイとして動作する。
 - GitHubの`main`が公開中のソースと一致する。
