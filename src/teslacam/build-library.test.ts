@@ -65,6 +65,41 @@ describe('buildTeslaCamLibrary', () => {
     })
   })
 
+  it('retains all six cameras in one same-timestamp segment', async () => {
+    const front = createLocalFileRef(
+      'TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-front.mp4',
+    )
+    const back = createLocalFileRef(
+      'TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-back.mp4',
+    )
+    const leftPillar = createLocalFileRef(
+      'TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-left_pillar.mp4',
+    )
+    const leftRepeater = createLocalFileRef(
+      'TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-left_repeater.mp4',
+    )
+    const rightPillar = createLocalFileRef(
+      'TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-right_pillar.mp4',
+    )
+    const rightRepeater = createLocalFileRef(
+      'TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-right_repeater.mp4',
+    )
+
+    const library = await buildTeslaCamLibrary(
+      [front, back, leftPillar, leftRepeater, rightPillar, rightRepeater],
+      () => undefined,
+    )
+
+    expect(library.eventsByCategory.saved[0]?.segments[0]?.cameras).toEqual({
+      front,
+      back,
+      left_pillar: leftPillar,
+      left_repeater: leftRepeater,
+      right_pillar: rightPillar,
+      right_repeater: rightRepeater,
+    })
+  })
+
   it('keeps sentry events separate by their parent directories', async () => {
     const first = createLocalFileRef(
       'TeslaCam/SentryClips/sentry-a/2026-08-21_14-30-45-right_repeater.mp4',
