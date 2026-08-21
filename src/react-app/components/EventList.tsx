@@ -1,8 +1,13 @@
 import { ImageOff, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import type { TeslaCamEvent } from '../../teslacam/types'
-import type { EventFilters } from '../app-state'
+import { cameraIds, type TeslaCamEvent } from '../../teslacam/types'
+import {
+  categoryLabel,
+  eventMatchesFilters,
+  eventTime,
+  type EventFilters,
+} from '../app-state'
 
 type EventListProps = {
   readonly events: readonly TeslaCamEvent[]
@@ -15,47 +20,23 @@ function visibleEvents(
   events: readonly TeslaCamEvent[],
   filters: EventFilters,
 ): readonly TeslaCamEvent[] {
-  const query = filters.query.trim().toLowerCase()
   const matchingEvents: TeslaCamEvent[] = []
   for (const event of events) {
-    if (filters.category !== 'all' && event.category !== filters.category) continue
-    if (filters.dateKey !== null && !event.timestamp.startsWith(filters.dateKey)) continue
-    if (
-      query !== '' &&
-      !`${eventTime(event.timestamp)} ${event.category}`.toLowerCase().includes(query)
-    ) {
-      continue
-    }
-    matchingEvents.push(event)
+    if (eventMatchesFilters(event, filters)) matchingEvents.push(event)
   }
   return matchingEvents.sort((left, right) =>
     right.timestamp.localeCompare(left.timestamp),
   )
 }
 
-function categoryLabel(category: TeslaCamEvent['category']): string {
-  switch (category) {
-    case 'recent':
-      return '最近の走行'
-    case 'saved':
-      return '保存済み'
-    case 'sentry':
-      return 'セントリー'
-  }
-}
-
-function cameraCount(event: TeslaCamEvent): number {
-  const cameras = new Set<string>()
+function missingCameraCount(event: TeslaCamEvent): number {
+  let maximumMissing = 0
   for (const segment of event.segments) {
-    for (const camera of Object.keys(segment.cameras)) cameras.add(camera)
+    const missing = cameraIds.filter((cameraId) => segment.cameras[cameraId] === undefined)
+      .length
+    maximumMissing = Math.max(maximumMissing, missing)
   }
-  return cameras.size
-}
-
-function eventTime(timestamp: string): string {
-  return timestamp.replace('_', ' ').replaceAll('-', (match, offset) =>
-    offset > 10 ? ':' : match,
-  )
+  return maximumMissing
 }
 
 function EventThumbnail({ event }: { readonly event: TeslaCamEvent }) {
@@ -114,12 +95,13 @@ export function EventList({
         <span>{matchingEvents.length} 件</span>
       </div>
       {matchingEvents.length === 0 ? (
-        <p className="event-list-empty">この条件に一致するイベントはありません。</p>
+        <p className="event-list-empty">
+          <span>この条件に一致するイベントはありません。</span>
+        </p>
       ) : (
         <div className="event-list" aria-label="イベント一覧">
           {matchingEvents.map((event) => {
-            const availableCameras = cameraCount(event)
-            const missingCameras = Math.max(0, 6 - availableCameras)
+            const missingCameras = missingCameraCount(event)
             const isSelected = event.id === selectedEventId
             return (
               <button

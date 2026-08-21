@@ -1,8 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
+import { afterEach, vi } from 'vitest'
 
-import type { TeslaCamEvent } from '../../teslacam/types'
+import type { LocalFileRef, TeslaCamEvent } from '../../teslacam/types'
 import { EventList } from './EventList'
 
 const events: readonly TeslaCamEvent[] = [
@@ -30,6 +31,33 @@ const events: readonly TeslaCamEvent[] = [
   },
 ]
 
+function fileRef(name: string): LocalFileRef {
+  return {
+    name,
+    relativePath: `RecentClips/${name}`,
+    size: 12,
+    type: 'video/mp4',
+    getFile: async () => new File(['clip'], name, { type: 'video/mp4' }),
+  }
+}
+
+function firstEvent(): TeslaCamEvent {
+  const event = events.at(0)
+  if (event === undefined) throw new Error('event fixture is missing')
+  return event
+}
+
+function pendingFileRequest(): {
+  readonly promise: Promise<File>
+  readonly resolve: (file: File) => void
+} {
+  let resolveFile: (file: File) => void = () => undefined
+  const promise = new Promise<File>((resolve) => {
+    resolveFile = resolve
+  })
+  return { promise, resolve: resolveFile }
+}
+
 function EventListHarness() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
 
@@ -45,6 +73,10 @@ function EventListHarness() {
     </>
   )
 }
+
+afterEach(() => {
+  vi.restoreAllMocks()
+})
 
 describe('EventList', () => {
   it('lists matching events newest first with their missing camera count', () => {
@@ -64,11 +96,11 @@ describe('EventList', () => {
     expect(eventButtons[0]).toHaveTextContent('5台のカメラがありません')
   })
 
-  it('filters by category, date, and text without exposing location metadata', () => {
+  it('applies category, date, and localized category text filters together', () => {
     render(
       <EventList
         events={events}
-        filters={{ category: 'sentry', dateKey: '2026-08-20', query: '20:45' }}
+        filters={{ category: 'sentry', dateKey: '2026-08-20', query: 'セントリー' }}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
@@ -98,5 +130,93 @@ describe('EventList', () => {
     )
 
     expect(screen.getByText('この条件に一致するイベントはありません。')).toBeVisible()
+  })
+
+  it('reports cameras missing from a later partial segment', () => {
+    const fullSegment = {
+      timestamp: '2026-08-20_20-45-00',
+      cameras: {
+        front: fileRef('front.mp4'),
+        back: fileRef('back.mp4'),
+        left_pillar: fileRef('left_pillar.mp4'),
+        left_repeater: fileRef('left_repeater.mp4'),
+        right_pillar: fileRef('right_pillar.mp4'),
+        right_repeater: fileRef('right_repeater.mp4'),
+      },
+    }
+    const partialSegment = {
+      timestamp: '2026-08-20_20-46-00',
+      cameras: { front: fileRef('later-front.mp4') },
+    }
+    const multiSegmentEvent: TeslaCamEvent = {
+      id: 'recent-multi-segment',
+      category: 'recent',
+      timestamp: '2026-08-20_20-45-00',
+      segments: [fullSegment, partialSegment],
+    }
+
+    render(
+      <EventList
+        events={[multiSegmentEvent]}
+        filters={{ category: 'all', dateKey: null, query: '' }}
+        selectedEventId={null}
+        onSelectEvent={() => undefined}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: /2026-08-20 20:45:00/ })).toHaveTextContent(
+      '5台のカメラがありません',
+    )
+  })
+
+  it('creates and revokes a mounted thumbnail URL', async () => {
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:thumbnail')
+    const revokeObjectURL = vi.spyOn(URL, 'revokeObjectURL')
+    const eventWithThumbnail: TeslaCamEvent = {
+      ...firstEvent(),
+      thumbnailFile: fileRef('thumb.png'),
+    }
+    const view = render(
+      <EventList
+        events={[eventWithThumbnail]}
+        filters={{ category: 'all', dateKey: null, query: '' }}
+        selectedEventId={null}
+        onSelectEvent={() => undefined}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(createObjectURL).toHaveBeenCalledTimes(1)
+    })
+    view.unmount()
+
+    expect(revokeObjectURL).toHaveBeenCalledWith('blob:thumbnail')
+  })
+
+  it('does not create a thumbnail URL after an unmounted file request resolves', async () => {
+    const pendingFile = pendingFileRequest()
+    const createObjectURL = vi.spyOn(URL, 'createObjectURL')
+    const thumbnailFile: LocalFileRef = {
+      ...fileRef('pending-thumb.png'),
+      getFile: async () => pendingFile.promise,
+    }
+    const eventWithPendingThumbnail: TeslaCamEvent = {
+      ...firstEvent(),
+      thumbnailFile,
+    }
+    const view = render(
+      <EventList
+        events={[eventWithPendingThumbnail]}
+        filters={{ category: 'all', dateKey: null, query: '' }}
+        selectedEventId={null}
+        onSelectEvent={() => undefined}
+      />,
+    )
+
+    view.unmount()
+    pendingFile.resolve(new File(['thumb'], 'pending-thumb.png', { type: 'image/png' }))
+    await Promise.resolve()
+
+    expect(createObjectURL).not.toHaveBeenCalled()
   })
 })

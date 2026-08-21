@@ -55,6 +55,54 @@ describe('welcome view', () => {
     expect(click).toHaveBeenCalled()
   })
 
+  it('recovers from a denied native picker by using the fallback picker', async () => {
+    const user = userEvent.setup()
+    const click = vi.spyOn(HTMLInputElement.prototype, 'click')
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => Promise.reject(new DOMException('', 'NotAllowedError')),
+    })
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('フォルダへのアクセスが許可されませんでした。')).toBeVisible()
+    })
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: undefined,
+    })
+    await user.click(screen.getByRole('button', { name: 'もう一度選ぶ' }))
+
+    expect(click).toHaveBeenCalled()
+  })
+
+  it('loads a fallback directory after the native picker is unsupported', async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: undefined,
+    })
+    render(<App />)
+    const fallbackInput = screen.getByLabelText(
+      'TeslaCamフォルダを選ぶ（互換モード）',
+    )
+    const clip = new File(['clip'], '2026-08-20_20-45-00-front.mp4', {
+      type: 'video/mp4',
+    })
+    Object.defineProperty(clip, 'webkitRelativePath', {
+      value: 'RecentClips/2026-08-20_20-45-00-front.mp4',
+    })
+
+    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+    fireEvent.change(fallbackInput, { target: { files: [clip] } })
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
+    })
+  })
+
   it('clears the fallback input before a folder is selected again', () => {
     render(<App />)
     const fallbackInput = screen.getByLabelText(

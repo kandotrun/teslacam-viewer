@@ -137,12 +137,27 @@ export function App() {
               <h1 id="selection-title">
                 {selectedEvent === undefined
                   ? 'イベントを選択してください'
-                  : '選択したイベントを準備しています'}
+                  : (
+                      <>
+                        <span className="selection-title__line">選択したイベントを</span>
+                        <span className="selection-title__line">準備しています</span>
+                      </>
+                    )}
               </h1>
-              <p>
+              <p className="selection-description">
                 {selectedEvent === undefined
-                  ? '一覧からイベントを選ぶと、次の段階で6方向の映像をここに表示します。'
-                  : `${selectedEvent.segments.length} セグメントを選択しました。再生は次の段階で利用できます。`}
+                  ? (
+                      <>
+                        <span>一覧からイベントを選ぶと、</span>
+                        <span>次の段階で6方向の映像をここに表示します。</span>
+                      </>
+                    )
+                  : (
+                      <>
+                        <span>{selectedEvent.segments.length} セグメントを選択しました。</span>
+                        <span>再生は次の段階で利用できます。</span>
+                      </>
+                    )}
               </p>
             </section>
           </main>

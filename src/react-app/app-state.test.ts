@@ -1,10 +1,30 @@
-import type { TeslaCamLibrary } from '../teslacam/types'
+import type { LocalFileRef, TeslaCamEvent, TeslaCamLibrary } from '../teslacam/types'
 
 import { appReducer, initialAppState } from './app-state'
 
+const file: LocalFileRef = {
+  name: 'front.mp4',
+  relativePath: 'SentryClips/2026-08-20_20-45-00-front.mp4',
+  size: 12,
+  type: 'video/mp4',
+  getFile: async () => new File(['clip'], 'front.mp4'),
+}
+
+const event: TeslaCamEvent = {
+  id: 'sentry-2026-08-20_20-45-00',
+  category: 'sentry',
+  timestamp: '2026-08-20_20-45-00',
+  segments: [
+    {
+      timestamp: '2026-08-20_20-45-00',
+      cameras: { front: file },
+    },
+  ],
+}
+
 const library: TeslaCamLibrary = {
-  events: [],
-  eventsByCategory: { recent: [], saved: [], sentry: [] },
+  events: [event],
+  eventsByCategory: { recent: [], saved: [], sentry: [event] },
   warnings: [],
 }
 
@@ -51,6 +71,26 @@ describe('appReducer', () => {
     expect(invalid).toMatchObject({ kind: 'error', reason: 'invalid' })
   })
 
+  it('keeps an empty library in the invalid error state', () => {
+    const emptyLibrary: TeslaCamLibrary = {
+      events: [],
+      eventsByCategory: { recent: [], saved: [], sentry: [] },
+      warnings: [],
+    }
+
+    expect(
+      appReducer(initialAppState, {
+        kind: 'library-ready',
+        folderName: 'TeslaCam',
+        library: emptyLibrary,
+      }),
+    ).toEqual({
+      kind: 'error',
+      reason: 'invalid',
+      filters: { category: 'all', dateKey: null, query: '' },
+    })
+  })
+
   it('retains partial scan warnings in the ready state', () => {
     const warnedLibrary: TeslaCamLibrary = {
       ...library,
@@ -68,7 +108,7 @@ describe('appReducer', () => {
     })
   })
 
-  it('updates category, date, text filters, selected event, and rescan state', () => {
+  it('updates category, date, and text filters and clears a selection they hide', () => {
     const ready = appReducer(initialAppState, {
       kind: 'library-ready',
       folderName: 'TeslaCam',
@@ -83,15 +123,25 @@ describe('appReducer', () => {
     )
     const selected = appReducer(filtered, {
       kind: 'event-selected',
-      eventId: 'sentry-2026-08-20_20-45-00-1',
+      eventId: event.id,
     })
 
     expect(selected).toMatchObject({
       kind: 'ready',
       filters: { category: 'sentry', dateKey: '2026-08-20', query: '20:45' },
-      selectedEventId: 'sentry-2026-08-20_20-45-00-1',
+      selectedEventId: event.id,
     })
-    expect(appReducer(selected, { kind: 'scan-started' })).toMatchObject({
+    const hidden = appReducer(selected, {
+      kind: 'category-filtered',
+      category: 'saved',
+    })
+
+    expect(hidden).toMatchObject({
+      kind: 'ready',
+      filters: { category: 'saved', dateKey: '2026-08-20', query: '20:45' },
+      selectedEventId: null,
+    })
+    expect(appReducer(hidden, { kind: 'scan-started' })).toMatchObject({
       kind: 'scanning',
       progress: { processed: 0, total: 0 },
     })

@@ -1,4 +1,9 @@
-import type { ClipCategory, ScanProgress, TeslaCamLibrary } from '../teslacam/types'
+import type {
+  ClipCategory,
+  ScanProgress,
+  TeslaCamEvent,
+  TeslaCamLibrary,
+} from '../teslacam/types'
 
 export type EventFilters = {
   readonly category: ClipCategory | 'all'
@@ -81,6 +86,47 @@ function updateReady(
   }
 }
 
+export function eventTime(timestamp: string): string {
+  return timestamp.replace('_', ' ').replaceAll('-', (match, offset) =>
+    offset > 10 ? ':' : match,
+  )
+}
+
+export function categoryLabel(category: ClipCategory): string {
+  switch (category) {
+    case 'recent':
+      return '最近の走行'
+    case 'saved':
+      return '保存済み'
+    case 'sentry':
+      return 'セントリー'
+  }
+}
+
+export function eventMatchesFilters(event: TeslaCamEvent, filters: EventFilters): boolean {
+  if (filters.category !== 'all' && event.category !== filters.category) return false
+  if (filters.dateKey !== null && !event.timestamp.startsWith(filters.dateKey)) return false
+  const query = filters.query.trim().toLowerCase()
+  return (
+    query === '' ||
+    `${eventTime(event.timestamp)} ${event.category} ${categoryLabel(event.category)}`
+      .toLowerCase()
+      .includes(query)
+  )
+}
+
+function withFilters(ready: ReadyState, filters: EventFilters): ReadyState {
+  const selectedEvent = ready.library.events.find((event) => event.id === ready.selectedEventId)
+  return {
+    ...ready,
+    filters,
+    selectedEventId:
+      selectedEvent !== undefined && eventMatchesFilters(selectedEvent, filters)
+        ? ready.selectedEventId
+        : null,
+  }
+}
+
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.kind) {
     case 'scan-started':
@@ -105,6 +151,9 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'scan-failed':
       return { kind: 'error', reason: 'failed', filters: initialFilters }
     case 'library-ready':
+      if (action.library.events.length === 0) {
+        return { kind: 'error', reason: 'invalid', filters: initialFilters }
+      }
       return {
         kind: 'ready',
         folderName: action.folderName,
@@ -113,20 +162,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         selectedEventId: null,
       }
     case 'category-filtered':
-      return updateReady(state, (ready) => ({
-        ...ready,
-        filters: { ...ready.filters, category: action.category },
-      }))
+      return updateReady(state, (ready) =>
+        withFilters(ready, { ...ready.filters, category: action.category }),
+      )
     case 'date-filtered':
-      return updateReady(state, (ready) => ({
-        ...ready,
-        filters: { ...ready.filters, dateKey: action.dateKey },
-      }))
+      return updateReady(state, (ready) =>
+        withFilters(ready, { ...ready.filters, dateKey: action.dateKey }),
+      )
     case 'query-filtered':
-      return updateReady(state, (ready) => ({
-        ...ready,
-        filters: { ...ready.filters, query: action.query },
-      }))
+      return updateReady(state, (ready) =>
+        withFilters(ready, { ...ready.filters, query: action.query }),
+      )
     case 'event-selected':
       return updateReady(state, (ready) => ({
         ...ready,
