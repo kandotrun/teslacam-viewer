@@ -71,7 +71,7 @@ const localTypeSafetyPlugin = {
 }
 
 export default [
-  { ignores: ['dist', 'node_modules', 'worker-configuration.d.ts'] },
+  { ignores: ['.omo', 'dist', 'node_modules', 'worker-configuration.d.ts'] },
   eslint.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],

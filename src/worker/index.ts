@@ -20,8 +20,25 @@ app.use('*', async (context, next) => {
   }
 })
 
+app.use('/api/health', async (context, next) => {
+  if (context.req.method !== 'GET' && context.req.method !== 'HEAD') {
+    context.header('Allow', 'GET, HEAD')
+    return context.json({ error: 'method_not_allowed' as const }, 405)
+  }
+
+  await next()
+})
+
 const routes = app.get('/api/health', (context) => {
   return context.json({ status: 'ok' as const })
+})
+
+app.notFound((context) => {
+  if (context.req.path === '/api' || context.req.path.startsWith('/api/')) {
+    return context.json({ error: 'not_found' as const }, 404)
+  }
+
+  return context.text('Not Found', 404)
 })
 
 export type AppType = typeof routes

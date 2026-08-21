@@ -1,11 +1,18 @@
 import app from './index'
 
 describe('health route', () => {
-  it('returns a typed health response', async () => {
+  it('returns a typed health response for GET', async () => {
     const response = await app.request('/api/health')
 
     expect(response.status).toBe(200)
     await expect(response.json()).resolves.toEqual({ status: 'ok' })
+  })
+
+  it('returns an empty successful response for HEAD', async () => {
+    const response = await app.request('/api/health', { method: 'HEAD' })
+
+    expect(response.status).toBe(200)
+    await expect(response.text()).resolves.toBe('')
   })
 
   it('returns the API security policy', async () => {
@@ -20,5 +27,29 @@ describe('health route', () => {
     expect(response.headers.get('Permissions-Policy')).toBe(
       'camera=(), microphone=(), geolocation=(), payment=(), usb=()',
     )
+  })
+})
+
+describe('API boundary', () => {
+  it('returns a structured JSON response for an unknown API route', async () => {
+    const response = await app.request('/api/missing')
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('Content-Type')).toContain('application/json')
+    await expect(response.json()).resolves.toEqual({ error: 'not_found' })
+  })
+
+  it('returns a structured JSON response and Allow header for unsupported health methods', async () => {
+    const response = await app.request('/api/health', { method: 'POST' })
+
+    expect(response.status).toBe(405)
+    expect(response.headers.get('Allow')).toBe('GET, HEAD')
+    await expect(response.json()).resolves.toEqual({ error: 'method_not_allowed' })
+  })
+
+  it('does not emit CORS headers from the API boundary', async () => {
+    const response = await app.request('/api/health')
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull()
   })
 })
