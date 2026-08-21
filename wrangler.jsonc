@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "teslacam-viewer",
+  "account_id": "ba88a8b00eb7e0bfe9a8f00e8eb83d56",
   "main": "./src/worker/index.ts",
   "compatibility_date": "2026-08-21",
   "compatibility_flags": ["nodejs_compat"],
