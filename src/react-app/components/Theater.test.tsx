@@ -124,6 +124,18 @@ describe('Theater', () => {
     expect(screen.getByText(/6カメラ同期映像ではありません/)).toBeVisible()
   })
 
+  it('maps an unknown getFile rejection to an unavailable tile', async () => {
+    const failing = fileRef('front.mp4', async () => Promise.reject('unavailable'))
+    const event: TeslaCamEvent = {
+      ...eventWithCameras([]),
+      segments: [{ timestamp: '2026-08-21_12-00-00', cameras: { front: failing } }],
+    }
+
+    render(<Theater event={event} onPrevious={() => undefined} onNext={() => undefined} hasPrevious={false} hasNext={false} />)
+
+    expect(await screen.findByText('映像を読み込めません')).toBeVisible()
+  })
+
   it('does not acquire a Blob URL when file resolution becomes stale after unmount', async () => {
     let resolveFile: (file: File) => void = () => undefined
     const pendingFile = new Promise<File>((resolve) => {

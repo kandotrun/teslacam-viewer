@@ -108,14 +108,11 @@ export function CameraTile({
           replacingRef.current = false
           element.load()
         },
-        (error: unknown) => {
-          if (error instanceof Error || error instanceof DOMException) {
-            replacingRef.current = false
-            update('unavailable')
-            onPlaybackEvent(cameraId, element, 'unavailable')
-            return
-          }
-          throw error
+        () => {
+          if (!active) return
+          replacingRef.current = false
+          update('unavailable')
+          onPlaybackEvent(cameraId, element, 'unavailable')
         },
       )
     }

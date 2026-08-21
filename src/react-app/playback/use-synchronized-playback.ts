@@ -64,7 +64,13 @@ export function useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera: C
     )
     setPlaying(resolution === 'playing')
     if (resolution === 'playing') setMessage(null)
-    if (resolution === 'failed') setMessage(rejectedMessage)
+    if (resolution === 'failed') {
+      intentRef.current = false
+      intentGeneration.current += 1
+      attempts.current.clear()
+      successfulCameras.current.clear()
+      setMessage(rejectedMessage)
+    }
   }, [])
 
   const invalidateCamera = useCallback((cameraId: CameraId): void => {
@@ -125,6 +131,7 @@ export function useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera: C
   const seek = useCallback((absoluteSeconds: number): void => {
     const location = locatePlaybackTime(event, absoluteSeconds)
     if (location.segmentIndex !== segmentRef.current) {
+      for (const registration of registrations.current.values()) registration.element.pause()
       sourceGeneration.current += 1
       attempts.current.clear()
       successfulCameras.current.clear()

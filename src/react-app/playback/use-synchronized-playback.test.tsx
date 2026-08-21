@@ -73,6 +73,15 @@ describe('useSynchronizedPlayback', () => {
 
     expect(hook.result.current.playing).toBe(false)
     expect(hook.result.current.message).toMatch(/再試行/)
+
+    act(() => {
+      hook.result.current.handleVideoEvent('front', front, 'loading')
+      front.play = vi.fn(async () => undefined)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+    })
+    await act(async () => Promise.resolve())
+
+    expect(front.play).not.toHaveBeenCalled()
   })
 
   it('does not let stale unregister cleanup remove a replacement element', async () => {
@@ -183,12 +192,15 @@ describe('useSynchronizedPlayback', () => {
     const oldPlay = hook.result.current.play()
     act(() => {
       hook.result.current.seek(60)
+    })
+    expect(front.pause).toHaveBeenCalledTimes(1)
+    act(() => {
       hook.result.current.handleVideoEvent('front', front, 'loading')
       front.play = vi.fn(async () => undefined)
       hook.result.current.handleVideoEvent('front', front, 'ready')
     })
     await act(async () => Promise.resolve())
-    pending.reject(new DOMException('', 'NotAllowedError'))
+    pending.resolve()
     await act(async () => oldPlay)
 
     expect(front.play).toHaveBeenCalledTimes(1)
