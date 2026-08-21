@@ -1,0 +1,17 @@
+{
+  "name": "TeslaCam Viewer",
+  "short_name": "TeslaCam",
+  "description": "SSD上のTeslaCam映像をブラウザ内だけで整理して確認します。",
+  "lang": "ja",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090b0d",
+  "theme_color": "#090b0d",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
