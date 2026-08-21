@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import { cameraIds, type TeslaCamEvent } from '../../teslacam/types'
 import {
   categoryLabel,
-  eventMatchesFilters,
   eventTime,
+  orderedMatchingEvents,
   type EventFilters,
 } from '../app-state'
 
@@ -14,19 +14,6 @@ type EventListProps = {
   readonly filters: EventFilters
   readonly selectedEventId: string | null
   readonly onSelectEvent: (eventId: string) => void
-}
-
-function visibleEvents(
-  events: readonly TeslaCamEvent[],
-  filters: EventFilters,
-): readonly TeslaCamEvent[] {
-  const matchingEvents: TeslaCamEvent[] = []
-  for (const event of events) {
-    if (eventMatchesFilters(event, filters)) matchingEvents.push(event)
-  }
-  return matchingEvents.sort((left, right) =>
-    right.timestamp.localeCompare(left.timestamp),
-  )
 }
 
 function missingCameraCount(event: TeslaCamEvent): number {
@@ -83,7 +70,7 @@ export function EventList({
   selectedEventId,
   onSelectEvent,
 }: EventListProps) {
-  const matchingEvents = visibleEvents(events, filters)
+  const matchingEvents = orderedMatchingEvents(events, filters)
 
   return (
     <section className="event-list-panel" aria-labelledby="event-list-title">

@@ -115,6 +115,15 @@ export function eventMatchesFilters(event: TeslaCamEvent, filters: EventFilters)
   )
 }
 
+export function orderedMatchingEvents(
+  events: readonly TeslaCamEvent[],
+  filters: EventFilters,
+): readonly TeslaCamEvent[] {
+  return events
+    .filter((event) => eventMatchesFilters(event, filters))
+    .sort((left, right) => right.timestamp.localeCompare(left.timestamp))
+}
+
 function withFilters(ready: ReadyState, filters: EventFilters): ReadyState {
   const selectedEvent = ready.library.events.find((event) => event.id === ready.selectedEventId)
   return {

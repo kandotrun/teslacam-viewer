@@ -4,12 +4,13 @@ import { buildTeslaCamLibrary } from '../teslacam/build-library'
 import { filesFromDirectoryInput } from '../teslacam/directory-input'
 import { pickTeslaCamDirectory } from '../teslacam/directory-picker'
 import type { LocalFileRef } from '../teslacam/types'
-import { appReducer, initialAppState } from './app-state'
+import { appReducer, initialAppState, orderedMatchingEvents } from './app-state'
 import { AppHeader } from './components/AppHeader'
 import { EmptyState } from './components/EmptyState'
 import { EventList } from './components/EventList'
 import { LibrarySidebar } from './components/LibrarySidebar'
 import { ScanProgress } from './components/ScanProgress'
+import { Theater } from './components/Theater'
 
 function folderNameFromFiles(files: readonly LocalFileRef[]): string {
   const firstFile = files.at(0)
@@ -109,6 +110,8 @@ export function App() {
       const selectedEvent = state.library.events.find(
         (event) => event.id === state.selectedEventId,
       )
+      const matchingEvents = orderedMatchingEvents(state.library.events, state.filters)
+      const selectedIndex = matchingEvents.findIndex((event) => event.id === state.selectedEventId)
       const counts = {
         recent: state.library.eventsByCategory.recent.length,
         saved: state.library.eventsByCategory.saved.length,
@@ -132,34 +135,31 @@ export function App() {
               selectedEventId={state.selectedEventId}
               onSelectEvent={(eventId) => dispatch({ kind: 'event-selected', eventId })}
             />
-            <section className="selection-placeholder" aria-labelledby="selection-title">
-              <p className="sidebar-label">THEATER</p>
-              <h1 id="selection-title">
-                {selectedEvent === undefined
-                  ? 'イベントを選択してください'
-                  : (
-                      <>
-                        <span className="selection-title__line">選択したイベントを</span>
-                        <span className="selection-title__line">準備しています</span>
-                      </>
-                    )}
-              </h1>
-              <p className="selection-description">
-                {selectedEvent === undefined
-                  ? (
-                      <>
-                        <span>一覧からイベントを選ぶと、</span>
-                        <span>次の段階で6方向の映像をここに表示します。</span>
-                      </>
-                    )
-                  : (
-                      <>
-                        <span>{selectedEvent.segments.length} セグメントを選択しました。</span>
-                        <span>再生は次の段階で利用できます。</span>
-                      </>
-                    )}
-              </p>
-            </section>
+            {selectedEvent === undefined ? (
+              <section className="selection-placeholder" aria-labelledby="selection-title">
+                <p className="sidebar-label">THEATER</p>
+                <h1 id="selection-title">イベントを選択してください</h1>
+                <p className="selection-description">
+                  <span>一覧からイベントを選ぶと、</span>
+                  <span>6方向の映像をここに表示します。</span>
+                </p>
+              </section>
+            ) : (
+              <Theater
+                event={selectedEvent}
+                hasNext={selectedIndex >= 0 && selectedIndex < matchingEvents.length - 1}
+                hasPrevious={selectedIndex > 0}
+                key={selectedEvent.id}
+                onNext={() => {
+                  const nextEvent = matchingEvents.at(selectedIndex + 1)
+                  if (nextEvent !== undefined) dispatch({ kind: 'event-selected', eventId: nextEvent.id })
+                }}
+                onPrevious={() => {
+                  const previousEvent = matchingEvents.at(selectedIndex - 1)
+                  if (previousEvent !== undefined) dispatch({ kind: 'event-selected', eventId: previousEvent.id })
+                }}
+              />
+            )}
           </main>
           {directoryInput(fallbackInputRef, changeDirectory)}
         </div>

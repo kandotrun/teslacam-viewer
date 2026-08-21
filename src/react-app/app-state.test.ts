@@ -1,6 +1,6 @@
 import type { LocalFileRef, TeslaCamEvent, TeslaCamLibrary } from '../teslacam/types'
 
-import { appReducer, initialAppState } from './app-state'
+import { appReducer, initialAppState, orderedMatchingEvents } from './app-state'
 
 const file: LocalFileRef = {
   name: 'front.mp4',
@@ -145,5 +145,27 @@ describe('appReducer', () => {
       kind: 'scanning',
       progress: { processed: 0, total: 0 },
     })
+  })
+})
+
+describe('orderedMatchingEvents', () => {
+  it('returns only matching events in newest-first navigation order', () => {
+    const newer: TeslaCamEvent = {
+      ...event,
+      id: 'saved-newer',
+      category: 'saved',
+      timestamp: '2026-08-21_09-00-00',
+    }
+    const older: TeslaCamEvent = {
+      ...newer,
+      id: 'saved-older',
+      timestamp: '2026-08-20_09-00-00',
+    }
+
+    expect(orderedMatchingEvents([older, event, newer], {
+      category: 'saved',
+      dateKey: null,
+      query: '',
+    }).map((matchingEvent) => matchingEvent.id)).toEqual(['saved-newer', 'saved-older'])
   })
 })

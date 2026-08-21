@@ -89,6 +89,13 @@
 | `--space-12` | `48px` | 大きな間隔 |
 | `--space-16` | `64px` | ページ余白 |
 | `--space-20` | `80px` | welcomeの呼吸 |
+| `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
+| `--theater-tablet-min` | `720px` | tabletシアター全体の検証高 |
+| `--theater-mobile-tile-min` | `180px` | mobileカメラタイル最小高 |
+| `--theater-mobile-tile-target` | `46dvb` | mobileで映像を主役にするタイル高 |
+| `--theater-event-list-max` | `320px` | tablet event listの最大高 |
+| `--theater-representative-max` | `40dvb` | 代表映像の最大表示高 |
+| `--theater-mobile-expanded-min` | `60dvb` | mobile expanded映像の最小高 |
 
 ### Grid
 
@@ -135,6 +142,22 @@
 - **Accessibility**: landmark、論理的な見出し順、自然な日本語改行、200%拡大でも情報を失わない。
 - **Motion**: なし。
 - **Layout**: centered stack。背景の二本の直線と小さなカメラ位置記号で、将来の6カメラシアターを抽象的に示す。
+
+### 6-camera theater
+
+- **Structure**: canonical orderの6タイル、共有timeline、transport、速度、前後イベント操作。
+- **Variants**: 2×3 grid、単一カメラexpanded、6方向すべてterminal時だけ代表映像。
+- **States**: loading、ready、missing、unavailable、corrupt、unsupportedを各タイルで独立表示する。
+- **Accessibility**: 各タイルは日本語カメラ名と拡大状態を持ち、transportは可視ラベル、44px操作、range label、キーボードshortcutsを備える。
+- **Motion**: 状態色とborderの`--motion-fast`のみ。expanded切替で位置やサイズをアニメーションしない。
+- **Layout**: desktopは2×3、tablet/mobileは縦方向へ再配置し、375pxで横overflowを生じさせない。
+- **Persistence**: transportはdesktopでシアター下端にsticky、tablet/mobileではviewport下端に固定し、映像をスクロール中も操作可能にする。
+
+### Playback transport
+
+- **Structure**: 前へ、-10秒、再生/一時停止、+10秒、次へ、elapsed/duration、range、速度選択。
+- **States**: default、hover、active、focus-visible、disabled、recoverable play error。
+- **Accessibility**: iconと日本語ラベルを併用し、検知位置はrange上の非操作markerとして名前を持つ。
 
 ## 6. Motion & Interaction
 
