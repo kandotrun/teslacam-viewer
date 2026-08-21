@@ -30,6 +30,7 @@
   --font-body: 1rem;
   --font-small: 0.875rem;
   --font-label: 0.75rem;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -41,6 +42,10 @@
   --space-12: 48px;
   --space-16: 64px;
   --space-20: 80px;
+  --library-rail-width: 224px;
+  --event-list-width: 320px;
+  --event-thumbnail-width: 88px;
+  --event-card-min-height: 104px;
   --theater-tile-min: 120px;
   --theater-tablet-min: 720px;
   --theater-mobile-tile-min: 180px;
@@ -410,7 +415,7 @@ button {
 .library-workspace {
   display: grid;
   min-block-size: 0;
-  grid-template-columns: 224px minmax(min(320px, 100%), 320px) minmax(0, 1fr);
+  grid-template-columns: var(--library-rail-width) minmax(min(var(--event-list-width), 100%), var(--event-list-width)) minmax(0, 1fr);
   overflow: hidden;
 }
 
@@ -565,9 +570,9 @@ button {
 .event-card {
   display: grid;
   min-inline-size: 0;
-  grid-template-columns: 88px minmax(0, 1fr);
+  grid-template-columns: var(--event-thumbnail-width) minmax(0, 1fr);
   gap: var(--space-3);
-  min-block-size: 104px;
+  min-block-size: var(--event-card-min-height);
   padding: var(--space-2);
   border: 1px solid transparent;
   border-radius: var(--radius-control);
@@ -577,7 +582,7 @@ button {
   text-align: start;
   transition: background-color var(--motion-fast), border-color var(--motion-fast);
   content-visibility: auto;
-  contain-intrinsic-size: 104px;
+  contain-intrinsic-size: var(--event-card-min-height);
 }
 
 .event-card:hover,
@@ -588,8 +593,8 @@ button {
 
 .event-thumbnail {
   display: grid;
-  inline-size: 88px;
-  block-size: 88px;
+  inline-size: var(--event-thumbnail-width);
+  block-size: var(--event-thumbnail-width);
   place-items: center;
   border: 1px solid var(--color-border);
   border-radius: var(--space-2);
@@ -807,7 +812,7 @@ button {
 .playback-controls__timeline > span {
   min-inline-size: 4ch;
   color: var(--color-text-secondary);
-  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-family: var(--font-mono);
   font-size: var(--font-small);
 }
 

@@ -90,13 +90,14 @@ export function CameraTile({
       if (!active) return
       reportStatus(nextStatus)
     }
-    onPlaybackEvent(cameraId, element, 'unavailable')
+    onPlaybackEvent(cameraId, element, 'loading')
     element.pause()
     element.removeAttribute('src')
     element.load()
     if (fileRef === undefined) {
       replacingRef.current = false
       update('missing')
+      onPlaybackEvent(cameraId, element, 'unavailable')
     } else {
       update('loading')
       void fileRef.getFile().then(
@@ -111,6 +112,7 @@ export function CameraTile({
           if (error instanceof Error || error instanceof DOMException) {
             replacingRef.current = false
             update('unavailable')
+            onPlaybackEvent(cameraId, element, 'unavailable')
             return
           }
           throw error

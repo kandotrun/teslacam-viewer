@@ -61,7 +61,7 @@
 ### Font Stack
 
 - Primary: `ui-sans-serif, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif`
-- Mono: `ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace`
+- Mono `--font-mono`: `ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace`
 - Webフォント、外部フォント、ブランド固有フォントは読み込まない。
 
 ### Rules
@@ -89,6 +89,10 @@
 | `--space-12` | `48px` | 大きな間隔 |
 | `--space-16` | `64px` | ページ余白 |
 | `--space-20` | `80px` | welcomeの呼吸 |
+| `--library-rail-width` | `224px` | desktopライブラリレール幅 |
+| `--event-list-width` | `320px` | desktopイベント一覧幅 |
+| `--event-thumbnail-width` | `88px` | イベントカードのサムネイル幅 |
+| `--event-card-min-height` | `104px` | イベントカードの最小高と仮想描画予約高 |
 | `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
 | `--theater-tablet-min` | `720px` | tabletシアター全体の検証高 |
 | `--theater-mobile-tile-min` | `180px` | mobileカメラタイル最小高 |

@@ -112,6 +112,11 @@ export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext }: The
 
   useEffect(() => {
     const handleKey = (keyboardEvent: KeyboardEvent): void => {
+      if (keyboardEvent.key === 'Escape' && expandedCamera !== null) {
+        setExpandedCamera(null)
+        keyboardEvent.preventDefault()
+        return
+      }
       if (isShortcutTarget(keyboardEvent.target)) return
       let handled = true
       switch (keyboardEvent.key) {
@@ -124,9 +129,6 @@ export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext }: The
           break
         case 'ArrowRight':
           playback.skip(10)
-          break
-        case 'Escape':
-          setExpandedCamera(null)
           break
         case '1':
         case '2':
@@ -145,7 +147,7 @@ export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext }: The
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [playback])
+  }, [expandedCamera, playback])
 
   const allTerminal = cameraIds.every((cameraId) => terminalStatuses.includes(statuses[cameraId] ?? 'loading'))
   const representativeMode = allTerminal && event.representativeFile !== undefined

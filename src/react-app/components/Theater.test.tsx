@@ -65,6 +65,22 @@ describe('Theater', () => {
     expect(screen.getByLabelText('再生位置')).toHaveValue('10')
   })
 
+  it('returns a clicked and focused expanded camera to the grid with Escape while ignoring other shortcuts', async () => {
+    const user = userEvent.setup()
+    render(<Theater event={eventWithCameras()} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+    const front = screen.getByRole('button', { name: 'フロントカメラを拡大' })
+
+    await user.click(front)
+    expect(front).toHaveFocus()
+    fireEvent.keyDown(front, { key: 'ArrowRight' })
+    fireEvent.keyDown(front, { key: '6' })
+    expect(screen.getByLabelText('再生位置')).toHaveValue('0')
+    expect(screen.queryByRole('button', { name: '右リピーターカメラをグリッドへ戻す' })).not.toBeInTheDocument()
+    fireEvent.keyDown(front, { key: 'Escape' })
+
+    expect(front).toHaveAttribute('aria-pressed', 'false')
+  })
+
   it('shows transport, speed choices, navigation edges, and an in-range detection marker', async () => {
     const previous = vi.fn()
     const next = vi.fn()
