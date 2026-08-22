@@ -276,6 +276,7 @@ test('shows missing and terminal media states with representative fallback', asy
   const terminalGrid = await corruptPage.locator('.camera-grid').boundingBox()
   const representative = await corruptPage.locator('.representative-video').boundingBox()
   const transport = await corruptPage.locator('.playback-controls').boundingBox()
+  const viewportHeight = await corruptPage.evaluate(() => window.innerHeight)
   if (terminalGrid === null || representative === null || transport === null) throw new Error('terminal layout geometry is missing')
   const maximumTileBottom = await corruptPage.locator('.camera-tile').evaluateAll((elements) => Math.max(...elements.map((element) => {
     const bounds = element.getBoundingClientRect()
@@ -292,6 +293,11 @@ test('shows missing and terminal media states with representative fallback', asy
   expect(maximumTileBottom).toBeLessThanOrEqual(representative.y)
   expect(internalOverlapCount).toBe(0)
   expect(representative.y + representative.height).toBeLessThanOrEqual(transport.y)
+  expect(transport.y + transport.height).toBeLessThanOrEqual(viewportHeight)
+  expect(await corruptPage.locator('.playback-controls__rate button').evaluateAll((elements, height) => elements.every((element) => {
+    const bounds = element.getBoundingClientRect()
+    return bounds.top >= 0 && bounds.bottom <= height
+  }), viewportHeight)).toBe(true)
   await corruptPage.screenshot({ path: `${evidenceRoot}/desktop-terminal-fallback.png` })
   await corruptContext.close()
 })
