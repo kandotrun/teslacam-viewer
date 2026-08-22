@@ -151,9 +151,11 @@ test('drives categories, playback, camera and event keyboard controls without an
   const media = [...await readFile(fixturePath)]
   await installPicker(context, media, 'full')
   const runtimeErrors = captureRuntimeErrors(page)
-  const requests: string[] = []
+  const requests: Array<{ readonly url: string; readonly body: string }> = []
   page.on('request', (request) => {
-    if (/^https?:/u.test(request.url())) requests.push(`${request.url()} ${request.postData() ?? ''}`)
+    if (/^https?:/u.test(request.url())) {
+      requests.push({ url: request.url(), body: request.postData() ?? '' })
+    }
   })
   await page.goto('/')
   await selectFolder(page)
@@ -194,7 +196,12 @@ test('drives categories, playback, camera and event keyboard controls without an
     return { width: bounds.width, height: bounds.height }
   }))
   expect(sizes.every((size) => size.width >= 44 && size.height >= 44)).toBe(true)
-  expect(requests.some((request) => request.includes('2026-08-20_20') || request.includes('synthetic-') || request.includes('ftyp'))).toBe(false)
+  const pageOrigin = new URL(page.url()).origin
+  expect(requests.every((request) => new URL(request.url).origin === pageOrigin)).toBe(true)
+  expect(requests.some((request) => {
+    const requestText = `${request.url} ${request.body}`
+    return requestText.includes('2026-08-20_20') || requestText.includes('synthetic-') || requestText.includes('ftyp')
+  })).toBe(false)
   expect(runtimeErrors).toEqual([])
 })
 

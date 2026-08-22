@@ -1,5 +1,9 @@
 import { defineConfig } from '@playwright/test'
 
+const port = process.env.PLAYWRIGHT_PORT ?? '4173'
+if (!/^\d+$/u.test(port)) throw new Error('PLAYWRIGHT_PORT must be numeric')
+const baseURL = `http://127.0.0.1:${port}`
+
 export default defineConfig({
   testDir: './tests/e2e',
   fullyParallel: false,
@@ -8,16 +12,16 @@ export default defineConfig({
   workers: 1,
   reporter: [['line'], ['json', { outputFile: '.omo/evidence/teslacam-viewer/json/playwright-results.json' }]],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL,
     browserName: 'chromium',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
     viewport: { width: 1440, height: 1000 },
   },
   webServer: {
-    command: 'npm run build && npx vite preview --host 127.0.0.1 --port 4173',
+    command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port}`,
     reuseExistingServer: false,
     timeout: 120_000,
-    url: 'http://127.0.0.1:4173',
+    url: baseURL,
   },
 })
