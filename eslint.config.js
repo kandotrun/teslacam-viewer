@@ -1,8 +1,8 @@
-import babelParser from '@babel/eslint-parser'
 import eslint from '@eslint/js'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import globals from 'globals'
+import tseslint from 'typescript-eslint'
 
 const createForbiddenNodeRule = (selector, message) => ({
   meta: {
@@ -77,14 +77,9 @@ export default [
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
-      parser: babelParser,
+      parser: tseslint.parser,
       parserOptions: {
-        requireConfigFile: false,
-        babelOptions: {
-          parserOpts: {
-            plugins: ['typescript', 'jsx'],
-          },
-        },
+        ecmaFeatures: { jsx: true },
       },
       globals: {
         ...globals.browser,
