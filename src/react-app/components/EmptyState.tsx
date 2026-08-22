@@ -57,7 +57,13 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
               </>
             ) : copy.title}
           </h1>
-          <p>{copy.description}</p>
+          <p>
+            {error === null ? (
+              <>
+                SSD内のセントリー、保存済み、<span className="text-keep">最近の走行</span>を整理し、最大6方向の映像を同じ時刻で確認できます。
+              </>
+            ) : copy.description}
+          </p>
         </div>
         <button className="primary-action" type="button" onClick={onSelect}>
           <FolderOpen aria-hidden="true" size={20} strokeWidth={1.8} />
@@ -67,11 +73,11 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
           <ShieldCheck aria-hidden="true" size={22} strokeWidth={1.8} />
           <div>
             <strong>映像はこのMacだけで処理</strong>
-            <p>選択した映像やファイル情報は、外部へ送信されません。</p>
+            <p>選択した映像やファイル情報は、<span className="text-keep">外部へ送信されません。</span></p>
           </div>
         </div>
         <p className="browser-guidance">
-          MacのChromeまたはEdgeで、RecentClips、SavedClips、SentryClipsを含むTeslaCamフォルダを選択してください。
+          MacのChromeまたはEdgeで、RecentClips、SavedClips、SentryClipsを含む<span className="text-keep">TeslaCamフォルダ</span>を選択してください。
         </p>
       </section>
     </main>

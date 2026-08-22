@@ -165,6 +165,10 @@ button {
   line-height: 1.65;
 }
 
+.text-keep {
+  white-space: nowrap;
+}
+
 .primary-action {
   display: inline-flex;
   min-height: var(--control-min-size);
