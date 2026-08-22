@@ -27,9 +27,9 @@
 | Text muted | `--color-text-muted` | `#7f8994` | メタデータ、非活性 |
 | Border | `--color-border` | `#2a3138` | 面の境界 |
 | Border strong | `--color-border-strong` | `#46515c` | 強調境界 |
-| Accent | `--color-accent` | `#4f7df3` | 唯一の主操作、focus |
-| Accent hover | `--color-accent-hover` | `#6a91f6` | 主操作hover |
-| Accent active | `--color-accent-active` | `#3f69d4` | 主操作active |
+| Accent | `--color-accent` | `#3967d6` | 唯一の主操作、focus |
+| Accent hover | `--color-accent-hover` | `#3c69d7` | 主操作hover |
+| Accent active | `--color-accent-active` | `#315bc4` | 主操作active |
 | Sentry | `--color-sentry` | `#eb5757` | セントリー。必ず文言・アイコンと併用 |
 | Saved | `--color-saved` | `#5b8def` | 保存済み。必ず文言・アイコンと併用 |
 | Recent | `--color-recent` | `#94a0ac` | 最近の走行。必ず文言・アイコンと併用 |

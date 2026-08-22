@@ -14,6 +14,27 @@ const viewports = [
 
 type PickerVariant = 'full' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
 
+function relativeLuminance(hexColor: string): number {
+  const match = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/iu.exec(hexColor)
+  if (match === null) throw new Error('invalid color token')
+  const channels = match.slice(1).map((channel) => Number.parseInt(channel, 16) / 255).map((channel) => (
+    channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+  ))
+  const red = channels.at(0)
+  const green = channels.at(1)
+  const blue = channels.at(2)
+  if (red === undefined || green === undefined || blue === undefined) throw new Error('invalid color token')
+  return (0.2126 * red) + (0.7152 * green) + (0.0722 * blue)
+}
+
+function contrastRatio(firstColor: string, secondColor: string): number {
+  const values = [relativeLuminance(firstColor), relativeLuminance(secondColor)].sort((first, second) => second - first)
+  const lighter = values.at(0)
+  const darker = values.at(1)
+  if (lighter === undefined || darker === undefined) throw new Error('invalid contrast colors')
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
 async function installPicker(context: BrowserContext, bytes: readonly number[], variant: PickerVariant): Promise<void> {
   await context.addInitScript(({ mediaBytes, pickerVariant, cameraNames }) => {
     const media = new Uint8Array(mediaBytes)
@@ -119,6 +140,30 @@ test('captures welcome and loaded states at the required viewports', async ({ br
       for (const phrase of ['最近の走行', '外部へ送信されません。', 'TeslaCamフォルダ']) {
         expect(await page.getByText(phrase, { exact: true }).evaluate((element) => element.getClientRects().length)).toBe(1)
       }
+      const colors = await page.evaluate(() => {
+        const styles = getComputedStyle(document.documentElement)
+        return {
+          text: styles.getPropertyValue('--color-text-primary').trim(),
+          accents: ['--color-accent', '--color-accent-hover', '--color-accent-active'].map((token) => styles.getPropertyValue(token).trim()),
+        }
+      })
+      expect(colors.accents.every((accent) => contrastRatio(colors.text, accent) >= 4.5)).toBe(true)
+      await page.setViewportSize({ width: 320, height: 844 })
+      const narrowAction = await page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).evaluate((element) => {
+        const labelNode = [...element.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '')
+        const range = document.createRange()
+        if (labelNode !== undefined) range.selectNodeContents(labelNode)
+        return {
+          labelLineCount: labelNode === undefined ? 0 : range.getClientRects().length,
+          height: element.getBoundingClientRect().height,
+          overflowFree: document.documentElement.scrollWidth <= window.innerWidth,
+        }
+      })
+      expect(narrowAction.labelLineCount).toBe(1)
+      expect(narrowAction.height).toBeGreaterThanOrEqual(44)
+      expect(narrowAction.height).toBeLessThanOrEqual(48)
+      expect(narrowAction.overflowFree).toBe(true)
+      await page.setViewportSize({ width: viewport.width, height: viewport.height })
     }
     await page.screenshot({ path: `${evidenceRoot}/${viewport.name}-welcome.png` })
     const selection = page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true })

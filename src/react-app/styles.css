@@ -14,9 +14,9 @@
   --color-text-muted: #7f8994;
   --color-border: #2a3138;
   --color-border-strong: #46515c;
-  --color-accent: #4f7df3;
-  --color-accent-hover: #6a91f6;
-  --color-accent-active: #3f69d4;
+  --color-accent: #3967d6;
+  --color-accent-hover: #3c69d7;
+  --color-accent-active: #315bc4;
   --color-sentry: #eb5757;
   --color-saved: #5b8def;
   --color-recent: #94a0ac;
@@ -249,6 +249,15 @@ button {
 
   .primary-action {
     width: 100%;
+  }
+}
+
+@media (max-width: 359px) {
+  .primary-action {
+    gap: var(--space-2);
+    padding-inline: var(--space-3);
+    font-size: var(--font-small);
+    white-space: nowrap;
   }
 }
 
