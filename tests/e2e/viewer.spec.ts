@@ -145,9 +145,12 @@ test('captures welcome and loaded states at the required viewports', async ({ br
         return {
           text: styles.getPropertyValue('--color-text-primary').trim(),
           accents: ['--color-accent', '--color-accent-hover', '--color-accent-active'].map((token) => styles.getPropertyValue(token).trim()),
+          borderStrong: styles.getPropertyValue('--color-border-strong').trim(),
+          boundaryBackgrounds: ['--color-rail', '--color-surface', '--color-surface-raised'].map((token) => styles.getPropertyValue(token).trim()),
         }
       })
       expect(colors.accents.every((accent) => contrastRatio(colors.text, accent) >= 4.5)).toBe(true)
+      expect(colors.boundaryBackgrounds.every((background) => contrastRatio(colors.borderStrong, background) >= 3)).toBe(true)
       await page.setViewportSize({ width: 320, height: 844 })
       const narrowAction = await page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).evaluate((element) => {
         const labelNode = [...element.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '')
