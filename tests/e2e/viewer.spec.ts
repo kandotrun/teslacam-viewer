@@ -137,7 +137,7 @@ test('captures welcome and loaded states at the required viewports', async ({ br
       }))
       expect(mobileTypography.token).not.toBe('')
       expect(mobileTypography.computed).toBe(Number.parseFloat(mobileTypography.token) * mobileTypography.root)
-      for (const phrase of ['最近の走行', '外部へ送信されません。', 'TeslaCamフォルダ']) {
+      for (const phrase of ['保存済み', '最近の走行', '最大6方向', '同じ時刻', '外部へ送信されません。', 'TeslaCamフォルダ']) {
         expect(await page.getByText(phrase, { exact: true }).evaluate((element) => element.getClientRects().length)).toBe(1)
       }
       const colors = await page.evaluate(() => {

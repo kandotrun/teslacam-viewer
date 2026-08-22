@@ -60,7 +60,7 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
           <p>
             {error === null ? (
               <>
-                SSD内のセントリー、保存済み、<span className="text-keep">最近の走行</span>を整理し、最大6方向の映像を同じ時刻で確認できます。
+                SSD内のセントリー、<span className="text-keep">保存済み</span>、<span className="text-keep">最近の走行</span>を整理し、<span className="text-keep">最大6方向</span>の映像を<span className="text-keep">同じ時刻</span>で確認できます。
               </>
             ) : copy.description}
           </p>
