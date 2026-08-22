@@ -1,4 +1,4 @@
-import { ImageOff, Video } from 'lucide-react'
+import { ChevronDown, ImageOff, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import { cameraIds, type TeslaCamEvent } from '../../teslacam/types'
@@ -41,9 +41,9 @@ function EventThumbnail({ event }: { readonly event: TeslaCamEvent }) {
         objectUrl = URL.createObjectURL(file)
         setUrl(objectUrl)
       },
-      (error: unknown) => {
-        if (error instanceof Error || error instanceof DOMException) return
-        throw error
+      () => {
+        if (!mounted) return
+        setUrl(null)
       },
     )
 
@@ -71,22 +71,35 @@ export function EventList({
   onSelectEvent,
 }: EventListProps) {
   const matchingEvents = orderedMatchingEvents(events, filters)
+  const [collapsed, setCollapsed] = useState(false)
 
   return (
-    <section className="event-list-panel" aria-labelledby="event-list-title">
+    <section className="event-list-panel" aria-labelledby="event-list-title" data-collapsed={collapsed}>
       <div className="event-list-panel__header">
         <div>
           <p className="sidebar-label">EVENTS</p>
           <h1 id="event-list-title">イベント</h1>
         </div>
-        <span>{matchingEvents.length} 件</span>
+        <div className="event-list-panel__summary">
+          <span>{matchingEvents.length} 件</span>
+          <button
+            aria-controls="event-list-content"
+            aria-expanded={!collapsed}
+            aria-label={`イベント一覧を${collapsed ? '開く' : '閉じる'}`}
+            className="event-list-disclosure"
+            type="button"
+            onClick={() => setCollapsed((current) => !current)}
+          >
+            <ChevronDown aria-hidden="true" size={18} />
+          </button>
+        </div>
       </div>
       {matchingEvents.length === 0 ? (
         <p className="event-list-empty">
           <span>この条件に一致するイベントはありません。</span>
         </p>
       ) : (
-        <div className="event-list" aria-label="イベント一覧">
+        <div className="event-list" id="event-list-content" aria-label="イベント一覧">
           {matchingEvents.map((event) => {
             const missingCameras = missingCameraCount(event)
             const isSelected = event.id === selectedEventId
@@ -97,7 +110,10 @@ export function EventList({
                 data-selected={isSelected}
                 key={event.id}
                 type="button"
-                onClick={() => onSelectEvent(event.id)}
+                onClick={() => {
+                  setCollapsed(true)
+                  onSelectEvent(event.id)
+                }}
               >
                 <EventThumbnail event={event} />
                 <span className="event-card__content">

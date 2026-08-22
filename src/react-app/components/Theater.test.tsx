@@ -34,6 +34,21 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('Theater', () => {
+  it('offers a labeled six-camera switcher while keeping every video mounted', async () => {
+    const user = userEvent.setup()
+    render(<Theater event={eventWithCameras()} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+
+    const switcher = screen.getByRole('group', { name: '表示するカメラ' })
+    const rightPillar = screen.getByRole('button', { name: '右ピラーを表示' })
+    expect(switcher).toBeVisible()
+    expect(screen.getByRole('button', { name: 'フロントを表示' })).toHaveAttribute('aria-pressed', 'true')
+
+    await user.click(rightPillar)
+
+    expect(rightPillar).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getAllByTestId('camera-video')).toHaveLength(6)
+  })
+
   it('renders six cameras in canonical Japanese order and keeps every tile mounted while expanded', async () => {
     const user = userEvent.setup()
     render(<Theater event={eventWithCameras()} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)

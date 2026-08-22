@@ -52,6 +52,7 @@
 | Level | Token | Size | Weight | Line height | Tracking | Usage |
 |---|---|---:|---:|---:|---:|---|
 | Display | `--font-display` | `clamp(2.25rem, 5vw, 4rem)` | 560 | 1.05 | `-0.035em` | welcomeの主見出し |
+| Display mobile | `--font-display-mobile` | `1.75rem` | 560 | 1.05 | `-0.035em` | 479px以下のwelcome主見出し |
 | Heading | `--font-heading` | `1.5rem` | 560 | 1.25 | `-0.02em` | パネル見出し |
 | Body large | `--font-body-large` | `1.125rem` | 400 | 1.65 | `-0.01em` | リード文 |
 | Body | `--font-body` | `1rem` | 400 | 1.6 | `0` | 標準本文、操作 |
@@ -94,9 +95,10 @@
 | `--event-thumbnail-width` | `88px` | イベントカードのサムネイル幅 |
 | `--event-card-min-height` | `104px` | イベントカードの最小高と仮想描画予約高 |
 | `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
+| `--theater-terminal-tile-min` | `80px` | 代表映像と併記するterminalカメラ状態の最小高 |
 | `--theater-tablet-min` | `720px` | tabletシアター全体の検証高 |
 | `--theater-mobile-tile-min` | `180px` | mobileカメラタイル最小高 |
-| `--theater-mobile-tile-target` | `46dvb` | mobileで映像を主役にするタイル高 |
+| `--theater-mobile-tile-target` | `30dvb` | 固定transportと重ならずmobileで映像を主役にするタイル高 |
 | `--theater-event-list-max` | `320px` | tablet event listの最大高 |
 | `--theater-representative-max` | `40dvb` | 代表映像の最大表示高 |
 | `--theater-mobile-expanded-min` | `60dvb` | mobile expanded映像の最小高 |
@@ -104,9 +106,10 @@
 ### Grid
 
 - welcome shellは中央の読み幅720pxを上限とし、上下はviewportに対して中央配置する。
-- 完成形のdesktopは224pxライブラリレール、320pxイベント一覧、残りを6カメラシアターへ割り当て、下端に72pxのトランスポートを固定する。
-- tabletはカテゴリを上部タブへ移し、イベント一覧を開閉可能にする。mobileは一画面カメラを主とする。
-- 検証幅は375px、768px、1280px。主コンテンツに横スクロールを発生させない。
+- 完成形のdesktopは224pxライブラリレール、320pxイベント一覧、残りを6カメラシアターへ割り当て、下端に全操作を収めた3段のトランスポートを固定する。
+- tabletはカテゴリを上部タブへ移し、イベント一覧を44px以上の開閉操作で折りたためる。mobileは一画面カメラを主とする。
+- mobileでは6つのvideo要素を同期とObject URLのライフサイクル維持のためDOMへ残し、選択した一方向だけを表示する。6方向の切り替えはラベル付き横スクロール操作とする。
+- 検証幅は390px、1024px、1440px。主コンテンツに横スクロールを発生させず、カメラ切り替えだけを局所的に横スクロール可能にする。
 - 外側余白は`clamp(var(--space-4), 5vw, var(--space-16))`を用いる。
 
 ### Shape
@@ -152,10 +155,32 @@
 - **Structure**: canonical orderの6タイル、共有timeline、transport、速度、前後イベント操作。
 - **Variants**: 2×3 grid、単一カメラexpanded、6方向すべてterminal時だけ代表映像。
 - **States**: loading、ready、missing、unavailable、corrupt、unsupportedを各タイルで独立表示する。
+- **Terminal fallback**: 代表映像を併記するときはカメラ名とterminal状態を80pxタイルの左右へ分け、互いに重ねず、6状態・代表映像・transportを別領域に保つ。
 - **Accessibility**: 各タイルは日本語カメラ名と拡大状態を持ち、transportは可視ラベル、44px操作、range label、キーボードshortcutsを備える。
 - **Motion**: 状態色とborderの`--motion-fast`のみ。expanded切替で位置やサイズをアニメーションしない。
 - **Layout**: desktopは2×3、tablet/mobileは縦方向へ再配置し、375pxで横overflowを生じさせない。
 - **Persistence**: transportはdesktopでシアター下端にsticky、tablet/mobileではviewport下端に固定し、映像をスクロール中も操作可能にする。
+
+### Camera switcher
+
+- **Structure**: canonical orderの6方向ラベルと現在選択状態。
+- **States**: mobileで常時表示し、選択中は`aria-pressed`とaccent境界を併用する。desktop/tabletでは6画面シアターを優先して非表示にする。
+- **Accessibility**: 「表示するカメラ」というgroup名、方向ごとの可視ラベル、44px以上の操作面、明確なfocus ringを持つ。
+- **Motion**: 色とborderだけを`--motion-fast`で遷移し、reduced motionでは0msにする。
+- **Layout**: 390pxでは一行横スクロールとし、ページ全体の横overflowへ波及させない。
+
+### Event list disclosure
+
+- **Structure**: 件数と開閉buttonをイベント見出しへまとめる。
+- **States**: 1024px以下で表示し、開閉を`aria-expanded`と矢印方向で示す。desktopではイベント一覧を常時表示する。
+- **Accessibility**: `aria-controls`で一覧と関連付け、44px以上の操作面とfocus ringを持つ。
+- **Motion**: 状態理解に不要な開閉アニメーションは行わない。
+
+### Compatibility status
+
+- `showDirectoryPicker`がない環境では、互換モードでOSのフォルダ選択を使うことをwelcome上へ常時表示する。
+- primary actionの直接操作からdirectory inputを開き、ブラウザのuser activationを保持する。
+- 未対応を失敗と表現せず、Chrome/Edgeの標準選択とdirectory inputの違いを正確に案内する。
 
 ### Playback transport
 
@@ -196,6 +221,5 @@
 
 | Item | Location | Why accepted | Owner / Exit |
 |---|---|---|---|
-| 実フォルダ選択のブラウザ能力判定とfallback | welcome shell | Task 1は実行基盤と主操作の表示までが範囲 | Task 5でFile System Access APIとdirectory inputを接続するときに解消 |
 | 完成形4ペインのprimitive showcase | viewer shell | Task 1ではwelcome shellだけが承認範囲 | Task 6でlibrary、event list、theater、transportを実装する前に検証 |
 | スクリーンリーダー実機確認 | welcome shell | 自動検証とキーボード確認までをTask 1で行う | E2E Task 9でVoiceOverによる読み順と操作を確認 |

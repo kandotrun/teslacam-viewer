@@ -50,6 +50,10 @@ describe('welcome view', () => {
     })
 
     render(<App />)
+
+    expect(screen.getByRole('status', { name: 'ブラウザ互換性' })).toHaveTextContent(
+      '互換モード',
+    )
     await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
 
     expect(click).toHaveBeenCalled()
@@ -76,6 +80,19 @@ describe('welcome view', () => {
     await user.click(screen.getByRole('button', { name: 'もう一度選ぶ' }))
 
     expect(click).toHaveBeenCalled()
+  })
+
+  it('maps an unknown picker rejection to a safe scan failure', async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => Promise.reject('picker unavailable'),
+    })
+
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+
+    expect(await screen.findByText('フォルダの読み取りを完了できませんでした。')).toBeVisible()
   })
 
   it('loads a fallback directory after the native picker is unsupported', async () => {

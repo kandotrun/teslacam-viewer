@@ -21,6 +21,8 @@ function folderNameFromFiles(files: readonly LocalFileRef[]): string {
 export function App() {
   const [state, dispatch] = useReducer(appReducer, initialAppState)
   const fallbackInputRef = useRef<HTMLInputElement>(null)
+  const theaterRef = useRef<HTMLElement>(null)
+  const nativePickerAvailable = globalThis.showDirectoryPicker !== undefined
 
   const buildLibrary = async (
     files: readonly LocalFileRef[],
@@ -39,12 +41,8 @@ export function App() {
         return
       }
       dispatch({ kind: 'library-ready', folderName, library })
-    } catch (error) {
-      if (error instanceof Error || error instanceof DOMException) {
-        dispatch({ kind: 'scan-failed' })
-        return
-      }
-      throw error
+    } catch {
+      dispatch({ kind: 'scan-failed' })
     }
   }
 
@@ -69,13 +67,17 @@ export function App() {
           fallbackInputRef.current?.click()
           return
       }
-    } catch (error) {
-      if (error instanceof Error || error instanceof DOMException) {
-        dispatch({ kind: 'scan-failed' })
-        return
-      }
-      throw error
+    } catch {
+      dispatch({ kind: 'scan-failed' })
     }
+  }
+
+  const requestDirectory = (): void => {
+    if (!nativePickerAvailable) {
+      fallbackInputRef.current?.click()
+      return
+    }
+    void selectDirectory()
   }
 
   const changeDirectory = (files: FileList | null): void => {
@@ -84,11 +86,18 @@ export function App() {
     void buildLibrary(selectedFiles, folderNameFromFiles(selectedFiles))
   }
 
+  const selectEvent = (eventId: string): void => {
+    dispatch({ kind: 'event-selected', eventId })
+    if (!globalThis.matchMedia('(max-width: 1024px)').matches) return
+    requestAnimationFrame(() => theaterRef.current?.scrollIntoView({ block: 'start' }))
+  }
+
   switch (state.kind) {
     case 'idle':
       return (
         <>
-          <EmptyState error={null} onSelect={() => void selectDirectory()} />
+          <EmptyState error={null} onSelect={requestDirectory} />
+          {!nativePickerAvailable && compatibilityStatus()}
           {directoryInput(fallbackInputRef, changeDirectory)}
         </>
       )
@@ -102,7 +111,8 @@ export function App() {
     case 'error':
       return (
         <>
-          <EmptyState error={state.reason} onSelect={() => void selectDirectory()} />
+          <EmptyState error={state.reason} onSelect={requestDirectory} />
+          {!nativePickerAvailable && compatibilityStatus()}
           {directoryInput(fallbackInputRef, changeDirectory)}
         </>
       )
@@ -133,7 +143,7 @@ export function App() {
               events={state.library.events}
               filters={state.filters}
               selectedEventId={state.selectedEventId}
-              onSelectEvent={(eventId) => dispatch({ kind: 'event-selected', eventId })}
+              onSelectEvent={selectEvent}
             />
             {selectedEvent === undefined ? (
               <section className="selection-placeholder" aria-labelledby="selection-title">
@@ -150,6 +160,7 @@ export function App() {
                 hasNext={selectedIndex >= 0 && selectedIndex < matchingEvents.length - 1}
                 hasPrevious={selectedIndex > 0}
                 key={selectedEvent.id}
+                theaterRef={theaterRef}
                 onNext={() => {
                   const nextEvent = matchingEvents.at(selectedIndex + 1)
                   if (nextEvent !== undefined) dispatch({ kind: 'event-selected', eventId: nextEvent.id })
@@ -166,6 +177,14 @@ export function App() {
       )
     }
   }
+}
+
+function compatibilityStatus() {
+  return (
+    <p aria-label="ブラウザ互換性" className="compatibility-status" role="status">
+      このブラウザでは互換モードを使用します。フォルダ選択画面からTeslaCamフォルダを選んでください。
+    </p>
+  )
 }
 
 function directoryInput(

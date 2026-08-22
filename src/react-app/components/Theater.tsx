@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react'
 
 import { cameraIds, type CameraId, type TeslaCamEvent } from '../../teslacam/types'
 import { ObjectUrlRegistry } from '../playback/object-url-registry'
@@ -12,6 +12,7 @@ export type TheaterProps = {
   readonly onNext: () => void
   readonly hasPrevious: boolean
   readonly hasNext: boolean
+  readonly theaterRef?: RefObject<HTMLElement | null>
 }
 
 const cameraLabels: Readonly<Record<CameraId, string>> = {
@@ -100,9 +101,10 @@ function RepresentativeVideo({ event, registry }: { readonly event: TeslaCamEven
   )
 }
 
-export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext }: TheaterProps) {
+export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext, theaterRef }: TheaterProps) {
   const registry = useMemo(() => new ObjectUrlRegistry(), [])
   const [expandedCamera, setExpandedCamera] = useState<CameraId | null>(null)
+  const [activeCamera, setActiveCamera] = useState<CameraId>('front')
   const [statuses, setStatuses] = useState<Readonly<Partial<Record<CameraId, CameraStatus>>>>({})
   const playback = useSynchronizedPlayback(event, expandedCamera)
   const segment = event.segments.at(playback.segmentIndex)
@@ -139,7 +141,10 @@ export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext }: The
         case '5':
         case '6': {
           const cameraId = cameraIds[Number(keyboardEvent.key) - 1]
-          if (cameraId !== undefined) setExpandedCamera((current) => current === cameraId ? null : cameraId)
+          if (cameraId !== undefined) {
+            setActiveCamera(cameraId)
+            setExpandedCamera((current) => current === cameraId ? null : cameraId)
+          }
           break
         }
         default:
@@ -156,18 +161,38 @@ export function Theater({ event, onPrevious, onNext, hasPrevious, hasNext }: The
   const markerSeconds = representativeMode ? null : detectionSeconds(event, playback.durationSeconds)
 
   return (
-    <section className="theater" aria-label="6カメラシアター">
+    <section className="theater" aria-label="6カメラシアター" data-representative={representativeMode} ref={theaterRef}>
+      <div className="camera-switcher" role="group" aria-label="表示するカメラ">
+        {cameraIds.map((cameraId) => (
+          <button
+            aria-label={`${cameraLabels[cameraId]}を表示`}
+            aria-pressed={activeCamera === cameraId}
+            key={cameraId}
+            type="button"
+            onClick={() => {
+              setActiveCamera(cameraId)
+              setExpandedCamera(null)
+            }}
+          >
+            {cameraLabels[cameraId]}
+          </button>
+        ))}
+      </div>
       <div className="camera-grid" data-expanded={expandedCamera !== null}>
         {cameraIds.map((cameraId) => (
           <CameraTile
             cameraId={cameraId}
+            active={activeCamera === cameraId}
             expanded={expandedCamera === cameraId}
             fileRef={segment?.cameras[cameraId]}
             key={cameraId}
             label={cameraLabels[cameraId]}
             onStatus={updateStatus}
             onPlaybackEvent={playback.handleVideoEvent}
-            onToggle={() => setExpandedCamera((current) => current === cameraId ? null : cameraId)}
+            onToggle={() => {
+              setActiveCamera(cameraId)
+              setExpandedCamera((current) => current === cameraId ? null : cameraId)
+            }}
             registerVideo={playback.registerVideo}
             registry={registry}
             unregisterVideo={playback.unregisterVideo}

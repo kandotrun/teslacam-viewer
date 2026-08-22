@@ -49,7 +49,14 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
           <span>LOCAL VIDEO WORKSPACE</span>
         </div>
         <div className="welcome-copy">
-          <h1 id="welcome-title">{copy.title}</h1>
+          <h1 aria-label={copy.title} id="welcome-title">
+            {error === null ? (
+              <>
+                <span>TeslaCamを、</span>
+                <span className="welcome-title__phrase">ひとつのシアターで。</span>
+              </>
+            ) : copy.title}
+          </h1>
           <p>{copy.description}</p>
         </div>
         <button className="primary-action" type="button" onClick={onSelect}>

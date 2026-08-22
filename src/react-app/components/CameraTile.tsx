@@ -13,6 +13,7 @@ type CameraTileProps = {
   readonly fileRef: LocalFileRef | undefined
   readonly registry: ObjectUrlRegistry
   readonly expanded: boolean
+  readonly active: boolean
   readonly onToggle: () => void
   readonly onStatus: (cameraId: CameraId, status: CameraStatus) => void
   readonly registerVideo: (cameraId: CameraId, element: HTMLVideoElement) => void
@@ -59,6 +60,7 @@ export function CameraTile({
   fileRef,
   registry,
   expanded,
+  active,
   onToggle,
   onStatus,
   registerVideo,
@@ -134,6 +136,7 @@ export function CameraTile({
       aria-pressed={expanded}
       className="camera-tile"
       data-expanded={expanded}
+      data-active={active}
       data-status={status}
       type="button"
       onClick={onToggle}

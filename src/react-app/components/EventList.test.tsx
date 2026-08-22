@@ -79,6 +79,17 @@ afterEach(() => {
 })
 
 describe('EventList', () => {
+  it('exposes an event-list disclosure control', async () => {
+    const user = userEvent.setup()
+    render(<EventListHarness />)
+    const disclosure = screen.getByRole('button', { name: 'イベント一覧を閉じる' })
+
+    await user.click(disclosure)
+
+    expect(disclosure).toHaveAccessibleName('イベント一覧を開く')
+    expect(disclosure).toHaveAttribute('aria-expanded', 'false')
+  })
+
   it('lists matching events newest first with their missing camera count', () => {
     render(
       <EventList
@@ -218,5 +229,28 @@ describe('EventList', () => {
     await Promise.resolve()
 
     expect(createObjectURL).not.toHaveBeenCalled()
+  })
+
+  it('keeps the empty thumbnail when file loading rejects with an unknown value', async () => {
+    const eventWithRejectedThumbnail: TeslaCamEvent = {
+      ...firstEvent(),
+      thumbnailFile: {
+        ...fileRef('rejected-thumb.png'),
+        getFile: async () => Promise.reject('thumbnail unavailable'),
+      },
+    }
+
+    render(
+      <EventList
+        events={[eventWithRejectedThumbnail]}
+        filters={{ category: 'all', dateKey: null, query: '' }}
+        selectedEventId={null}
+        onSelectEvent={() => undefined}
+      />,
+    )
+
+    await waitFor(() => {
+      expect(document.querySelector('.event-thumbnail--empty')).toBeVisible()
+    })
   })
 })
