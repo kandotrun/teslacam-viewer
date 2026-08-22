@@ -14,10 +14,16 @@ const viewports = [
 
 type PickerVariant = 'full' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
 
-function relativeLuminance(hexColor: string): number {
-  const match = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/iu.exec(hexColor)
-  if (match === null) throw new Error('invalid color token')
-  const channels = match.slice(1).map((channel) => Number.parseInt(channel, 16) / 255).map((channel) => (
+function colorChannels(color: string): readonly number[] {
+  const hex = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/iu.exec(color)
+  if (hex !== null) return hex.slice(1).map((channel) => Number.parseInt(channel, 16) / 255)
+  const rgb = color.match(/\d+(?:\.\d+)?/gu)
+  if (rgb === null || rgb.length < 3) throw new Error('invalid color token')
+  return rgb.slice(0, 3).map((channel) => Number(channel) / 255)
+}
+
+function relativeLuminance(color: string): number {
+  const channels = colorChannels(color).map((channel) => (
     channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
   ))
   const red = channels.at(0)
@@ -145,12 +151,15 @@ test('captures welcome and loaded states at the required viewports', async ({ br
         return {
           text: styles.getPropertyValue('--color-text-primary').trim(),
           accents: ['--color-accent', '--color-accent-hover', '--color-accent-active'].map((token) => styles.getPropertyValue(token).trim()),
+          accentBorder: styles.getPropertyValue('--color-accent-border').trim(),
           borderStrong: styles.getPropertyValue('--color-border-strong').trim(),
-          boundaryBackgrounds: ['--color-rail', '--color-surface', '--color-surface-raised'].map((token) => styles.getPropertyValue(token).trim()),
+          boundaryBackgrounds: ['--color-rail', '--color-surface', '--color-surface-raised', '--color-surface-active'].map((token) => styles.getPropertyValue(token).trim()),
+          activeBackground: styles.getPropertyValue('--color-surface-active').trim(),
         }
       })
       expect(colors.accents.every((accent) => contrastRatio(colors.text, accent) >= 4.5)).toBe(true)
       expect(colors.boundaryBackgrounds.every((background) => contrastRatio(colors.borderStrong, background) >= 3)).toBe(true)
+      expect(contrastRatio(colors.accentBorder, colors.activeBackground)).toBeGreaterThanOrEqual(3)
       await page.setViewportSize({ width: 320, height: 844 })
       const narrowAction = await page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).evaluate((element) => {
         const labelNode = [...element.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '')
@@ -180,6 +189,13 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     }
     await page.getByRole('button', { name: /2026-08-20 20:45:00/ }).click()
     await expect(page.locator('video')).toHaveCount(6)
+    await expect.poll(async () => {
+      const interactiveBoundaries = await page.locator('.camera-tile[data-active="true"], .filter-field input, .category-action[data-active="true"], .event-card[data-selected="true"], .quiet-action, .playback-controls button:not(:disabled), .camera-switcher button[aria-pressed="true"]:visible, .event-list-disclosure:visible').evaluateAll((elements) => elements.map((element) => {
+        const styles = getComputedStyle(element)
+        return { name: element.getAttribute('aria-label') ?? element.getAttribute('class') ?? element.tagName, border: styles.borderTopColor, fill: styles.backgroundColor }
+      }))
+      return interactiveBoundaries.filter((colors) => contrastRatio(colors.border, colors.fill) < 3)
+    }).toEqual([])
     if (viewport.name !== 'desktop') {
       await expect(page.getByRole('button', { name: 'イベント一覧を開く' })).toHaveAttribute('aria-expanded', 'false')
       const activeCamera = await page.locator('.camera-tile[data-active="true"]').boundingBox()

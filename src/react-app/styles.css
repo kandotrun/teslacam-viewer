@@ -13,8 +13,9 @@
   --color-text-secondary: #aeb6bf;
   --color-text-muted: #7f8994;
   --color-border: #2a3138;
-  --color-border-strong: #63707c;
+  --color-border-strong: #687581;
   --color-accent: #3967d6;
+  --color-accent-border: #5b8def;
   --color-accent-hover: #3c69d7;
   --color-accent-active: #315bc4;
   --color-sentry: #eb5757;
@@ -421,7 +422,7 @@ button {
 
 .quiet-action:hover,
 .quiet-action:active {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-border);
   background: var(--color-surface-active);
 }
 
@@ -482,7 +483,7 @@ button {
 
 .category-action:hover,
 .category-action[data-active="true"] {
-  border-color: var(--color-border);
+  border-color: var(--color-border-strong);
   background: var(--color-surface-active);
   color: var(--color-text-primary);
 }
@@ -502,7 +503,7 @@ button {
   inline-size: 100%;
   min-block-size: var(--control-min-size);
   padding-inline: var(--space-3);
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-surface);
   color: var(--color-text-primary);
@@ -735,7 +736,7 @@ button {
   min-block-size: var(--theater-tile-min);
   overflow: hidden;
   padding: 0;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-control);
   background: var(--color-surface-raised);
   color: var(--color-text-primary);
@@ -746,7 +747,7 @@ button {
 .camera-tile:hover,
 .camera-tile:active,
 .camera-tile[data-expanded="true"] {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-border);
   background: var(--color-surface-active);
 }
 
@@ -865,7 +866,7 @@ button {
 .playback-controls button:hover,
 .playback-controls button:active,
 .playback-controls button[aria-pressed="true"] {
-  border-color: var(--color-accent);
+  border-color: var(--color-accent-border);
   background: var(--color-surface-active);
 }
 
@@ -1106,7 +1107,7 @@ button {
   }
 
   .camera-switcher button[aria-pressed="true"] {
-    border-color: var(--color-accent);
+    border-color: var(--color-accent-border);
     background: var(--color-surface-active);
     color: var(--color-text-primary);
   }

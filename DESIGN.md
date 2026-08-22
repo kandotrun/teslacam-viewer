@@ -26,8 +26,9 @@
 | Text secondary | `--color-text-secondary` | `#aeb6bf` | 補助説明 |
 | Text muted | `--color-text-muted` | `#7f8994` | メタデータ、非活性 |
 | Border | `--color-border` | `#2a3138` | 面の境界 |
-| Border strong | `--color-border-strong` | `#63707c` | 強調境界 |
+| Border strong | `--color-border-strong` | `#687581` | 強調境界 |
 | Accent | `--color-accent` | `#3967d6` | 唯一の主操作、focus |
+| Accent border | `--color-accent-border` | `#5b8def` | 選択、hover、拡大の操作境界 |
 | Accent hover | `--color-accent-hover` | `#3c69d7` | 主操作hover |
 | Accent active | `--color-accent-active` | `#315bc4` | 主操作active |
 | Sentry | `--color-sentry` | `#eb5757` | セントリー。必ず文言・アイコンと併用 |
