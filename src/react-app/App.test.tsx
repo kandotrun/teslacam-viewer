@@ -97,6 +97,7 @@ describe('welcome view', () => {
 
   it('loads a fallback directory after the native picker is unsupported', async () => {
     const user = userEvent.setup()
+    const click = vi.spyOn(HTMLInputElement.prototype, 'click')
     Object.defineProperty(window, 'showDirectoryPicker', {
       configurable: true,
       value: undefined,
@@ -118,6 +119,10 @@ describe('welcome view', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
     })
+    const fallbackClickCount = click.mock.calls.length
+    await user.click(screen.getByRole('button', { name: '別のフォルダを選ぶ' }))
+
+    expect(click.mock.calls.length).toBeGreaterThan(fallbackClickCount)
   })
 
   it('clears the fallback input before a folder is selected again', () => {
@@ -173,10 +178,9 @@ describe('welcome view', () => {
     await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
 
     await waitFor(() => {
-      expect(screen.getByText('TeslaCam')).toBeVisible()
+      expect(screen.getByLabelText('読み込み元')).toHaveTextContent('Private Drive')
     })
 
-    expect(screen.queryByText('Private Drive')).not.toBeInTheDocument()
     expect(screen.getByText(/暗号化されたファイル 1 件/)).toBeVisible()
     expect(screen.getByRole('button', { name: 'すべて1' })).toBeVisible()
 

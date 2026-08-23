@@ -1,0 +1,38 @@
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+  }
+}
+
+@media (forced-colors: active) {
+  button,
+  input,
+  select,
+  .event-list-panel,
+  .camera-tile,
+  .playback-controls {
+    border-color: CanvasText;
+  }
+
+  .category-action[data-active="true"],
+  .event-card[data-selected="true"],
+  .camera-switcher button[aria-pressed="true"],
+  .camera-tile[data-active="true"] {
+    outline: 3px solid Highlight;
+    outline-offset: -3px;
+  }
+
+  .event-category--sentry,
+  .event-card__warning,
+  .theater-context__warning,
+  .playback-message {
+    color: CanvasText;
+    font-weight: 700;
+    text-decoration: underline;
+  }
+}

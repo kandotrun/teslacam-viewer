@@ -1,19 +1,19 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import { cameraIds, type CameraId, type TeslaCamEvent } from '../../teslacam/types'
+import { createPlaybackAttemptCoordinator, type PlaybackAttemptCoordinator } from './playback-attempt-coordinator'
+import type { PlaybackResolution, PlaybackVideoEvent, SynchronizedPlayback } from './playback-attempt-state'
 import {
-  attemptMatches,
-  resolvePlayback,
-  type PlayAttempt,
-  type PlaybackVideoEvent,
-  type SynchronizedPlayback,
-  type StreamLifecycle,
-} from './playback-attempt-state'
+  createPlaybackRuntime,
+  setPlaybackPosition,
+  setPlaybackRate,
+  setPlaybackSegment,
+  type PlaybackRuntime,
+} from './playback-runtime'
+import { electPlaybackSource } from './playback-source-election'
 import { eventDuration, locatePlaybackTime } from './timeline'
 
 export type { PlaybackVideoEvent, SynchronizedPlayback } from './playback-attempt-state'
-
-type RegisteredVideo = { readonly element: HTMLVideoElement }
 
 const noPlayableMessage = '再生できるカメラ映像がありません。\n読み込み後に再試行してください。'
 const rejectedMessage = '映像を再生できませんでした。\nブラウザの再生許可を確認して再試行できます。'
@@ -28,212 +28,133 @@ export function useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera: C
   const [playing, setPlaying] = useState(false)
   const [rate, setRateState] = useState(1)
   const [message, setMessage] = useState<string | null>(null)
-  const registrations = useRef(new Map<CameraId, RegisteredVideo>())
-  const lifecycles = useRef(new Map<CameraId, StreamLifecycle>())
-  const readyCameras = useRef(new Set<CameraId>())
-  const successfulCameras = useRef(new Set<CameraId>())
-  const attempts = useRef(new Map<CameraId, PlayAttempt>())
-  const streamGenerations = useRef(new Map<CameraId, number>())
-  const sourceCamera = useRef<CameraId | null>(null)
-  const elapsedRef = useRef(0)
-  const rateRef = useRef(1)
-  const segmentRef = useRef(0)
-  const intentRef = useRef(false)
-  const intentGeneration = useRef(0)
-  const sourceGeneration = useRef(0)
-  const attemptId = useRef(0)
-  const preferredRef = useRef(preferredCamera)
-
-  const electSource = useCallback((): void => {
-    const preferred = preferredRef.current
-    if (preferred !== null && readyCameras.current.has(preferred)) {
-      sourceCamera.current = preferred
-      return
-    }
-    sourceCamera.current = cameraIds.find((cameraId) => readyCameras.current.has(cameraId)) ?? null
-  }, [])
-
-  const refreshPlaybackState = useCallback((): void => {
-    const registeredCameras = [...registrations.current.keys()]
-    const resolution = resolvePlayback(
-      intentRef.current,
-      registeredCameras,
-      lifecycles.current,
-      attempts.current,
-      successfulCameras.current,
-    )
+  const [runtime] = useState<PlaybackRuntime>(createPlaybackRuntime)
+  const updatePlaybackState = useCallback((resolution: PlaybackResolution): void => {
     setPlaying(resolution === 'playing')
     if (resolution === 'playing') setMessage(null)
-    if (resolution === 'failed') {
-      intentRef.current = false
-      intentGeneration.current += 1
-      attempts.current.clear()
-      successfulCameras.current.clear()
-      setMessage(rejectedMessage)
-    }
+    if (resolution === 'failed') setMessage(rejectedMessage)
   }, [])
+  const [coordinator] = useState<PlaybackAttemptCoordinator>(() => (
+    createPlaybackAttemptCoordinator(runtime, updatePlaybackState)
+  ))
 
-  const invalidateCamera = useCallback((cameraId: CameraId): void => {
-    streamGenerations.current.set(cameraId, (streamGenerations.current.get(cameraId) ?? 0) + 1)
-    attempts.current.delete(cameraId)
-    successfulCameras.current.delete(cameraId)
-  }, [])
-
-  const runPlayAttempts = useCallback(async (cameraIdsToPlay: readonly CameraId[]): Promise<void> => {
-    const calls: Array<{ readonly cameraId: CameraId; readonly attempt: PlayAttempt; readonly promise: Promise<void> }> = []
-    for (const cameraId of cameraIdsToPlay) {
-      const registration = registrations.current.get(cameraId)
-      if (registration === undefined || lifecycles.current.get(cameraId) !== 'ready') continue
-      const attempt: PlayAttempt = {
-        id: attemptId.current + 1,
-        element: registration.element,
-        intentGeneration: intentGeneration.current,
-        sourceGeneration: sourceGeneration.current,
-        streamGeneration: streamGenerations.current.get(cameraId) ?? 0,
-        status: 'pending',
-      }
-      attemptId.current = attempt.id
-      attempts.current.set(cameraId, attempt)
-      calls.push({ cameraId, attempt, promise: registration.element.play() })
-    }
-    if (calls.length === 0) {
-      refreshPlaybackState()
-      return
-    }
-    refreshPlaybackState()
-    const results = await Promise.allSettled(calls.map((call) => call.promise))
-    for (const [index, call] of calls.entries()) {
-      const result = results[index]
-      if (result === undefined || !attemptMatches(
-        call.attempt,
-        attempts.current.get(call.cameraId),
-        registrations.current.get(call.cameraId)?.element,
-        intentGeneration.current,
-        sourceGeneration.current,
-        streamGenerations.current.get(call.cameraId) ?? 0,
-      )) continue
-      attempts.current.set(call.cameraId, { ...call.attempt, status: result.status })
-      if (result.status === 'fulfilled') successfulCameras.current.add(call.cameraId)
-      else successfulCameras.current.delete(call.cameraId)
-    }
-    refreshPlaybackState()
-  }, [refreshPlaybackState])
+  const electSource = useCallback((): void => {
+    electPlaybackSource(runtime, preferredCamera)
+  }, [preferredCamera, runtime])
 
   const syncElements = useCallback((absoluteSeconds: number): void => {
     const location = locatePlaybackTime(event, absoluteSeconds)
-    segmentRef.current = location.segmentIndex
-    for (const registration of registrations.current.values()) {
+    setPlaybackSegment(runtime, location.segmentIndex)
+    for (const registration of runtime.registrations.values()) {
       setMediaTime(registration.element, location.offsetSeconds)
-      registration.element.playbackRate = rateRef.current
+      registration.element.playbackRate = runtime.rate
     }
-  }, [event])
+  }, [event, runtime])
 
   const seek = useCallback((absoluteSeconds: number): void => {
     const location = locatePlaybackTime(event, absoluteSeconds)
-    if (location.segmentIndex !== segmentRef.current) {
-      for (const registration of registrations.current.values()) registration.element.pause()
-      sourceGeneration.current += 1
-      attempts.current.clear()
-      successfulCameras.current.clear()
+    if (location.segmentIndex !== runtime.segmentIndex) {
+      for (const registration of runtime.registrations.values()) registration.element.pause()
+      coordinator.restartForSourceChange()
       setPlaying(false)
     }
     const normalized = location.segmentIndex * 60 + location.offsetSeconds
-    elapsedRef.current = normalized
+    setPlaybackPosition(runtime, normalized, location.segmentIndex)
     setElapsedSeconds(normalized)
     syncElements(normalized)
-  }, [event, syncElements])
+  }, [coordinator, event, runtime, syncElements])
 
   const pause = useCallback((): void => {
-    intentRef.current = false
-    intentGeneration.current += 1
-    attempts.current.clear()
-    successfulCameras.current.clear()
+    coordinator.stop()
     setPlaying(false)
-    for (const registration of registrations.current.values()) registration.element.pause()
-  }, [])
+    for (const registration of runtime.registrations.values()) registration.element.pause()
+  }, [coordinator, runtime])
 
   const play = useCallback(async (): Promise<void> => {
-    intentRef.current = true
-    intentGeneration.current += 1
-    attempts.current.clear()
-    successfulCameras.current.clear()
+    coordinator.start()
     setMessage(null)
-    const playable = cameraIds.filter((cameraId) => readyCameras.current.has(cameraId))
+    const playable = cameraIds.filter((cameraId) => runtime.readyCameras.has(cameraId))
     if (playable.length === 0) setMessage(noPlayableMessage)
-    await runPlayAttempts(playable)
-  }, [runPlayAttempts])
+    await coordinator.run(playable)
+  }, [coordinator, runtime])
 
-  const skip = useCallback((seconds: number): void => seek(elapsedRef.current + seconds), [seek])
+  const skip = useCallback((seconds: number): void => seek(runtime.elapsedSeconds + seconds), [runtime, seek])
 
   const setRate = useCallback((nextRate: number): void => {
-    rateRef.current = nextRate
+    setPlaybackRate(runtime, nextRate)
     setRateState(nextRate)
-    for (const registration of registrations.current.values()) registration.element.playbackRate = nextRate
-  }, [])
+    for (const registration of runtime.registrations.values()) registration.element.playbackRate = nextRate
+  }, [runtime])
 
   const unregisterVideo = useCallback((cameraId: CameraId, element: HTMLVideoElement): void => {
-    if (registrations.current.get(cameraId)?.element !== element) return
-    invalidateCamera(cameraId)
-    registrations.current.delete(cameraId)
-    lifecycles.current.delete(cameraId)
-    readyCameras.current.delete(cameraId)
-    if (sourceCamera.current === cameraId) electSource()
-    refreshPlaybackState()
-  }, [electSource, invalidateCamera, refreshPlaybackState])
+    if (runtime.registrations.get(cameraId)?.element !== element) return
+    coordinator.invalidate(cameraId)
+    runtime.registrations.delete(cameraId)
+    runtime.lifecycles.delete(cameraId)
+    runtime.readyCameras.delete(cameraId)
+    if (runtime.sourceCamera === cameraId) electSource()
+    coordinator.refresh()
+  }, [coordinator, electSource, runtime])
 
   const registerVideo = useCallback((cameraId: CameraId, element: HTMLVideoElement): void => {
-    const existing = registrations.current.get(cameraId)
+    const existing = runtime.registrations.get(cameraId)
     if (existing?.element === element) return
     if (existing !== undefined) unregisterVideo(cameraId, existing.element)
-    registrations.current.set(cameraId, { element })
-    lifecycles.current.set(cameraId, 'loading')
-  }, [unregisterVideo])
+    runtime.registrations.set(cameraId, { element })
+    runtime.lifecycles.set(cameraId, 'loading')
+  }, [runtime, unregisterVideo])
 
   const handleVideoEvent = useCallback((cameraId: CameraId, element: HTMLVideoElement, mediaEvent: PlaybackVideoEvent): void => {
-    if (registrations.current.get(cameraId)?.element !== element) return
+    if (runtime.registrations.get(cameraId)?.element !== element) return
+    electSource()
     switch (mediaEvent) {
       case 'loading':
-        invalidateCamera(cameraId)
-        lifecycles.current.set(cameraId, 'loading')
-        readyCameras.current.delete(cameraId)
-        if (sourceCamera.current === cameraId) electSource()
-        refreshPlaybackState()
+        coordinator.invalidate(cameraId)
+        runtime.lifecycles.set(cameraId, 'loading')
+        runtime.readyCameras.delete(cameraId)
+        if (runtime.sourceCamera === cameraId) electSource()
+        coordinator.refresh()
         return
       case 'ready': {
-        const wasReady = lifecycles.current.get(cameraId) === 'ready'
-        lifecycles.current.set(cameraId, 'ready')
-        readyCameras.current.add(cameraId)
+        const wasReady = runtime.lifecycles.get(cameraId) === 'ready'
+        runtime.lifecycles.set(cameraId, 'ready')
+        runtime.readyCameras.add(cameraId)
         electSource()
-        const location = locatePlaybackTime(event, elapsedRef.current)
+        const location = locatePlaybackTime(event, runtime.elapsedSeconds)
         setMediaTime(element, location.offsetSeconds)
-        element.playbackRate = rateRef.current
-        if (intentRef.current && (!wasReady || (!attempts.current.has(cameraId) && !successfulCameras.current.has(cameraId)))) void runPlayAttempts([cameraId])
+        element.playbackRate = runtime.rate
+        if (runtime.intended && (!wasReady || (!runtime.attempts.has(cameraId) && !runtime.successfulCameras.has(cameraId)))) {
+          void coordinator.run([cameraId])
+        }
         return
       }
       case 'unavailable':
-        invalidateCamera(cameraId)
-        lifecycles.current.set(cameraId, 'terminal')
-        readyCameras.current.delete(cameraId)
-        if (sourceCamera.current === cameraId) electSource()
-        refreshPlaybackState()
+        coordinator.invalidate(cameraId)
+        runtime.lifecycles.set(cameraId, 'terminal')
+        runtime.readyCameras.delete(cameraId)
+        if (runtime.sourceCamera === cameraId) electSource()
+        coordinator.refresh()
         return
       case 'timeupdate': {
-        if (sourceCamera.current !== cameraId) return
-        const absoluteSeconds = segmentRef.current * 60 + element.currentTime
+        if (runtime.sourceCamera !== cameraId) return
+        const currentLocation = locatePlaybackTime(event, runtime.elapsedSeconds)
+        const absoluteSeconds = currentLocation.segmentIndex * 60 + element.currentTime
         const location = locatePlaybackTime(event, absoluteSeconds)
         const normalized = location.segmentIndex * 60 + location.offsetSeconds
-        elapsedRef.current = normalized
-        segmentRef.current = location.segmentIndex
+        setPlaybackPosition(runtime, normalized, location.segmentIndex)
         setElapsedSeconds(normalized)
-        for (const [otherCameraId, registration] of registrations.current) {
-          if (otherCameraId === cameraId || !readyCameras.current.has(otherCameraId)) continue
-          if (Math.abs(registration.element.currentTime - location.offsetSeconds) > 0.25) setMediaTime(registration.element, location.offsetSeconds)
+        for (const [otherCameraId, registration] of runtime.registrations) {
+          if (otherCameraId === cameraId || !runtime.readyCameras.has(otherCameraId)) continue
+          if (Math.abs(registration.element.currentTime - location.offsetSeconds) > 0.25) {
+            setMediaTime(registration.element, location.offsetSeconds)
+          }
         }
         return
       }
       case 'ended': {
-        if (sourceCamera.current !== cameraId) return
-        const nextBoundary = (segmentRef.current + 1) * 60
+        if (runtime.sourceCamera !== cameraId) return
+        const currentLocation = locatePlaybackTime(event, runtime.elapsedSeconds)
+        const nextBoundary = (currentLocation.segmentIndex + 1) * 60
         if (nextBoundary < durationSeconds) {
           seek(nextBoundary)
           return
@@ -243,26 +164,17 @@ export function useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera: C
         return
       }
     }
-  }, [durationSeconds, electSource, event, invalidateCamera, pause, refreshPlaybackState, runPlayAttempts, seek])
+  }, [coordinator, durationSeconds, electSource, event, pause, runtime, seek])
 
   useEffect(() => () => {
-    intentRef.current = false
-    intentGeneration.current += 1
-    for (const registration of registrations.current.values()) registration.element.pause()
-    registrations.current.clear()
-    lifecycles.current.clear()
-    readyCameras.current.clear()
-    attempts.current.clear()
-    successfulCameras.current.clear()
-  }, [])
+    coordinator.stop()
+    for (const registration of runtime.registrations.values()) registration.element.pause()
+    runtime.registrations.clear()
+    runtime.lifecycles.clear()
+    runtime.readyCameras.clear()
+  }, [coordinator, runtime])
 
   const location = locatePlaybackTime(event, elapsedSeconds)
-  useEffect(() => {
-    preferredRef.current = preferredCamera
-    segmentRef.current = location.segmentIndex
-    electSource()
-  }, [electSource, location.segmentIndex, preferredCamera])
-
   return {
     playing, elapsedSeconds, durationSeconds,
     segmentIndex: location.segmentIndex, segmentOffsetSeconds: location.offsetSeconds,

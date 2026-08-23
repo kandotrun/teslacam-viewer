@@ -61,13 +61,18 @@ export function PlaybackControls({ playback, onPrevious, onNext, hasPrevious, ha
         </div>
         <span>{formatTime(playback.durationSeconds)}</span>
       </div>
-      <div className="playback-controls__rate" aria-label="再生速度">
-        {[0.5, 1, 1.5, 2].map((speed) => (
-          <button aria-pressed={playback.rate === speed} key={speed} type="button" onClick={() => playback.setRate(speed)}>
-            {speed}×
-          </button>
-        ))}
-      </div>
+      <label className="playback-controls__rate">
+        <span>速度</span>
+        <select
+          aria-label="再生速度"
+          value={String(playback.rate)}
+          onChange={(event) => playback.setRate(Number(event.currentTarget.value))}
+        >
+          {[0.5, 1, 1.5, 2].map((speed) => (
+            <option key={speed} value={String(speed)}>{speed}×</option>
+          ))}
+        </select>
+      </label>
       {playback.message !== null && <p className="playback-message" role="status">{playback.message}</p>}
     </div>
   )

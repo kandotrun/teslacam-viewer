@@ -1,29 +1,20 @@
-import { ChevronDown, ImageOff, Video } from 'lucide-react'
+import { ChevronDown, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import { cameraIds, type TeslaCamEvent } from '../../teslacam/types'
+import type { TeslaCamEvent } from '../../teslacam/types'
+import { categoryLabel, eventTime } from '../event-filters'
 import {
-  categoryLabel,
-  eventTime,
-  orderedMatchingEvents,
-  type EventFilters,
-} from '../app-state'
+  cameraAvailability,
+  cameraAvailabilityLabel,
+  eventDurationLabel,
+  missingCameraLabel,
+  segmentCountLabel,
+} from '../event-summary'
 
 type EventListProps = {
   readonly events: readonly TeslaCamEvent[]
-  readonly filters: EventFilters
   readonly selectedEventId: string | null
   readonly onSelectEvent: (eventId: string) => void
-}
-
-function missingCameraCount(event: TeslaCamEvent): number {
-  let maximumMissing = 0
-  for (const segment of event.segments) {
-    const missing = cameraIds.filter((cameraId) => segment.cameras[cameraId] === undefined)
-      .length
-    maximumMissing = Math.max(maximumMissing, missing)
-  }
-  return maximumMissing
 }
 
 function EventThumbnail({ event }: { readonly event: TeslaCamEvent }) {
@@ -53,35 +44,26 @@ function EventThumbnail({ event }: { readonly event: TeslaCamEvent }) {
     }
   }, [event.thumbnailFile])
 
-  if (url === null) {
-    return (
-      <span className="event-thumbnail event-thumbnail--empty" aria-hidden="true">
-        <ImageOff size={20} strokeWidth={1.8} />
-      </span>
-    )
-  }
+  if (url === null) return null
 
   return <img alt="" className="event-thumbnail" src={url} />
 }
 
 export function EventList({
   events,
-  filters,
   selectedEventId,
   onSelectEvent,
 }: EventListProps) {
-  const matchingEvents = orderedMatchingEvents(events, filters)
   const [collapsed, setCollapsed] = useState(false)
 
   return (
     <section className="event-list-panel" aria-labelledby="event-list-title" data-collapsed={collapsed}>
       <div className="event-list-panel__header">
         <div>
-          <p className="sidebar-label">EVENTS</p>
           <h1 id="event-list-title">イベント</h1>
         </div>
         <div className="event-list-panel__summary">
-          <span>{matchingEvents.length} 件</span>
+          <span>{events.length}件</span>
           <button
             aria-controls="event-list-content"
             aria-expanded={!collapsed}
@@ -94,14 +76,15 @@ export function EventList({
           </button>
         </div>
       </div>
-      {matchingEvents.length === 0 ? (
+      {events.length === 0 ? (
         <p className="event-list-empty">
           <span>この条件に一致するイベントはありません。</span>
         </p>
       ) : (
         <div className="event-list" id="event-list-content" aria-label="イベント一覧">
-          {matchingEvents.map((event) => {
-            const missingCameras = missingCameraCount(event)
+          {events.map((event) => {
+            const availability = cameraAvailability(event)
+            const missing = missingCameraLabel(availability)
             const isSelected = event.id === selectedEventId
             return (
               <button
@@ -117,13 +100,19 @@ export function EventList({
               >
                 <EventThumbnail event={event} />
                 <span className="event-card__content">
-                  <span className={`event-category event-category--${event.category}`}>
-                    <Video aria-hidden="true" size={14} strokeWidth={1.8} />
-                    {categoryLabel(event.category)}
+                  <span className="event-card__heading">
+                    <strong>{eventTime(event.timestamp)}</strong>
+                    <span className={`event-category event-category--${event.category}`}>
+                      <Video aria-hidden="true" size={14} strokeWidth={1.8} />
+                      {categoryLabel(event.category)}
+                    </span>
                   </span>
-                  <strong>{eventTime(event.timestamp)}</strong>
-                  <span>{event.segments.length} セグメント</span>
-                  <span>{missingCameras}台のカメラがありません</span>
+                  <span className="event-card__facts">
+                    <span>{eventDurationLabel(event)}</span>
+                    <span>{segmentCountLabel(event)}</span>
+                    <span>{cameraAvailabilityLabel(availability)}</span>
+                  </span>
+                  {missing !== null && <span className="event-card__warning">{missing}</span>}
                 </span>
               </button>
             )

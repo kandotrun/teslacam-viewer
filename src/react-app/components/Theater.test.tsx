@@ -34,6 +34,27 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('Theater', () => {
+  it('keeps the selected evidence context next to the playback surface', () => {
+    render(
+      <Theater
+        event={eventWithCameras()}
+        hasNext
+        hasPrevious
+        sourceName="TeslaCam"
+        onNext={() => undefined}
+        onPrevious={() => undefined}
+      />,
+    )
+
+    const context = screen.getByLabelText('再生中のイベント')
+
+    expect(context).toHaveTextContent('TeslaCam')
+    expect(context).toHaveTextContent('2026-08-21 12:00:00')
+    expect(context).toHaveTextContent('保存済み')
+    expect(context).toHaveTextContent('6/6 カメラ')
+    expect(context).toHaveTextContent('1分')
+  })
+
   it('offers a labeled six-camera switcher while keeping every video mounted', async () => {
     const user = userEvent.setup()
     render(<Theater event={eventWithCameras()} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
@@ -106,7 +127,10 @@ describe('Theater', () => {
     await user.click(screen.getByRole('button', { name: '次のイベント' }))
     expect(next).toHaveBeenCalledTimes(1)
     expect(screen.getByLabelText('再生位置')).toHaveAttribute('max', '60')
-    expect(screen.getByLabelText('再生速度')).toHaveTextContent('0.5×1×1.5×2×')
+    const playbackRate = screen.getByRole('combobox', { name: '再生速度' })
+    expect(playbackRate).toHaveValue('1')
+    await user.selectOptions(playbackRate, '1.5')
+    expect(playbackRate).toHaveValue('1.5')
     expect(screen.getByLabelText('検知位置')).toHaveAttribute('style', expect.stringContaining('50%'))
   })
 

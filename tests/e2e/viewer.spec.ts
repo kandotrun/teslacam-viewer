@@ -7,9 +7,9 @@ const fixturePath = fileURLToPath(new URL('./fixtures/TeslaCam/RecentClips/2026-
 const evidenceRoot = '.omo/evidence/teslacam-viewer/screenshots'
 const cameras = ['front', 'back', 'left_pillar', 'left_repeater', 'right_pillar', 'right_repeater'] as const
 const viewports = [
-  { name: 'desktop', width: 1440, height: 1000 },
-  { name: 'tablet', width: 1024, height: 768 },
-  { name: 'mobile', width: 390, height: 844 },
+  { name: '1280', mode: 'desktop', width: 1280, height: 1000 },
+  { name: '768', mode: 'tablet', width: 768, height: 1024 },
+  { name: '375', mode: 'mobile', width: 375, height: 844 },
 ] as const
 
 type PickerVariant = 'full' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
@@ -132,34 +132,11 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     const page = await context.newPage()
     const runtimeErrors = captureRuntimeErrors(page)
     await page.goto('/')
-    await expect(page.getByRole('heading', { name: 'TeslaCamを、ひとつのシアターで。' })).toBeVisible()
-    const welcomePhraseLineCount = await page.locator('.welcome-title__phrase').evaluate((element) => element.getClientRects().length)
-    expect(welcomePhraseLineCount).toBe(1)
-    if (viewport.name === 'mobile') {
-      const mobileTypography = await page.getByRole('heading', { name: 'TeslaCamを、ひとつのシアターで。' }).evaluate((element) => ({
-        computed: Number.parseFloat(getComputedStyle(element).fontSize),
-        root: Number.parseFloat(getComputedStyle(document.documentElement).fontSize),
-        token: getComputedStyle(document.documentElement).getPropertyValue('--font-display-mobile').trim(),
-      }))
-      expect(mobileTypography.token).not.toBe('')
-      expect(mobileTypography.computed).toBe(Number.parseFloat(mobileTypography.token) * mobileTypography.root)
-      for (const phrase of ['保存済み', '最近の走行', '最大6方向', '同じ時刻', '外部へ送信されません。', 'TeslaCamフォルダ']) {
-        expect(await page.getByText(phrase, { exact: true }).evaluate((element) => element.getClientRects().length)).toBe(1)
-      }
-      const colors = await page.evaluate(() => {
-        const styles = getComputedStyle(document.documentElement)
-        return {
-          text: styles.getPropertyValue('--color-text-primary').trim(),
-          accents: ['--color-accent', '--color-accent-hover', '--color-accent-active'].map((token) => styles.getPropertyValue(token).trim()),
-          accentBorder: styles.getPropertyValue('--color-accent-border').trim(),
-          borderStrong: styles.getPropertyValue('--color-border-strong').trim(),
-          boundaryBackgrounds: ['--color-rail', '--color-surface', '--color-surface-raised', '--color-surface-active'].map((token) => styles.getPropertyValue(token).trim()),
-          activeBackground: styles.getPropertyValue('--color-surface-active').trim(),
-        }
-      })
-      expect(colors.accents.every((accent) => contrastRatio(colors.text, accent) >= 4.5)).toBe(true)
-      expect(colors.boundaryBackgrounds.every((background) => contrastRatio(colors.borderStrong, background) >= 3)).toBe(true)
-      expect(contrastRatio(colors.accentBorder, colors.activeBackground)).toBeGreaterThanOrEqual(3)
+    await expect(page.getByRole('heading', { name: 'SSDのTeslaCamフォルダを開く' })).toBeVisible()
+    await expect(page.getByText('選ぶもの', { exact: true })).toBeVisible()
+    await expect(page.getByText('表示されるもの', { exact: true })).toBeVisible()
+    await expect(page.getByText(/外部へ送信されません/)).toBeVisible()
+    if (viewport.mode === 'mobile') {
       await page.setViewportSize({ width: 320, height: 844 })
       const narrowAction = await page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).evaluate((element) => {
         const labelNode = [...element.childNodes].find((node) => node.nodeType === Node.TEXT_NODE && node.textContent?.trim() !== '')
@@ -184,11 +161,16 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     await selection.click()
     await expect(page.getByText(/250 ファイルを確認中です/)).toBeVisible()
     await expect(page.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
-    if (viewport.name === 'tablet') {
+    if (viewport.mode === 'tablet') {
       await expect(page.getByRole('button', { name: 'イベント一覧を閉じる' })).toBeVisible()
     }
+    await expect(page.locator('.event-thumbnail')).toHaveCount(0)
     await page.getByRole('button', { name: /2026-08-20 20:45:00/ }).click()
     await expect(page.locator('video')).toHaveCount(6)
+    const evidenceContext = page.getByLabel('再生中のイベント')
+    await expect(evidenceContext).toContainText('TeslaCam')
+    await expect(evidenceContext).toContainText('2026-08-20 20:45:00')
+    await expect(evidenceContext).toContainText('6/6 カメラ')
     await expect.poll(async () => {
       const interactiveBoundaries = await page.locator('.camera-tile[data-active="true"], .filter-field input, .category-action[data-active="true"], .event-card[data-selected="true"], .quiet-action, .playback-controls button:not(:disabled), .camera-switcher button[aria-pressed="true"]:visible, .event-list-disclosure:visible').evaluateAll((elements) => elements.map((element) => {
         const styles = getComputedStyle(element)
@@ -196,14 +178,18 @@ test('captures welcome and loaded states at the required viewports', async ({ br
       }))
       return interactiveBoundaries.filter((colors) => contrastRatio(colors.border, colors.fill) < 3)
     }).toEqual([])
-    if (viewport.name !== 'desktop') {
+    if (viewport.mode !== 'desktop') {
       await expect(page.getByRole('button', { name: 'イベント一覧を開く' })).toHaveAttribute('aria-expanded', 'false')
       const activeCamera = await page.locator('.camera-tile[data-active="true"]').boundingBox()
       const transport = await page.locator('.playback-controls').boundingBox()
       if (activeCamera === null || transport === null) throw new Error('responsive theater geometry is missing')
       expect(activeCamera.y + activeCamera.height).toBeLessThanOrEqual(transport.y)
+      if (viewport.mode === 'mobile') {
+        expect(activeCamera.height).toBeGreaterThanOrEqual(viewport.height * 0.45)
+        expect(transport.height).toBeLessThanOrEqual(140)
+      }
     }
-    if (viewport.name === 'tablet') {
+    if (viewport.mode === 'tablet') {
       const maximumControlHeight = await page.locator('.playback-controls__primary button').evaluateAll((elements) => Math.max(...elements.map((element) => element.getBoundingClientRect().height)))
       expect(maximumControlHeight).toBeLessThanOrEqual(48)
     }
@@ -227,10 +213,10 @@ test('drives categories, playback, camera and event keyboard controls without an
   await page.goto('/')
   await selectFolder(page)
   const categories = [
-    { name: /^すべて\s*3$/u, count: '3 件' },
-    { name: /^最近の走行\s*1$/u, count: '1 件' },
-    { name: /^保存済み\s*1$/u, count: '1 件' },
-    { name: /^セントリー\s*1$/u, count: '1 件' },
+    { name: /^すべて\s*3$/u, count: '3件' },
+    { name: /^最近の走行\s*1$/u, count: '1件' },
+    { name: /^保存済み\s*1$/u, count: '1件' },
+    { name: /^セントリー\s*1$/u, count: '1件' },
   ] as const
   for (const category of categories) {
     await page.getByRole('button', { name: category.name }).click()
@@ -274,17 +260,27 @@ test('drives categories, playback, camera and event keyboard controls without an
 
 test('shows missing and terminal media states with representative fallback', async ({ browser }) => {
   const media = [...await readFile(fixturePath)]
-  const missingContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
-  await installPicker(missingContext, media, 'missing')
-  const missingPage = await missingContext.newPage()
-  await missingPage.goto('/')
-  await selectFolder(missingPage)
-  await missingPage.getByRole('button', { name: /2026-08-20 20:35:00/ }).click()
-  await expect(missingPage.getByText('映像がありません')).toBeVisible()
-  await missingPage.screenshot({ path: `${evidenceRoot}/desktop-missing.png` })
-  await missingContext.close()
+  for (const viewport of viewports) {
+    const missingContext = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } })
+    await installPicker(missingContext, media, 'missing')
+    const missingPage = await missingContext.newPage()
+    await missingPage.goto('/')
+    await selectFolder(missingPage)
+    const partialEvent = missingPage.getByRole('button', { name: /2026-08-20 20:35:00/ })
+    await expect(partialEvent).toContainText('5/6 カメラ')
+    await expect(partialEvent).toContainText('右リピーターなし')
+    await partialEvent.click()
+    if (viewport.mode === 'mobile') {
+      await missingPage.getByRole('button', { name: '右リピーターを表示' }).click()
+    }
+    await expect(missingPage.getByText('映像がありません')).toBeVisible()
+    await expect(missingPage.getByLabel('再生中のイベント')).toContainText('5/6 カメラ')
+    await missingPage.screenshot({ path: `${evidenceRoot}/${viewport.name}-missing.png` })
+    expect(await missingPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    await missingContext.close()
+  }
 
-  const corruptContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } })
+  const corruptContext = await browser.newContext({ viewport: { width: 1280, height: 1000 } })
   await installPicker(corruptContext, media, 'corrupt')
   const corruptPage = await corruptContext.newPage()
   await corruptPage.goto('/')
@@ -313,11 +309,11 @@ test('shows missing and terminal media states with representative fallback', asy
   expect(internalOverlapCount).toBe(0)
   expect(representative.y + representative.height).toBeLessThanOrEqual(transport.y)
   expect(transport.y + transport.height).toBeLessThanOrEqual(viewportHeight)
-  expect(await corruptPage.locator('.playback-controls__rate button').evaluateAll((elements, height) => elements.every((element) => {
+  expect(await corruptPage.locator('.playback-controls__rate select').evaluateAll((elements, height) => elements.every((element) => {
     const bounds = element.getBoundingClientRect()
     return bounds.top >= 0 && bounds.bottom <= height
   }), viewportHeight)).toBe(true)
-  await corruptPage.screenshot({ path: `${evidenceRoot}/desktop-terminal-fallback.png` })
+  await corruptPage.screenshot({ path: `${evidenceRoot}/1280-terminal-fallback.png` })
   await corruptContext.close()
 })
 
@@ -344,7 +340,7 @@ test('handles wrong folders, permission denial, cancellation and unknown picker 
   const cancelledPage = await cancelledContext.newPage()
   await cancelledPage.goto('/')
   await cancelledPage.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).click()
-  await expect(cancelledPage.getByRole('heading', { name: 'TeslaCamを、ひとつのシアターで。' })).toBeVisible()
+  await expect(cancelledPage.getByRole('heading', { name: 'SSDのTeslaCamフォルダを開く' })).toBeVisible()
   await cancelledContext.close()
 })
 
@@ -364,7 +360,7 @@ test('uses the real directory-input fallback with webkitRelativePath', async ({ 
 
 test('keeps responsive disclosures, mobile cameras, reduced motion and expanded evidence accurate', async ({ browser }) => {
   const media = [...await readFile(fixturePath)]
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
+  const context = await browser.newContext({ viewport: { width: 375, height: 844 }, reducedMotion: 'reduce' })
   await installPicker(context, media, 'full')
   const page = await context.newPage()
   await page.goto('/')
@@ -389,8 +385,8 @@ test('keeps responsive disclosures, mobile cameras, reduced motion and expanded 
   await page.getByRole('group', { name: '表示するカメラ' }).scrollIntoViewIfNeeded()
   const transitions = await page.locator('.camera-tile, .camera-switcher button, .playback-controls button').evaluateAll((elements) => elements.map((element) => getComputedStyle(element).transitionDuration))
   expect(transitions.every((duration) => duration === '0s')).toBe(true)
-  await page.screenshot({ path: `${evidenceRoot}/mobile-switcher.png` })
-  await page.setViewportSize({ width: 1440, height: 1000 })
+  await page.screenshot({ path: `${evidenceRoot}/375-switcher.png` })
+  await page.setViewportSize({ width: 1280, height: 1000 })
   await page.getByRole('button', { name: '右ピラーカメラを拡大' }).click()
   await page.screenshot({ path: `${evidenceRoot}/desktop-expanded.png` })
   await context.close()

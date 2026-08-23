@@ -1,4 +1,4 @@
-import { AlertTriangle, ImageOff } from 'lucide-react'
+import { ImageOff, LoaderCircle } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import type { CameraId, LocalFileRef } from '../../teslacam/types'
@@ -163,7 +163,9 @@ export function CameraTile({
       <span className="camera-tile__label">{label}</span>
       {status !== 'ready' && (
         <span className="camera-tile__state">
-          {terminal ? <ImageOff aria-hidden="true" size={20} /> : <AlertTriangle aria-hidden="true" size={18} />}
+          {terminal
+            ? <ImageOff aria-hidden="true" size={20} />
+            : <LoaderCircle aria-hidden="true" className="camera-tile__loader" size={18} />}
           {statusLabel(status)}
         </span>
       )}

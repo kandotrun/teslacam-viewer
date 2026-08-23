@@ -1,6 +1,7 @@
 import type { LocalFileRef, TeslaCamEvent, TeslaCamLibrary } from '../teslacam/types'
 
-import { appReducer, initialAppState, orderedMatchingEvents } from './app-state'
+import { appReducer, initialAppState } from './app-state'
+import { orderedMatchingEvents } from './event-filters'
 
 const file: LocalFileRef = {
   name: 'front.mp4',

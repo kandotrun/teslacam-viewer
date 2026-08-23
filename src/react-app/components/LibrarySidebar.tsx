@@ -1,13 +1,15 @@
 import { CalendarDays, Search, ShieldAlert } from 'lucide-react'
 
 import type { ClipCategory, ScanWarning } from '../../teslacam/types'
-import type { EventFilters } from '../app-state'
+import type { EventFilters } from '../event-filters'
 
 type CategoryCounts = Readonly<Record<ClipCategory, number>>
 
 type LibrarySidebarProps = {
   readonly counts: CategoryCounts
+  readonly eventCount: number
   readonly filters: EventFilters
+  readonly folderName: string
   readonly warnings: readonly ScanWarning[]
   readonly onCategory: (category: EventFilters['category']) => void
   readonly onDate: (dateKey: string | null) => void
@@ -39,7 +41,9 @@ function warningCopy(warning: ScanWarning): string {
 
 export function LibrarySidebar({
   counts,
+  eventCount,
   filters,
+  folderName,
   warnings,
   onCategory,
   onDate,
@@ -49,8 +53,13 @@ export function LibrarySidebar({
 
   return (
     <aside className="library-sidebar" aria-label="ライブラリの絞り込み">
+      <section className="library-source" aria-label="読み込み元">
+        <p className="sidebar-label">読み込み元</p>
+        <strong>{folderName}</strong>
+        <span>{eventCount} 件のイベント</span>
+      </section>
       <nav aria-label="映像カテゴリ">
-        <p className="sidebar-label">LIBRARY</p>
+        <p className="sidebar-label">映像</p>
         <div className="category-list">
           {categories.map((category) => {
             const count = category.key === 'all' ? allCount : counts[category.key]
@@ -100,7 +109,7 @@ export function LibrarySidebar({
         <section className="scan-warnings" aria-label="読み込み時の注意">
           <ShieldAlert aria-hidden="true" size={18} strokeWidth={1.8} />
           <div>
-            <p className="sidebar-label">SCAN NOTICE</p>
+            <p className="sidebar-label">読み込み時の注意</p>
             {warnings.map((warning) => (
               <p key={warning.kind}>{warningCopy(warning)}</p>
             ))}

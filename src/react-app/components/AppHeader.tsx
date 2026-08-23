@@ -1,15 +1,16 @@
 import { FolderOpen, ShieldCheck } from 'lucide-react'
 
 type AppHeaderProps = {
+  readonly folderName: string
   readonly onRescan: () => void
 }
 
-export function AppHeader({ onRescan }: AppHeaderProps) {
+export function AppHeader({ folderName, onRescan }: AppHeaderProps) {
   return (
     <header className="app-header">
       <div className="app-header__identity">
-        <span className="app-header__eyebrow">LOCAL VIDEO WORKSPACE</span>
-        <strong>TeslaCam</strong>
+        <strong>TeslaCam Viewer</strong>
+        <span className="app-header__source">{folderName}</span>
       </div>
       <div className="app-header__actions">
         <span className="app-header__privacy">

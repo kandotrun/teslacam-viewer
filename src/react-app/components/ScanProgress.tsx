@@ -19,8 +19,7 @@ export function ScanProgress({ progress }: ScanProgressProps) {
       <section className="scan-panel" aria-live="polite" aria-atomic="true">
         <LoaderCircle aria-hidden="true" className="scan-panel__icon" size={28} strokeWidth={1.8} />
         <div>
-          <p className="eyebrow">LOCAL SCAN</p>
-          <h1>TeslaCamを整理しています</h1>
+          <h1>フォルダを確認しています</h1>
           <p>{details}</p>
         </div>
       </section>

@@ -6,10 +6,13 @@
 - Lazyweb: `video review workspace`、`security camera playback timeline`、`cinematic media library`の3クエリを実行し、Frame.io、Vimeo、Milestone XProtect、Soraの4画面を閲覧した。左のライブラリレール、時系列イベント列、主映像を支配的に置くシアター、画面下部に固定するトランスポートというレイアウト文法だけを抽出した。
 - Imagen drafts: `exec-6d68dff4-c919-40dc-91e4-e86a587fda7c.png`、`exec-5cc54840-df75-4158-a0c4-9c38f47b1218.png`、`exec-053c7f42-d7cf-4d17-82c1-614fd8199a96.png`を比較し、1案目の`exec-6d68dff4-c919-40dc-91e4-e86a587fda7c.png`を参照契約として採用した。
 - Target composition: チャコールのライブラリレール、イベント一覧、6カメラシアター、永続トランスポートバー。初期実装では同じトークンと状態規則によるwelcome shellだけを構築する。
+- 2026-08-23 redesign audit: 公開版と375px、768px、1280pxの実画面を監査し、英語の大文字eyebrow、中央カード型welcome、均一な角丸枠、再生中の証拠文脈不足をAI生成サービスらしさの主因と特定した。Tesla、Apple、Raycastを候補に再比較し、映像そのものを主役にできるTeslaのradical subtractionを継続採用する。装飾は足さず、フォルダ、イベント時刻、カテゴリ、カメラ可用性を先に読ませる。
 
 ## 1. Atmosphere & Identity
 
-暗い編集室で、映像だけが静かに立ち上がるローカル映像ワークスペース。印象の核は、黒に近い面をわずかな明度差で積層する「チャコール・シアター」である。高彩度色は主操作とカテゴリ状態に限定し、Tesla由来の余白、抑制した文字階層、単一CTAの精度を、TeslaCam確認という独自用途へ再構成する。想定利用者は、SSDをMacへつないですぐ確認したい所有者、事故やセントリー記録を時刻から探す調査者、欠損カメラを含む大量イベントを長時間確認する運用者である。
+SSDをMacへつなぎ、必要な記録を時刻から探し、映像を確認するためのローカル閲覧ツール。印象の核は、黒に近い面をわずかな明度差で積層する「チャコール・シアター」である。映像と証拠文脈が常に最初に読め、UIは静かに退く。高彩度色は主操作とカテゴリ状態に限定し、Tesla由来のradical subtractionをTeslaCam確認という独自用途へ再構成する。想定利用者は、SSDをMacへつないですぐ確認したい所有者、事故やセントリー記録を時刻から探す調査者、欠損カメラを含む大量イベントを長時間確認する運用者である。
+
+AI生成サービスらしさを避けるため、宣伝見出し、英語の大文字eyebrow、意味のないカード、均一なpill、グラデーション、glow、glass、装飾アニメーションを使わない。日本語の短い作業語彙を使い、正常状態は肯定形、欠損や失敗は影響する方向を具体的に示す。
 
 ## 2. Color
 
@@ -52,13 +55,13 @@
 
 | Level | Token | Size | Weight | Line height | Tracking | Usage |
 |---|---|---:|---:|---:|---:|---|
-| Display | `--font-display` | `clamp(2.25rem, 5vw, 4rem)` | 560 | 1.05 | `-0.035em` | welcomeの主見出し |
-| Display mobile | `--font-display-mobile` | `1.75rem` | 560 | 1.05 | `-0.035em` | 479px以下のwelcome主見出し |
+| Display | `--font-display` | `clamp(2rem, 4vw, 3rem)` | 560 | 1.08 | `-0.03em` | 作業開始画面の主見出し |
+| Display mobile | `--font-display-mobile` | `1.75rem` | 560 | 1.1 | `-0.03em` | 479px以下の作業開始見出し |
 | Heading | `--font-heading` | `1.5rem` | 560 | 1.25 | `-0.02em` | パネル見出し |
 | Body large | `--font-body-large` | `1.125rem` | 400 | 1.65 | `-0.01em` | リード文 |
 | Body | `--font-body` | `1rem` | 400 | 1.6 | `0` | 標準本文、操作 |
 | Small | `--font-small` | `0.875rem` | 450 | 1.5 | `0` | ブラウザ案内 |
-| Label | `--font-label` | `0.75rem` | 600 | 1.35 | `0.08em` | カテゴリ、メタデータ |
+| Label | `--font-label` | `0.75rem` | 560 | 1.35 | `0.01em` | カテゴリ、メタデータ |
 
 ### Font Stack
 
@@ -91,10 +94,10 @@
 | `--space-12` | `48px` | 大きな間隔 |
 | `--space-16` | `64px` | ページ余白 |
 | `--space-20` | `80px` | welcomeの呼吸 |
-| `--library-rail-width` | `224px` | desktopライブラリレール幅 |
-| `--event-list-width` | `320px` | desktopイベント一覧幅 |
+| `--library-rail-width` | `216px` | desktopライブラリレール幅 |
+| `--event-list-width` | `336px` | desktopイベント一覧幅 |
 | `--event-thumbnail-width` | `88px` | イベントカードのサムネイル幅 |
-| `--event-card-min-height` | `104px` | イベントカードの最小高と仮想描画予約高 |
+| `--event-card-min-height` | `96px` | イベント行の最小高 |
 | `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
 | `--theater-terminal-tile-min` | `80px` | 代表映像と併記するterminalカメラ状態の最小高 |
 | `--theater-tablet-min` | `720px` | tabletシアター全体の検証高 |
@@ -103,20 +106,22 @@
 | `--theater-event-list-max` | `320px` | tablet event listの最大高 |
 | `--theater-representative-max` | `40dvb` | 代表映像の最大表示高 |
 | `--theater-mobile-expanded-min` | `60dvb` | mobile expanded映像の最小高 |
+| `--app-header-height` | `56px` | desktop/tabletの固定ヘッダー高 |
+| `--transport-mobile-max` | `140px` | mobile transportの最大高 |
 
 ### Grid
 
-- welcome shellは中央の読み幅720pxを上限とし、上下はviewportに対して中央配置する。
-- 完成形のdesktopは224pxライブラリレール、320pxイベント一覧、残りを6カメラシアターへ割り当て、下端に全操作を収めた3段のトランスポートを固定する。
+- 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力、得られる結果、ローカル処理の事実が一画面で読める。
+- 完成形のdesktopは216pxライブラリレール、336pxイベント一覧、残りを6カメラシアターへ割り当て、下端に全操作を収めた3段のトランスポートを固定する。
 - tabletはカテゴリを上部タブへ移し、イベント一覧を44px以上の開閉操作で折りたためる。mobileは一画面カメラを主とする。
 - mobileでは6つのvideo要素を同期とObject URLのライフサイクル維持のためDOMへ残し、選択した一方向だけを表示する。6方向の切り替えはラベル付き横スクロール操作とする。
-- 検証幅は390px、1024px、1440px。主コンテンツに横スクロールを発生させず、カメラ切り替えだけを局所的に横スクロール可能にする。
+- 検証幅は375px、768px、1280px。主コンテンツに横スクロールを発生させず、カメラ切り替えだけを局所的に横スクロール可能にする。
 - 外側余白は`clamp(var(--space-4), 5vw, var(--space-16))`を用いる。
 
 ### Shape
 
-- `--radius-control: 12px`
-- `--radius-panel: 16px`
+- `--radius-control: 6px`
+- `--radius-panel: 8px`
 - `--control-min-size: 44px`
 
 ## 5. Components
@@ -141,15 +146,37 @@
 - **Motion**: なし。
 - **Layout**: 左揃えのcluster。小画面では本文が自然に折り返す。
 
-### Welcome shell
+### 作業開始画面
 
-- **Structure**: `main`内にeyebrow、見出し、説明、primary action、trust statement、browser guidance。
+- **Structure**: compact product header、入力を示す見出し、primary action、`RecentClips / SavedClips / SentryClips → イベント一覧 / 6カメラ`の結果説明、local-only statement、browser guidance。
 - **Variants**: desktop、tablet、mobile。
 - **Spacing**: `--space-4`から`--space-20`。
 - **States**: emptyが標準。errorとloadingは後続タスクで追加する。
 - **Accessibility**: landmark、論理的な見出し順、自然な日本語改行、200%拡大でも情報を失わない。
 - **Motion**: なし。
-- **Layout**: centered stack。背景の二本の直線と小さなカメラ位置記号で、将来の6カメラシアターを抽象的に示す。
+- **Layout**: 左揃えのstack。背景装飾、中央のrounded panel、英語の大文字eyebrowを置かない。
+
+### Source summary
+
+- **Structure**: 選択したフォルダ名、総イベント件数、読み込み警告、再選択操作。
+- **States**: standard、warning。warningだけを色とアイコンで強調する。
+- **Accessibility**: フォルダ名は省略表示してもtitle相当の全文を読み取れる。再選択は可視ラベルを持つ。
+- **Layout**: desktopでは左レール上部、tablet/mobileではheader直下に置く。
+
+### Event row
+
+- **Structure**: category、local timestamp、duration、segment count、`n/6 cameras`、欠損方向。
+- **States**: default、hover、focus-visible、selected、partial、no-poster。
+- **Copy**: 正常時は`6/6 カメラ`と肯定形で示す。欠損時だけ`5/6 カメラ・右リピーターなし`のように方向を示す。`0台のカメラがありません`は使わない。
+- **Thumbnail**: 実際のposterがある場合だけ表示する。posterがない健康なイベントに空の画像枠やエラーアイコンを置かない。
+- **Layout**: cardを並べず、一覧面の中をdividerとselected barで区切る。
+
+### Theater context
+
+- **Structure**: source folder、category、local timestamp、event duration、segment count、camera availability。
+- **States**: complete、partial、terminal fallback。
+- **Accessibility**: 色だけに依存せず、シアター単体のスクリーンショットでも現在の証拠を特定できる。
+- **Layout**: camera gridの直上に常設し、mobileでもイベント一覧を読み戻さず確認できる。
 
 ### 6-camera theater
 
@@ -168,7 +195,7 @@
 - **States**: mobileで常時表示し、選択中は`aria-pressed`とaccent境界を併用する。desktop/tabletでは6画面シアターを優先して非表示にする。
 - **Accessibility**: 「表示するカメラ」というgroup名、方向ごとの可視ラベル、44px以上の操作面、明確なfocus ringを持つ。
 - **Motion**: 色とborderだけを`--motion-fast`で遷移し、reduced motionでは0msにする。
-- **Layout**: 390pxでは一行横スクロールとし、ページ全体の横overflowへ波及させない。
+- **Layout**: 375pxでは一行横スクロールとし、ページ全体の横overflowへ波及させない。
 
 ### Event list disclosure
 
@@ -188,6 +215,7 @@
 - **Structure**: 前へ、-10秒、再生/一時停止、+10秒、次へ、elapsed/duration、range、速度選択。
 - **States**: default、hover、active、focus-visible、disabled、recoverable play error。
 - **Accessibility**: iconと日本語ラベルを併用し、検知位置はrange上の非操作markerとして名前を持つ。
+- **Mobile layout**: rangeを一段、再生と前後移動を一段にまとめ、defaultで`--transport-mobile-max`以下にする。速度はラベル付きselectで保持し、映像を45dvb以上確保する。
 
 ## 6. Motion & Interaction
 
@@ -206,7 +234,7 @@
 
 ## 7. Depth & Surface
 
-戦略はtonal-shiftを主とし、操作境界に1px borderだけを併用する。box-shadow、blur、glow、gradientは使わない。Canvas、Rail、Surface、Surface raisedの順にわずかに明るくし、映像を置く領域は周辺より暗く保つ。12pxは操作、16pxは主要パネルに限定し、丸いカードを入れ子にしない。
+戦略はtonal-shiftを主とし、操作境界とfault stateにだけ1px borderを併用する。box-shadow、blur、glow、gradientは使わない。Canvas、Rail、Surface、Surface raisedの順にわずかに明るくし、映像を置く領域は周辺より暗く保つ。6pxは操作、8pxはシアター外枠に限定する。通常のイベント行、ラベル、メタデータをrounded outlineで囲わない。永続的なelevationはシアターと選択イベントの2段階までとする。
 
 ## 8. Accessibility Constraints & Accepted Debt
 
@@ -222,5 +250,4 @@
 
 | Item | Location | Why accepted | Owner / Exit |
 |---|---|---|---|
-| 完成形4ペインのprimitive showcase | viewer shell | Task 1ではwelcome shellだけが承認範囲 | Task 6でlibrary、event list、theater、transportを実装する前に検証 |
-| スクリーンリーダー実機確認 | welcome shell | 自動検証とキーボード確認までをTask 1で行う | E2E Task 9でVoiceOverによる読み順と操作を確認 |
+| VoiceOver実機確認 | viewer shell | 自動検証とキーボード確認までを継続する | 公開後の実SSD確認時に読み順と操作を確認 |

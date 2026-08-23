@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useState } from 'react'
 import { afterEach, vi } from 'vitest'
@@ -8,17 +8,6 @@ import { EventList } from './EventList'
 
 const events: readonly TeslaCamEvent[] = [
   {
-    id: 'recent-older',
-    category: 'recent',
-    timestamp: '2026-08-19_08-30-00',
-    segments: [
-      {
-        timestamp: '2026-08-19_08-30-00',
-        cameras: { front: { name: 'front.mp4', relativePath: 'RecentClips/2026-08-19_08-30-00-front.mp4', size: 12, type: 'video/mp4', getFile: async () => new File(['clip'], 'front.mp4') } },
-      },
-    ],
-  },
-  {
     id: 'sentry-newer',
     category: 'sentry',
     timestamp: '2026-08-20_20-45-00',
@@ -26,6 +15,17 @@ const events: readonly TeslaCamEvent[] = [
       {
         timestamp: '2026-08-20_20-45-00',
         cameras: { front: { name: 'front.mp4', relativePath: 'SentryClips/event/2026-08-20_20-45-00-front.mp4', size: 12, type: 'video/mp4', getFile: async () => new File(['clip'], 'front.mp4') } },
+      },
+    ],
+  },
+  {
+    id: 'recent-older',
+    category: 'recent',
+    timestamp: '2026-08-19_08-30-00',
+    segments: [
+      {
+        timestamp: '2026-08-19_08-30-00',
+        cameras: { front: { name: 'front.mp4', relativePath: 'RecentClips/2026-08-19_08-30-00-front.mp4', size: 12, type: 'video/mp4', getFile: async () => new File(['clip'], 'front.mp4') } },
       },
     ],
   },
@@ -50,12 +50,15 @@ function firstEvent(): TeslaCamEvent {
 function pendingFileRequest(): {
   readonly promise: Promise<File>
   readonly resolve: (file: File) => void
+  readonly reject: (reason?: unknown) => void
 } {
   let resolveFile: (file: File) => void = () => undefined
-  const promise = new Promise<File>((resolve) => {
+  let rejectFile: (reason?: unknown) => void = () => undefined
+  const promise = new Promise<File>((resolve, reject) => {
     resolveFile = resolve
+    rejectFile = reject
   })
-  return { promise, resolve: resolveFile }
+  return { promise, resolve: resolveFile, reject: rejectFile }
 }
 
 function EventListHarness() {
@@ -65,7 +68,6 @@ function EventListHarness() {
     <>
       <EventList
         events={events}
-        filters={{ category: 'all', dateKey: null, query: '' }}
         selectedEventId={selectedEventId}
         onSelectEvent={setSelectedEventId}
       />
@@ -94,7 +96,6 @@ describe('EventList', () => {
     render(
       <EventList
         events={events}
-        filters={{ category: 'all', dateKey: null, query: '' }}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
@@ -104,14 +105,31 @@ describe('EventList', () => {
 
     expect(eventButtons).toHaveLength(2)
     expect(eventButtons[0]).toHaveTextContent('2026-08-20 20:45:00')
-    expect(eventButtons[0]).toHaveTextContent('5台のカメラがありません')
+    expect(eventButtons[0]).toHaveTextContent('1/6 カメラ')
+    expect(eventButtons[0]).toHaveTextContent('1分')
+    expect(eventButtons[0]).toHaveTextContent('1セグメント')
   })
 
-  it('applies category, date, and localized category text filters together', () => {
+  it('states camera availability positively and names missing directions only for partial events', () => {
     render(
       <EventList
         events={events}
-        filters={{ category: 'sentry', dateKey: '2026-08-20', query: 'セントリー' }}
+        selectedEventId={null}
+        onSelectEvent={() => undefined}
+      />,
+    )
+
+    const partialEvent = screen.getByRole('button', { name: /2026-08-20 20:45:00/ })
+
+    expect(partialEvent).toHaveTextContent('1/6 カメラ')
+    expect(partialEvent).toHaveTextContent('リア、左ピラー、左リピーター、右ピラー、右リピーターなし')
+    expect(partialEvent).not.toHaveTextContent('台のカメラがありません')
+  })
+
+  it('renders the matching subset supplied by the workspace', () => {
+    render(
+      <EventList
+        events={[firstEvent()]}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
@@ -133,8 +151,7 @@ describe('EventList', () => {
   it('shows an explicit empty result for an empty category', () => {
     render(
       <EventList
-        events={events}
-        filters={{ category: 'saved', dateKey: null, query: '' }}
+        events={[]}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
@@ -169,14 +186,13 @@ describe('EventList', () => {
     render(
       <EventList
         events={[multiSegmentEvent]}
-        filters={{ category: 'all', dateKey: null, query: '' }}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
     )
 
     expect(screen.getByRole('button', { name: /2026-08-20 20:45:00/ })).toHaveTextContent(
-      '5台のカメラがありません',
+      '1/6 カメラ',
     )
   })
 
@@ -190,7 +206,6 @@ describe('EventList', () => {
     const view = render(
       <EventList
         events={[eventWithThumbnail]}
-        filters={{ category: 'all', dateKey: null, query: '' }}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
@@ -218,7 +233,6 @@ describe('EventList', () => {
     const view = render(
       <EventList
         events={[eventWithPendingThumbnail]}
-        filters={{ category: 'all', dateKey: null, query: '' }}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
@@ -231,26 +245,31 @@ describe('EventList', () => {
     expect(createObjectURL).not.toHaveBeenCalled()
   })
 
-  it('keeps the empty thumbnail when file loading rejects with an unknown value', async () => {
+  it('does not draw a fake thumbnail frame when file loading rejects', async () => {
+    const pendingFile = pendingFileRequest()
+    const getFile = vi.fn(async () => pendingFile.promise)
     const eventWithRejectedThumbnail: TeslaCamEvent = {
       ...firstEvent(),
       thumbnailFile: {
         ...fileRef('rejected-thumb.png'),
-        getFile: async () => Promise.reject('thumbnail unavailable'),
+        getFile,
       },
     }
 
     render(
       <EventList
         events={[eventWithRejectedThumbnail]}
-        filters={{ category: 'all', dateKey: null, query: '' }}
         selectedEventId={null}
         onSelectEvent={() => undefined}
       />,
     )
 
-    await waitFor(() => {
-      expect(document.querySelector('.event-thumbnail--empty')).toBeVisible()
+    await waitFor(() => expect(getFile).toHaveBeenCalledTimes(1))
+    await act(async () => {
+      pendingFile.reject(new Error('thumbnail unavailable'))
+      await pendingFile.promise.catch(() => undefined)
     })
+
+    expect(document.querySelector('.event-thumbnail')).not.toBeInTheDocument()
   })
 })

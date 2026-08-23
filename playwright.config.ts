@@ -2,7 +2,9 @@ import { defineConfig } from '@playwright/test'
 
 const port = process.env.PLAYWRIGHT_PORT ?? '4173'
 if (!/^\d+$/u.test(port)) throw new Error('PLAYWRIGHT_PORT must be numeric')
-const baseURL = `http://127.0.0.1:${port}`
+const localBaseURL = `http://127.0.0.1:${port}`
+const requestedBaseURL = process.env.PLAYWRIGHT_BASE_URL
+const baseURL = requestedBaseURL ?? localBaseURL
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -16,12 +18,15 @@ export default defineConfig({
     browserName: 'chromium',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',
-    viewport: { width: 1440, height: 1000 },
+    viewport: { width: 1280, height: 1000 },
   },
-  webServer: {
-    command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port}`,
-    reuseExistingServer: false,
-    timeout: 120_000,
-    url: baseURL,
-  },
+  webServer:
+    requestedBaseURL === undefined
+      ? {
+          command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port}`,
+          reuseExistingServer: false,
+          timeout: 120_000,
+          url: localBaseURL,
+        }
+      : undefined,
 })

@@ -1,4 +1,4 @@
-import { FolderOpen, MonitorPlay, ShieldCheck } from 'lucide-react'
+import { FolderOpen, ShieldCheck } from 'lucide-react'
 
 type EmptyStateProps = {
   readonly error: 'denied' | 'invalid' | 'failed' | null
@@ -31,8 +31,8 @@ function errorCopy(error: EmptyStateProps['error']): {
       }
     case null:
       return {
-        title: 'TeslaCamを、ひとつのシアターで。',
-        description: 'SSD内のセントリー、保存済み、最近の走行を整理し、最大6方向の映像を同じ時刻で確認できます。',
+        title: 'SSDのTeslaCamフォルダを開く',
+        description: 'セントリー、保存済み、最近の走行を日時順に整理して、最大6方向の映像を確認します。',
         action: 'TeslaCamフォルダを選ぶ',
       }
   }
@@ -44,40 +44,39 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
   return (
     <main className="welcome-shell">
       <section className="welcome-panel" aria-labelledby="welcome-title">
-        <div className="eyebrow">
-          <MonitorPlay aria-hidden="true" size={16} strokeWidth={1.8} />
-          <span>LOCAL VIDEO WORKSPACE</span>
-        </div>
+        <header className="welcome-brand">
+          <strong>TeslaCam Viewer</strong>
+          <span>ローカル映像ビューア</span>
+        </header>
         <div className="welcome-copy">
-          <h1 aria-label={copy.title} id="welcome-title">
-            {error === null ? (
-              <>
-                <span>TeslaCamを、</span>
-                <span className="welcome-title__phrase">ひとつのシアターで。</span>
-              </>
-            ) : copy.title}
-          </h1>
-          <p>
-            {error === null ? (
-              <>
-                SSD内のセントリー、<span className="text-keep">保存済み</span>、<span className="text-keep">最近の走行</span>を整理し、<span className="text-keep">最大6方向</span>の映像を<span className="text-keep">同じ時刻</span>で確認できます。
-              </>
-            ) : copy.description}
-          </p>
+          <h1 id="welcome-title">{copy.title}</h1>
+          <p>{copy.description}</p>
         </div>
         <button className="primary-action" type="button" onClick={onSelect}>
           <FolderOpen aria-hidden="true" size={20} strokeWidth={1.8} />
           {copy.action}
         </button>
-        <div className="trust-statement">
+        {error === null && (
+          <dl className="welcome-outcome">
+            <div>
+              <dt>選ぶもの</dt>
+              <dd>RecentClips、SavedClips、SentryClipsを含むTeslaCamフォルダ</dd>
+            </div>
+            <div>
+              <dt>表示されるもの</dt>
+              <dd>日時順のイベント一覧と、最大6方向の同期映像</dd>
+            </div>
+          </dl>
+        )}
+        <div className="trust-statement" role="note">
           <ShieldCheck aria-hidden="true" size={22} strokeWidth={1.8} />
           <div>
             <strong>映像はこのMacだけで処理</strong>
-            <p>選択した映像やファイル情報は、<span className="text-keep">外部へ送信されません。</span></p>
+            <p>選択した映像やファイル情報は外部へ送信されません。</p>
           </div>
         </div>
         <p className="browser-guidance">
-          MacのChromeまたはEdgeで、RecentClips、SavedClips、SentryClipsを含む<span className="text-keep">TeslaCamフォルダ</span>を選択してください。
+          MacのChromeまたはEdgeに対応しています。
         </p>
       </section>
     </main>
