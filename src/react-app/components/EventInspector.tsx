@@ -1,3 +1,5 @@
+import { useState } from 'react'
+
 import type { TeslaCamEvent } from '../../teslacam/types'
 import { detectionSeconds, sentryPlaybackStartLabel } from '../event-detection'
 import { categoryLabel, eventTime } from '../event-filters'
@@ -14,6 +16,11 @@ type EventInspectorProps = {
 }
 
 export function EventInspector({ event }: EventInspectorProps) {
+  const [open, setOpen] = useState(() => (
+    typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(min-width: 1025px)').matches
+  ))
   const availability = cameraAvailability(event)
   const missing = missingCameraLabel(availability)
   const detected = detectionSeconds(event)
@@ -22,7 +29,13 @@ export function EventInspector({ event }: EventInspectorProps) {
   const reason = event.metadata?.reason
 
   return (
-    <section className="event-inspector" aria-label="イベント詳細">
+    <details
+      aria-label="イベント詳細"
+      className="event-inspector"
+      open={open}
+      onToggle={(toggleEvent) => setOpen(toggleEvent.currentTarget.open)}
+    >
+      <summary>イベント詳細</summary>
       <dl>
         <div>
           <dt>カテゴリ</dt>
@@ -69,6 +82,6 @@ export function EventInspector({ event }: EventInspectorProps) {
           </div>
         )}
       </dl>
-    </section>
+    </details>
   )
 }

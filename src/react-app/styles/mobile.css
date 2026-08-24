@@ -230,8 +230,12 @@
     min-inline-size: 66px;
   }
 
+  .event-inspector {
+    display: none;
+  }
+
   .day-timeline {
-    min-block-size: 92px;
+    min-block-size: 104px;
     grid-template-rows: auto minmax(0, 1fr);
   }
 
@@ -240,13 +244,15 @@
   }
 
   .day-timeline__summary {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-1) var(--space-2);
     padding: var(--space-2) var(--space-3);
   }
 
-  .day-timeline__summary p:first-child,
-  .day-timeline__summary p:last-child {
-    display: none;
+  .day-timeline__summary p {
+    min-inline-size: 0;
+    overflow-wrap: anywhere;
+    line-height: 1.25;
   }
 }
 

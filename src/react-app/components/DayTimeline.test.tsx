@@ -62,6 +62,7 @@ describe('DayTimeline', () => {
     expect(screen.getByLabelText('前のイベント')).toHaveTextContent('セントリー')
     expect(screen.getByLabelText('選択中のイベント')).toHaveTextContent('保存済み')
     expect(screen.getByLabelText('次のイベント')).toHaveTextContent('最近の走行')
+    expect(screen.getByLabelText('この日のイベント数')).toHaveTextContent('3件')
   })
 
   it('reports an empty local day without rendering marker controls', () => {

@@ -117,6 +117,7 @@ export function DayTimeline({
             <p aria-label="前のイベント">前: {markerSummary(previousMarker)}</p>
             <p aria-label="選択中のイベント">選択: {markerSummary(selectedMarker)}</p>
             <p aria-label="次のイベント">次: {markerSummary(nextMarker)}</p>
+            <p aria-label="この日のイベント数">同日: {markers.length}件</p>
           </div>
         </>
       )}

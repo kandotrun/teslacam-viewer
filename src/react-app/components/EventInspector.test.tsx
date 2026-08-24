@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 
 import type { TeslaCamEvent } from '../../teslacam/types'
 import { EventInspector } from './EventInspector'
@@ -27,14 +28,24 @@ describe('EventInspector', () => {
   it('renders only factual event fields and omits location metadata', () => {
     render(<EventInspector event={eventWithLocationMetadata} />)
 
-    expect(screen.getByText('セントリー')).toBeVisible()
-    expect(screen.getByText('録画開始')).toBeVisible()
-    expect(screen.getByText('検知時刻')).toBeVisible()
-    expect(screen.getByText('再生開始')).toBeVisible()
-    expect(screen.getByText('連結再生時間')).toBeVisible()
-    expect(screen.getByText('sentry_aware_object_detection')).toBeVisible()
+    expect(screen.getByText('セントリー')).toBeInTheDocument()
+    expect(screen.getByText('録画開始')).toBeInTheDocument()
+    expect(screen.getByText('検知時刻')).toBeInTheDocument()
+    expect(screen.getByText('再生開始')).toBeInTheDocument()
+    expect(screen.getByText('連結再生時間')).toBeInTheDocument()
+    expect(screen.getByText('sentry_aware_object_detection')).toBeInTheDocument()
     expect(screen.queryByText('Sample city')).not.toBeInTheDocument()
     expect(screen.queryByText('Sample street')).not.toBeInTheDocument()
     expect(screen.queryByText('35.0000')).not.toBeInTheDocument()
+  })
+
+  it('exposes a native disclosure for compact investigation layouts', async () => {
+    const user = userEvent.setup()
+    render(<EventInspector event={eventWithLocationMetadata} />)
+
+    const details = screen.getByLabelText('イベント詳細')
+    expect(details).not.toHaveAttribute('open')
+    await user.click(screen.getByText('イベント詳細'))
+    expect(details).toHaveAttribute('open')
   })
 })

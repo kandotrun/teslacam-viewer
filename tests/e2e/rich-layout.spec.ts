@@ -62,7 +62,7 @@ test.describe('rich investigation layout', () => {
     await context.close()
   })
 
-  test('uses a three by two camera grid and removes the inspector from the tablet stage', async ({ browser }) => {
+  test('uses a three by two camera grid and keeps details available as a tablet disclosure', async ({ browser }) => {
     const media = [...await readFile(fixturePath)]
     const context = await browser.newContext({ viewport: { width: 768, height: 1024 } })
     await installPicker(context, media, 'full')
@@ -82,10 +82,16 @@ test.describe('rich investigation layout', () => {
     expect(new Set(tileBounds.map((bounds) => bounds.left)).size).toBe(3)
     expect(new Set(tileBounds.map((bounds) => bounds.top)).size).toBe(2)
     const cameraBottom = await page.locator('.camera-grid').evaluate((element) => element.getBoundingClientRect().bottom)
+    const inspector = page.locator('.event-inspector')
+    await expect(inspector).toBeVisible()
+    await expect(inspector).not.toHaveAttribute('open')
+    const inspectorBounds = await inspector.evaluate((element) => element.getBoundingClientRect())
     const playbackTop = await page.locator('.playback-deck').evaluate((element) => element.getBoundingClientRect().top)
-    expect(playbackTop - cameraBottom).toBeGreaterThanOrEqual(0)
-    expect(playbackTop - cameraBottom).toBeLessThanOrEqual(1)
-    await expect(page.locator('.event-inspector')).toBeHidden()
+    expect(inspectorBounds.top).toBeGreaterThanOrEqual(cameraBottom)
+    expect(playbackTop).toBeGreaterThanOrEqual(inspectorBounds.bottom)
+    await inspector.locator('summary').click()
+    await expect(inspector).toHaveAttribute('open')
+    await page.screenshot({ path: `${evidenceRoot}/task-7/768-event-details-open.png` })
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await context.close()
   })
@@ -106,6 +112,12 @@ test.describe('rich investigation layout', () => {
     const switcher = page.locator('.camera-switcher')
     await expect(switcher.getByRole('button')).toHaveCount(6)
     await expect(page.locator('.camera-tile:visible')).toHaveCount(1)
+    await expect(page.locator('.event-inspector')).toBeHidden()
+    const timelineSummary = page.locator('.day-timeline__summary')
+    await expect(timelineSummary.getByLabel('前のイベント')).toBeVisible()
+    await expect(timelineSummary.getByLabel('選択中のイベント')).toBeVisible()
+    await expect(timelineSummary.getByLabel('次のイベント')).toBeVisible()
+    await expect(timelineSummary.getByLabel('この日のイベント数')).toHaveText(/同日: 3件/)
     expect(await switcher.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     const outsideScrollers = await page.locator('body *').evaluateAll((elements) => elements.filter((element) => (
