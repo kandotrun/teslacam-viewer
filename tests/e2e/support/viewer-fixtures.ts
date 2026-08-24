@@ -1,8 +1,11 @@
+import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
 import { expect, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
 export const fixturePath = fileURLToPath(new URL('../fixtures/TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4', import.meta.url))
+export const sentryMetadataPath = fileURLToPath(new URL('../fixtures/TeslaCam/SentryClips/event-sentry/event.json', import.meta.url))
+export const sentryMediaPath = fileURLToPath(new URL('../fixtures/TeslaCam/SentryClips/event-sentry/sentry-autoplay-20s.mp4', import.meta.url))
 export const evidenceRoot = '.omo/evidence/teslacam-viewer/screenshots'
 const cameras = ['front', 'back', 'left_pillar', 'left_repeater', 'right_pillar', 'right_repeater'] as const
 export const viewports = [
@@ -41,8 +44,13 @@ export function contrastRatio(firstColor: string, secondColor: string): number {
 }
 
 export async function installPicker(context: BrowserContext, bytes: readonly number[], variant: PickerVariant): Promise<void> {
-  await context.addInitScript(({ mediaBytes, pickerVariant, cameraNames }) => {
+  const [sentryMetadata, sentryMedia] = await Promise.all([
+    readFile(sentryMetadataPath, 'utf8'),
+    readFile(sentryMediaPath),
+  ])
+  await context.addInitScript(({ mediaBytes, pickerVariant, cameraNames, metadataContents, sentryMediaBytes }) => {
     const media = new Uint8Array(mediaBytes)
+    const sentryMedia = new Uint8Array(sentryMediaBytes)
     const file = (name: string, content: Uint8Array = media) => ({
       kind: 'file',
       name,
@@ -62,7 +70,10 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
       file('event.mp4'),
     ])
     const sentryCameras = pickerVariant === 'missing' ? cameraNames.slice(0, 5) : cameraNames
-    const sentry = directory('event-sentry', clips('2026-08-20_20-35-00', sentryCameras))
+    const sentry = directory('event-sentry', [
+      ...clips('2026-08-20_20-35-00', sentryCameras, sentryMedia),
+      file('event.json', new TextEncoder().encode(metadataContents)),
+    ])
     const recent = directory('RecentClips', clips('2026-08-20_20-45-00', cameraNames))
     const syntheticNoise = Array.from({ length: 253 }, (_, index) => index === 248
       ? {
@@ -106,7 +117,13 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
         }
       },
     })
-  }, { mediaBytes: bytes, pickerVariant: variant, cameraNames: cameras })
+  }, {
+    mediaBytes: bytes,
+    pickerVariant: variant,
+    cameraNames: cameras,
+    metadataContents: sentryMetadata,
+    sentryMediaBytes: [...sentryMedia],
+  })
 }
 
 export function captureRuntimeErrors(page: Page): readonly string[] {
