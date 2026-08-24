@@ -134,6 +134,22 @@ describe('Theater', () => {
     expect(screen.getByLabelText('検知位置')).toHaveAttribute('style', expect.stringContaining('50%'))
   })
 
+  it('positions a marker by the matching segment rather than event start time', () => {
+    const event: TeslaCamEvent = {
+      ...eventWithCameras(),
+      category: 'sentry',
+      metadata: { timestamp: '2026-08-21T12:01:20' },
+      segments: [
+        { timestamp: '2026-08-21_12-00-00', cameras: {} },
+        { timestamp: '2026-08-21_12-01-00', cameras: {} },
+      ],
+    }
+
+    render(<Theater event={event} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+
+    expect(screen.getByLabelText('検知位置')).toHaveAttribute('style', expect.stringContaining('66.666'))
+  })
+
   it('omits invalid or out-of-range detection metadata and ignores shortcuts from controls', () => {
     const outsideEvent: TeslaCamEvent = {
       ...eventWithCameras(),

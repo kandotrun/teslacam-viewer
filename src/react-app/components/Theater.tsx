@@ -48,7 +48,7 @@ function TheaterSession({ event, onPrevious, onNext, hasPrevious, hasNext, sourc
 
   const allTerminal = cameraIds.every((cameraId) => terminalStatuses.includes(statuses[cameraId] ?? 'loading'))
   const representativeMode = allTerminal && event.representativeFile !== undefined
-  const markerSeconds = representativeMode ? null : detectionSeconds(event, playback.durationSeconds)
+  const markerSeconds = representativeMode ? null : detectionSeconds(event)
 
   return (
     <section className="theater" aria-label="6カメラシアター" data-representative={representativeMode} ref={theaterRef}>
