@@ -125,7 +125,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力、得られる結果、ローカル処理の事実が一画面で読める。
 - 完成形のdesktopは320pxのEventNavigatorと残りのTheaterSessionに分け、TheaterSession内は可変CameraStageと240pxのEventInspectorを並べる。下端196pxはPlaybackControlsとDayTimelineが共有する。
 - CameraStageのcontent boxが720px以上のdesktopだけ車両配置を許可し、frontを上中央、pillarを車両左右、repeaterとbackを下段へ置く。同じcanonical orderの6動画要素を使い、中央の静的車両画像だけを`vehicle` areaへ置く。
-- 640–1024pxはEventNavigator、TheaterContext、3×2 CameraStage、PlaybackDeckを積層し、EventInspectorはstage領域から外す。639px以下は1画面カメラと6方向Camera switcherだけを局所横スクロールにする。
+- 640–1024pxはEventNavigator、TheaterContext、3×2 CameraStage、開閉式EventInspector、PlaybackDeckを積層する。閉じたEventInspectorでもカテゴリ、時刻、カメラ可用性を読める。639px以下は1画面カメラと6方向Camera switcherだけを局所横スクロールにする。
 - mobileでは6つのvideo要素を同期とObject URLのライフサイクル維持のためDOMへ残し、選択した一方向だけを表示する。6方向の切り替えはラベル付き横スクロール操作とする。
 - 検証幅は375px、768px、1280px。主コンテンツに横スクロールを発生させず、カメラ切り替えだけを局所的に横スクロール可能にする。
 - 外側余白は`clamp(var(--space-4), 5vw, var(--space-16))`を用いる。
@@ -193,7 +193,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 ### Event inspector
 
 - **Structure**: 選択イベントのカテゴリ、録画開始、検知、再生開始、長さ、セグメント、カメラ可用性、reasonだけを表示する。
-- **Surface**: desktopは240pxのライト面。1024px以下ではstage領域から外し、映像を優先する。
+- **Surface**: desktopは240pxのライト面。640–1024pxでは映像直下の開閉領域とし、639px以下では非表示にして映像を優先する。
 - **Privacy**: 住所、座標、外部解析値を追加しない。
 
 ### Vehicle spatial stage

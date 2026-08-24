@@ -2,7 +2,7 @@ import { useState } from 'react'
 
 import type { TeslaCamEvent } from '../../teslacam/types'
 import { detectionSeconds, sentryPlaybackStartLabel } from '../event-detection'
-import { categoryLabel, eventTime } from '../event-filters'
+import { categoryLabel, eventClock, eventTime } from '../event-filters'
 import {
   cameraAvailability,
   cameraAvailabilityLabel,
@@ -35,7 +35,12 @@ export function EventInspector({ event }: EventInspectorProps) {
       open={open}
       onToggle={(toggleEvent) => setOpen(toggleEvent.currentTarget.open)}
     >
-      <summary>イベント詳細</summary>
+      <summary>
+        <span>イベント詳細</span>
+        <span className="event-inspector__summary-context">
+          {categoryLabel(event.category)} · {eventClock(event.timestamp)} · {cameraAvailabilityLabel(availability)}
+        </span>
+      </summary>
       <dl>
         <div>
           <dt>カテゴリ</dt>

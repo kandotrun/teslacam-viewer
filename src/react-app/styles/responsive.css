@@ -137,12 +137,21 @@
     display: flex;
     min-block-size: var(--control-min-size);
     align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
     padding-inline: var(--space-4);
     color: var(--color-text-secondary);
     cursor: pointer;
     font-size: var(--font-small);
     font-weight: 560;
     list-style: none;
+  }
+
+  .event-inspector__summary-context {
+    overflow: hidden;
+    color: var(--color-text-primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .event-inspector > summary::-webkit-details-marker {

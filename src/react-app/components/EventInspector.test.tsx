@@ -45,6 +45,11 @@ describe('EventInspector', () => {
 
     const details = screen.getByLabelText('イベント詳細')
     expect(details).not.toHaveAttribute('open')
+    const summaryContext = details.querySelector<HTMLElement>('.event-inspector__summary-context')
+    if (summaryContext === null) throw new Error('event inspector summary context is missing')
+    expect(summaryContext).toHaveTextContent('セントリー')
+    expect(summaryContext).toHaveTextContent('20:45:00')
+    expect(summaryContext).toHaveTextContent('0/6 カメラ')
     await user.click(screen.getByText('イベント詳細'))
     expect(details).toHaveAttribute('open')
   })
