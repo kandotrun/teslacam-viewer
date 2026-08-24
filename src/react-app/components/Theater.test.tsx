@@ -160,7 +160,7 @@ describe('Theater', () => {
     expect(screen.getAllByText('映像がありません')).toHaveLength(5)
     await waitFor(() => expect(screen.getByText('映像を読み込めません')).toBeVisible())
     expect(screen.getByText('代表映像（単独再生）')).toBeVisible()
-    expect(screen.getByText(/6カメラ同期映像ではありません/)).toBeVisible()
+    expect(screen.getByLabelText('代表映像')).toHaveTextContent('6カメラ同期映像ではありません。')
   })
 
   it('maps an unknown getFile rejection to an unavailable tile', async () => {

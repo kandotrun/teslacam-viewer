@@ -4,7 +4,7 @@
   min-block-size: 0;
   flex-direction: column;
   overflow: hidden;
-  background: var(--color-theater);
+  background: var(--color-surface);
 }
 
 .theater-context {
@@ -98,6 +98,13 @@
 }
 
 .camera-grid {
+  --color-rail: var(--color-theater-rail);
+  --color-text-primary: var(--color-theater-text-primary);
+  --color-text-secondary: var(--color-theater-text-secondary);
+  --color-border: var(--color-theater-border);
+  --color-border-strong: var(--color-theater-border-strong);
+  --color-accent-border: var(--color-theater-accent-border);
+  --color-warning: var(--color-theater-warning);
   display: grid;
   min-inline-size: 0;
   min-block-size: 0;
@@ -195,6 +202,10 @@
   color: var(--color-text-secondary);
   font-size: var(--font-label);
   line-height: 1.45;
+}
+
+.representative-video__tail {
+  white-space: nowrap;
 }
 
 .representative-video video {

@@ -38,7 +38,7 @@ export function RepresentativeVideo({ event, registry }: RepresentativeVideoProp
     <section className="representative-video" aria-label="代表映像">
       <div>
         <strong>代表映像（単独再生）</strong>
-        <span>6カメラ同期映像ではありません。</span>
+        <span>6カメラ同期映像では<span className="representative-video__tail">ありません。</span></span>
       </div>
       {unavailable && <span role="status">代表映像を読み込めません。</span>}
       {url !== null && <video controls muted playsInline preload="metadata" src={url} />}

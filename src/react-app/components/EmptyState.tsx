@@ -49,7 +49,9 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
           <span>ローカル映像ビューア</span>
         </header>
         <div className="welcome-copy">
-          <h1 id="welcome-title">{copy.title}</h1>
+          <h1 id="welcome-title">
+            {error === null ? <>SSDのTeslaCam<span className="welcome-title__tail">フォルダを開く</span></> : copy.title}
+          </h1>
           <p>{copy.description}</p>
         </div>
         <button className="primary-action" type="button" onClick={onSelect}>

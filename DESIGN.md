@@ -5,12 +5,13 @@
 - Embedded refs: Tesla、Sentry、Runwayを候補化し、映像を主役にする静けさと精密な操作感を両立できるため、Layer Aはminimalist、Layer BはTeslaを採用した。ブランドロゴ、固有書体、公式UIは複製しない。
 - Lazyweb: `video review workspace`、`security camera playback timeline`、`cinematic media library`の3クエリを実行し、Frame.io、Vimeo、Milestone XProtect、Soraの4画面を閲覧した。左のライブラリレール、時系列イベント列、主映像を支配的に置くシアター、画面下部に固定するトランスポートというレイアウト文法だけを抽出した。
 - Imagen drafts: `exec-6d68dff4-c919-40dc-91e4-e86a587fda7c.png`、`exec-5cc54840-df75-4158-a0c4-9c38f47b1218.png`、`exec-053c7f42-d7cf-4d17-82c1-614fd8199a96.png`を比較し、1案目の`exec-6d68dff4-c919-40dc-91e4-e86a587fda7c.png`を参照契約として採用した。
-- Target composition: チャコールのライブラリレール、イベント一覧、6カメラシアター、永続トランスポートバー。初期実装では同じトークンと状態規則によるwelcome shellだけを構築する。
+- Target composition: 明るいライブラリレールとイベント一覧、暗い6カメラ映像面、明るい永続トランスポートバー。初期画面から閲覧画面まで同じトークンと状態規則を使う。
 - 2026-08-23 redesign audit: 公開版と375px、768px、1280pxの実画面を監査し、英語の大文字eyebrow、中央カード型welcome、均一な角丸枠、再生中の証拠文脈不足をAI生成サービスらしさの主因と特定した。Tesla、Apple、Raycastを候補に再比較し、映像そのものを主役にできるTeslaのradical subtractionを継続採用する。装飾は足さず、フォルダ、イベント時刻、カテゴリ、カメラ可用性を先に読ませる。
+- 2026-08-24 light-theme audit: SSD接続中の長時間探索では、作業面を明るくして一覧と操作の境界を先に読ませる。映像そのもの、カメラ名、欠損状態だけを暗い映像面へ閉じ込め、テーマ切り替えを設けずライトを標準とする。
 
 ## 1. Atmosphere & Identity
 
-SSDをMacへつなぎ、必要な記録を時刻から探し、映像を確認するためのローカル閲覧ツール。印象の核は、黒に近い面をわずかな明度差で積層する「チャコール・シアター」である。映像と証拠文脈が常に最初に読め、UIは静かに退く。高彩度色は主操作とカテゴリ状態に限定し、Tesla由来のradical subtractionをTeslaCam確認という独自用途へ再構成する。想定利用者は、SSDをMacへつないですぐ確認したい所有者、事故やセントリー記録を時刻から探す調査者、欠損カメラを含む大量イベントを長時間確認する運用者である。
+SSDをMacへつなぎ、必要な記録を時刻から探し、映像を確認するためのローカル閲覧ツール。印象の核は、昼間の作業机のように明るい「ライト・ワークスペース」と、録画範囲だけを黒く保つ「エビデンス・シアター」の対比である。一覧、証拠文脈、再生操作を明るい面で読みやすく保ち、映像は周囲の装飾に邪魔されない。高彩度色は主操作とカテゴリ状態に限定し、Tesla由来のradical subtractionをTeslaCam確認という独自用途へ再構成する。想定利用者は、SSDをMacへつないですぐ確認したい所有者、事故やセントリー記録を時刻から探す調査者、欠損カメラを含む大量イベントを長時間確認する運用者である。
 
 AI生成サービスらしさを避けるため、宣伝見出し、英語の大文字eyebrow、意味のないカード、均一なpill、グラデーション、glow、glass、装飾アニメーションを使わない。日本語の短い作業語彙を使い、正常状態は肯定形、欠損や失敗は影響する方向を具体的に示す。
 
@@ -20,32 +21,39 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 | Role | Token | Value | Usage |
 |---|---|---:|---|
-| Canvas | `--color-canvas` | `#090b0d` | 画面全体 |
-| Rail | `--color-rail` | `#0e1114` | ライブラリレール |
-| Surface | `--color-surface` | `#14181c` | イベント列、welcome panel |
-| Surface raised | `--color-surface-raised` | `#1b2025` | カメラタイル、操作面 |
-| Surface active | `--color-surface-active` | `#242a30` | hover、選択状態 |
-| Text primary | `--color-text-primary` | `#f4f6f8` | 見出し、本文 |
-| Text secondary | `--color-text-secondary` | `#aeb6bf` | 補助説明 |
-| Text muted | `--color-text-muted` | `#7f8994` | メタデータ、非活性 |
-| Border | `--color-border` | `#2a3138` | 面の境界 |
-| Border strong | `--color-border-strong` | `#687581` | 強調境界 |
-| Accent | `--color-accent` | `#3967d6` | 唯一の主操作、focus |
-| Accent border | `--color-accent-border` | `#5b8def` | 選択、hover、拡大の操作境界 |
-| Accent hover | `--color-accent-hover` | `#3c69d7` | 主操作hover |
-| Accent active | `--color-accent-active` | `#315bc4` | 主操作active |
-| Sentry | `--color-sentry` | `#eb5757` | セントリー。必ず文言・アイコンと併用 |
-| Saved | `--color-saved` | `#5b8def` | 保存済み。必ず文言・アイコンと併用 |
-| Recent | `--color-recent` | `#94a0ac` | 最近の走行。必ず文言・アイコンと併用 |
-| Success | `--color-success` | `#62bd8f` | 完了、利用可能 |
-| Warning | `--color-warning` | `#e1ad5a` | 欠損、注意 |
-| Error | `--color-error` | `#f07178` | 破損、失敗 |
-| Focus halo | `--color-focus-halo` | `#b9ccff` | 外側focus ring |
+| Canvas | `--color-canvas` | `#f7f9fc` | 画面全体 |
+| Rail | `--color-rail` | `#eef2f6` | ヘッダー、ライブラリレール、再生操作 |
+| Surface | `--color-surface` | `#ffffff` | イベント列、入力、文脈面 |
+| Surface raised | `--color-surface-raised` | `#f3f6fa` | hover |
+| Surface active | `--color-surface-active` | `#e7eef8` | 選択状態 |
+| Theater | `--color-theater` | `#050608` | 映像そのものの背景 |
+| Text primary | `--color-text-primary` | `#17202a` | 見出し、本文 |
+| Text secondary | `--color-text-secondary` | `#465466` | 補助説明 |
+| Text muted | `--color-text-muted` | `#5d6b7a` | メタデータ、非活性 |
+| Text on accent | `--color-text-on-accent` | `#ffffff` | 青い主操作上の文字 |
+| Border | `--color-border` | `#aeb9c6` | 面の境界 |
+| Border strong | `--color-border-strong` | `#657384` | 操作境界 |
+| Accent | `--color-accent` | `#155eef` | 唯一の主操作、選択 |
+| Accent border | `--color-accent-border` | `#155eef` | 選択中の操作境界 |
+| Accent contrast | `--color-accent-contrast` | `#d8ebff` | 青い主操作の外周 |
+| Accent hover | `--color-accent-hover` | `#0f4cc9` | 主操作hover |
+| Accent active | `--color-accent-active` | `#0b3b9e` | 主操作active |
+| Sentry | `--color-sentry` | `#c62828` | セントリー。必ず文言・アイコンと併用 |
+| Warning | `--color-warning` | `#8a4b00` | 欠損、注意 |
+| Warning surface | `--color-warning-surface` | `#fff4e5` | 注意の背景 |
+| Focus | `--color-focus` | `#005fcc` | 外側focus ring |
+| Theater rail | `--color-theater-rail` | `#101318` | 映像上のカメラ名 |
+| Theater text primary | `--color-theater-text-primary` | `#f5f6f7` | 映像上の主テキスト |
+| Theater text secondary | `--color-theater-text-secondary` | `#c2c8d0` | 映像上の補助テキスト |
+| Theater border | `--color-theater-border` | `#303741` | 映像タイル間の境界 |
+| Theater border strong | `--color-theater-border-strong` | `#74808e` | 映像タイルの操作境界 |
+| Theater accent border | `--color-theater-accent-border` | `#8bb9ff` | 選択中の映像境界 |
+| Theater warning | `--color-theater-warning` | `#e1a74d` | 映像内の欠損、注意 |
 
 ### Rules
 
-- 無彩色面の明度差で階層を示し、グラデーションと装飾色は使わない。
-- Accentは操作、Sentry・Saved・Recentは分類にだけ使う。
+- 明るい無彩色面の明度差で作業階層を示し、映像グリッドの内側だけを暗いトークンへ切り替える。
+- Accentは操作、Sentryは分類にだけ使う。
 - 状態を色だけで伝えず、ラベル、Lucideアイコン、形状を併用する。
 - CSSへ新しい色を直書きせず、先にこの表へ意味を追加する。
 
@@ -235,7 +243,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 ## 7. Depth & Surface
 
-戦略はtonal-shiftを主とし、操作境界とfault stateにだけ1px borderを併用する。box-shadow、blur、glow、gradientは使わない。Canvas、Rail、Surface、Surface raisedの順にわずかに明るくし、映像を置く領域は周辺より暗く保つ。6pxは操作、8pxはシアター外枠に限定する。通常のイベント行、ラベル、メタデータをrounded outlineで囲わない。永続的なelevationはシアターと選択イベントの2段階までとする。
+戦略はtonal-shiftを主とし、操作境界とfault stateにだけ1px borderを併用する。box-shadow、blur、glow、gradientは使わない。Canvas、Rail、Surface、Surface raisedの小さな差で作業面を分け、Camera gridの内側だけをTheater系トークンへ切り替える。文脈、カメラ切り替え、再生操作はライト面に残す。6pxは操作、8pxはシアター外枠に限定する。通常のイベント行、ラベル、メタデータをrounded outlineで囲わない。
 
 ## 8. Accessibility Constraints & Accepted Debt
 

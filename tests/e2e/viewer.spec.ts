@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
-import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { expect, test, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
 const fixturePath = fileURLToPath(new URL('./fixtures/TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4', import.meta.url))
 const evidenceRoot = '.omo/evidence/teslacam-viewer/screenshots'
@@ -124,6 +124,63 @@ async function selectFolder(page: Page): Promise<void> {
   await expect(page.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
 }
 
+async function textSpansSingleLine(locator: Locator, phrase: string): Promise<boolean> {
+  return locator.evaluate((element, target) => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT)
+    let node = walker.nextNode()
+    while (node !== null) {
+      const content = node.textContent ?? ''
+      const start = content.indexOf(target)
+      if (start >= 0) {
+        const range = document.createRange()
+        range.setStart(node, start)
+        range.setEnd(node, start + target.length)
+        const lineTops = new Set([...range.getClientRects()].map((rect) => Math.round(rect.top)))
+        return lineTops.size === 1
+      }
+      node = walker.nextNode()
+    }
+    return false
+  }, phrase)
+}
+
+test('defaults browser, PWA and workspace surfaces to light', async ({ page }) => {
+  await page.goto('/')
+  const theme = await page.evaluate(async () => {
+    const rootStyles = getComputedStyle(document.documentElement)
+    const bodyStyles = getComputedStyle(document.body)
+    const themeColor = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.content
+    const response = await fetch('/manifest.webmanifest')
+    const manifest: unknown = await response.json()
+    if (
+      typeof manifest !== 'object'
+      || manifest === null
+      || !('background_color' in manifest)
+      || typeof manifest.background_color !== 'string'
+      || !('theme_color' in manifest)
+      || typeof manifest.theme_color !== 'string'
+    ) {
+      throw new Error('invalid web app manifest theme')
+    }
+    return {
+      scheme: rootStyles.colorScheme,
+      background: bodyStyles.backgroundColor,
+      text: bodyStyles.color,
+      browser: themeColor,
+      pwaBackground: manifest.background_color,
+      pwaTheme: manifest.theme_color,
+    }
+  })
+
+  expect(theme.scheme).toBe('light')
+  expect(relativeLuminance(theme.background)).toBeGreaterThan(0.8)
+  expect(contrastRatio(theme.text, theme.background)).toBeGreaterThanOrEqual(4.5)
+  if (theme.browser === undefined) throw new Error('browser theme color is missing')
+  expect(relativeLuminance(theme.browser)).toBeGreaterThan(0.8)
+  expect(relativeLuminance(theme.pwaBackground)).toBeGreaterThan(0.8)
+  expect(relativeLuminance(theme.pwaTheme)).toBeGreaterThan(0.8)
+})
+
 test('captures welcome and loaded states at the required viewports', async ({ browser }) => {
   const media = [...await readFile(fixturePath)]
   for (const viewport of viewports) {
@@ -136,6 +193,13 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     await expect(page.getByText('選ぶもの', { exact: true })).toBeVisible()
     await expect(page.getByText('表示されるもの', { exact: true })).toBeVisible()
     await expect(page.getByText(/外部へ送信されません/)).toBeVisible()
+    expect(await textSpansSingleLine(page.getByRole('heading', { name: 'SSDのTeslaCamフォルダを開く' }), 'フォルダを開く')).toBe(true)
+    const welcomeColors = await page.locator('body').evaluate((element) => {
+      const styles = getComputedStyle(element)
+      return { background: styles.backgroundColor, text: styles.color }
+    })
+    expect(relativeLuminance(welcomeColors.background)).toBeGreaterThan(0.8)
+    expect(contrastRatio(welcomeColors.text, welcomeColors.background)).toBeGreaterThanOrEqual(4.5)
     if (viewport.mode === 'mobile') {
       await page.setViewportSize({ width: 320, height: 844 })
       const narrowAction = await page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).evaluate((element) => {
@@ -171,6 +235,10 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     await expect(evidenceContext).toContainText('TeslaCam')
     await expect(evidenceContext).toContainText('2026-08-20 20:45:00')
     await expect(evidenceContext).toContainText('6/6 カメラ')
+    const surfaceColors = await page.locator('.library-sidebar, .event-list-panel, .theater-context, .camera-switcher, .playback-controls').evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor))
+    expect(surfaceColors.every((color) => relativeLuminance(color) > 0.75)).toBe(true)
+    const theaterColors = await page.locator('.camera-grid, .camera-tile').evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor))
+    expect(theaterColors.every((color) => relativeLuminance(color) < 0.05)).toBe(true)
     await expect.poll(async () => {
       const interactiveBoundaries = await page.locator('.camera-tile[data-active="true"], .filter-field input, .category-action[data-active="true"], .event-card[data-selected="true"], .quiet-action, .playback-controls button:not(:disabled), .camera-switcher button[aria-pressed="true"]:visible, .event-list-disclosure:visible').evaluateAll((elements) => elements.map((element) => {
         const styles = getComputedStyle(element)
@@ -314,6 +382,7 @@ test('shows missing and terminal media states with representative fallback', asy
   await corruptPage.getByRole('button', { name: /2026-08-20 20:30:00/ }).click()
   await expect(corruptPage.locator('.camera-tile[data-status="corrupt"], .camera-tile[data-status="unsupported"]')).toHaveCount(6)
   await expect(corruptPage.getByText('代表映像（単独再生）')).toBeVisible()
+  expect(await textSpansSingleLine(corruptPage.getByText('6カメラ同期映像ではありません。'), 'ありません。')).toBe(true)
   const terminalGrid = await corruptPage.locator('.camera-grid').boundingBox()
   const representative = await corruptPage.locator('.representative-video').boundingBox()
   const transport = await corruptPage.locator('.playback-controls').boundingBox()

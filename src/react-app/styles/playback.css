@@ -41,9 +41,9 @@
 }
 
 .playback-controls__primary .playback-controls__play {
-  border-color: var(--color-accent-border);
+  border-color: var(--color-accent-contrast);
   background: var(--color-accent);
-  color: var(--color-text-primary);
+  color: var(--color-text-on-accent);
   font-weight: 600;
 }
 
