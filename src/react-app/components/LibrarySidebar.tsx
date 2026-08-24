@@ -52,7 +52,7 @@ export function LibrarySidebar({
   const allCount = counts.recent + counts.saved + counts.sentry
 
   return (
-    <aside className="library-sidebar" aria-label="ライブラリの絞り込み">
+    <section className="library-sidebar">
       <section className="library-source" aria-label="読み込み元">
         <p className="sidebar-label">読み込み元</p>
         <strong>{folderName}</strong>
@@ -116,6 +116,6 @@ export function LibrarySidebar({
           </div>
         </section>
       ) : null}
-    </aside>
+    </section>
   )
 }

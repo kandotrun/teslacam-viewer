@@ -2,7 +2,8 @@ import { ChevronDown, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import type { TeslaCamEvent } from '../../teslacam/types'
-import { categoryLabel, eventTime } from '../event-filters'
+import { detectionSeconds } from '../event-detection'
+import { categoryLabel, eventClock, eventDate, eventTime } from '../event-filters'
 import {
   cameraAvailability,
   cameraAvailabilityLabel,
@@ -86,8 +87,10 @@ export function EventList({
             const availability = cameraAvailability(event)
             const missing = missingCameraLabel(availability)
             const isSelected = event.id === selectedEventId
+            const showSentryPreRoll = isSelected && event.category === 'sentry' && detectionSeconds(event) !== null
             return (
               <button
+                aria-label={eventTime(event.timestamp)}
                 aria-pressed={isSelected}
                 className="event-card"
                 data-selected={isSelected}
@@ -100,9 +103,10 @@ export function EventList({
               >
                 <EventThumbnail event={event} />
                 <span className="event-card__content">
+                  <span className="event-card__date">{eventDate(event.timestamp)}</span>
                   <span className="event-card__heading">
-                    <strong>{eventTime(event.timestamp)}</strong>
-                    <span className={`event-category event-category--${event.category}`}>
+                    <strong className="event-card__time" title={eventTime(event.timestamp)}>{eventClock(event.timestamp)}</strong>
+                    <span className={`event-category event-category--${event.category}`} data-atomic="true">
                       <Video aria-hidden="true" size={14} strokeWidth={1.8} />
                       {categoryLabel(event.category)}
                     </span>
@@ -113,6 +117,7 @@ export function EventList({
                     <span>{cameraAvailabilityLabel(availability)}</span>
                   </span>
                   {missing !== null && <span className="event-card__warning">{missing}</span>}
+                  {showSentryPreRoll && <span className="event-card__pre-roll">検知の15秒前から開始</span>}
                 </span>
               </button>
             )

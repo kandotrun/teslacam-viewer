@@ -3,8 +3,7 @@ import type { Dispatch, RefObject } from 'react'
 import { orderedMatchingEvents } from '../event-filters'
 import type { AppAction, ReadyState } from '../app-state'
 import { AppHeader } from './AppHeader'
-import { EventList } from './EventList'
-import { LibrarySidebar } from './LibrarySidebar'
+import { EventNavigator } from './EventNavigator'
 import { Theater } from './Theater'
 
 type ReadyWorkspaceProps = {
@@ -35,7 +34,9 @@ export function ReadyWorkspace({
     <div className="library-shell">
       <AppHeader folderName={state.folderName} onRescan={onRescan} />
       <main className="library-workspace">
-        <LibrarySidebar
+        <EventNavigator
+          events={matchingEvents}
+          selectedEventId={state.selectedEventId}
           counts={counts}
           eventCount={state.library.events.length}
           filters={state.filters}
@@ -44,10 +45,6 @@ export function ReadyWorkspace({
           onCategory={(category) => dispatch({ kind: 'category-filtered', category })}
           onDate={(dateKey) => dispatch({ kind: 'date-filtered', dateKey })}
           onQuery={(query) => dispatch({ kind: 'query-filtered', query })}
-        />
-        <EventList
-          events={matchingEvents}
-          selectedEventId={state.selectedEventId}
           onSelectEvent={onSelectEvent}
         />
         {selectedEvent === undefined ? (

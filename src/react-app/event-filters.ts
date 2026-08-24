@@ -6,10 +6,16 @@ export type EventFilters = {
   readonly query: string
 }
 
+export function eventDate(timestamp: string): string {
+  return timestamp.slice(0, 10)
+}
+
+export function eventClock(timestamp: string): string {
+  return timestamp.slice(11).replaceAll('-', ':')
+}
+
 export function eventTime(timestamp: string): string {
-  return timestamp.replace('_', ' ').replaceAll('-', (match, offset) =>
-    offset > 10 ? ':' : match,
-  )
+  return `${eventDate(timestamp)} ${eventClock(timestamp)}`
 }
 
 export function categoryLabel(category: ClipCategory): string {

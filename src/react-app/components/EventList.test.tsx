@@ -11,6 +11,7 @@ const events: readonly TeslaCamEvent[] = [
     id: 'sentry-newer',
     category: 'sentry',
     timestamp: '2026-08-20_20-45-00',
+    metadata: { timestamp: '2026-08-20T20:45:15' },
     segments: [
       {
         timestamp: '2026-08-20_20-45-00',
@@ -104,10 +105,31 @@ describe('EventList', () => {
     const eventButtons = screen.getAllByRole('button', { name: /2026-08/ })
 
     expect(eventButtons).toHaveLength(2)
-    expect(eventButtons[0]).toHaveTextContent('2026-08-20 20:45:00')
+    expect(eventButtons[0]).toHaveTextContent('2026-08-20')
+    expect(eventButtons[0]).toHaveTextContent('20:45:00')
     expect(eventButtons[0]).toHaveTextContent('1/6 カメラ')
     expect(eventButtons[0]).toHaveTextContent('1分')
     expect(eventButtons[0]).toHaveTextContent('1セグメント')
+    expect(eventButtons[0]).not.toHaveTextContent('検知の15秒前から開始')
+  })
+
+  it('splits the selected Sentry timestamp and preserves its category as an atomic label', () => {
+    render(
+      <EventList
+        events={events}
+        selectedEventId="sentry-newer"
+        onSelectEvent={() => undefined}
+      />,
+    )
+
+    const selectedEvent = screen.getByRole('button', { name: /2026-08-20 20:45:00/ })
+    const category = screen.getByText('セントリー')
+
+    expect(selectedEvent).toHaveTextContent('2026-08-20')
+    expect(selectedEvent).toHaveTextContent('20:45:00')
+    expect(category).toHaveClass('event-category')
+    expect(category).toHaveAttribute('data-atomic', 'true')
+    expect(selectedEvent).toHaveTextContent('検知の15秒前から開始')
   })
 
   it('states camera availability positively and names missing directions only for partial events', () => {
@@ -135,8 +157,9 @@ describe('EventList', () => {
       />,
     )
 
-    expect(screen.getByText('2026-08-20 20:45:00')).toBeVisible()
-    expect(screen.queryByText('2026-08-19 08:30:00')).not.toBeInTheDocument()
+    expect(screen.getByText('2026-08-20')).toBeVisible()
+    expect(screen.getByText('20:45:00')).toBeVisible()
+    expect(screen.queryByText('2026-08-19')).not.toBeInTheDocument()
   })
 
   it('selects an event through the rendered event control', async () => {
