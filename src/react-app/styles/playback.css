@@ -1,3 +1,13 @@
+.playback-deck {
+  display: grid;
+  block-size: var(--playback-deck-height);
+  min-block-size: 0;
+  flex: 0 0 var(--playback-deck-height);
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  background: var(--color-rail);
+}
+
 .playback-controls {
   display: grid;
   min-block-size: 108px;
@@ -104,4 +114,88 @@
   font-size: var(--font-label);
   line-height: 1.4;
   white-space: pre-line;
+}
+
+.day-timeline {
+  --color-text-primary: var(--color-theater-text-primary);
+  --color-text-secondary: var(--color-theater-text-secondary);
+  --color-border: var(--color-theater-border);
+  position: relative;
+  display: grid;
+  min-inline-size: 0;
+  min-block-size: 0;
+  grid-template-rows: auto auto minmax(44px, 1fr);
+  overflow: hidden;
+  border-block-start: 1px solid var(--color-border);
+  background: var(--color-theater-rail);
+  color: var(--color-text-primary);
+}
+
+.day-timeline__header,
+.day-timeline__ruler {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--space-4);
+}
+
+.day-timeline__header {
+  padding-block-start: var(--space-1);
+}
+
+.day-timeline__header h2,
+.day-timeline__header p,
+.day-timeline__ruler {
+  font-size: var(--font-label);
+}
+
+.day-timeline__header p,
+.day-timeline__ruler {
+  color: var(--color-text-secondary);
+}
+
+.day-timeline__markers {
+  position: relative;
+  min-inline-size: 0;
+  min-block-size: 44px;
+  margin-inline: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.day-timeline__marker {
+  position: absolute;
+  inset-block-start: 0;
+  display: grid;
+  min-inline-size: 44px;
+  min-block-size: 44px;
+  place-content: center;
+  padding-inline: var(--space-1);
+  border-inline-start: 2px solid var(--color-accent-border);
+  background: var(--color-theater-rail);
+  color: var(--color-text-primary);
+  font-size: var(--font-label);
+  font-variant-numeric: tabular-nums;
+  transform: translateX(-50%);
+}
+
+.day-timeline__marker[data-category="sentry"] {
+  border-inline-start-color: var(--color-sentry);
+}
+
+.day-timeline__marker[aria-pressed="true"] {
+  background: var(--color-theater);
+}
+
+.day-timeline__marker-category {
+  white-space: nowrap;
+}
+
+.day-timeline__summary {
+  display: none;
+}
+
+.day-timeline__empty {
+  padding: var(--space-3) var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-small);
 }

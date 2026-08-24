@@ -22,7 +22,9 @@
   .category-action[data-active="true"],
   .event-card[data-selected="true"],
   .camera-switcher button[aria-pressed="true"],
-  .camera-tile[data-active="true"] {
+  .camera-tile[data-active="true"],
+  .theater-view-switch button[aria-pressed="true"],
+  .day-timeline__marker[aria-pressed="true"] {
     outline: 3px solid Highlight;
     outline-offset: -3px;
   }

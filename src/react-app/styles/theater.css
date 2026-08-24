@@ -66,7 +66,7 @@
 }
 
 .camera-switcher {
-  display: flex;
+  display: none;
   min-block-size: var(--theater-switcher-height);
   flex: 0 0 auto;
   overflow-x: auto;
@@ -115,6 +115,34 @@
   overflow: hidden;
   background: var(--color-border);
 }
+
+.camera-stage {
+  block-size: 100%;
+}
+
+.camera-stage[data-view-mode="spatial"] {
+  grid-template-areas:
+    ". front ."
+    "left-pillar vehicle right-pillar"
+    "left-repeater back right-repeater";
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(var(--theater-tile-min), 1fr));
+}
+
+.camera-stage[data-view-mode="spatial"] > img {
+  inline-size: 40%;
+  max-block-size: 80%;
+  grid-area: vehicle;
+  place-self: center;
+  object-fit: contain;
+}
+
+.camera-stage[data-view-mode="spatial"] .camera-tile[data-camera="front"] { grid-area: front; }
+.camera-stage[data-view-mode="spatial"] .camera-tile[data-camera="back"] { grid-area: back; }
+.camera-stage[data-view-mode="spatial"] .camera-tile[data-camera="left_pillar"] { grid-area: left-pillar; }
+.camera-stage[data-view-mode="spatial"] .camera-tile[data-camera="left_repeater"] { grid-area: left-repeater; }
+.camera-stage[data-view-mode="spatial"] .camera-tile[data-camera="right_pillar"] { grid-area: right-pillar; }
+.camera-stage[data-view-mode="spatial"] .camera-tile[data-camera="right_repeater"] { grid-area: right-repeater; }
 
 .camera-grid[data-expanded="true"] {
   grid-template-columns: 1fr;
@@ -221,10 +249,15 @@
   flex: 0 0 124px;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-template-rows: 1fr;
+  grid-template-areas: none;
 }
 
 .theater[data-representative="true"] .camera-stage > img {
   display: none;
+}
+
+.theater[data-representative="true"] .camera-tile {
+  grid-area: auto;
 }
 
 .theater[data-representative="true"] .camera-tile__label {

@@ -49,8 +49,10 @@
   --space-12: 48px;
   --space-16: 64px;
   --space-20: 80px;
-  --library-rail-width: 216px;
-  --event-list-width: 336px;
+  --event-navigator-width: 320px;
+  --event-inspector-width: 240px;
+  --camera-stage-spatial-min: 720px;
+  --playback-deck-height: 196px;
   --event-thumbnail-width: 88px;
   --event-card-min-height: 96px;
   --theater-tile-min: 120px;

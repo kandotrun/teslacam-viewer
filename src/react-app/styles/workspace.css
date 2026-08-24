@@ -71,8 +71,84 @@
 .library-workspace {
   display: grid;
   block-size: calc(100dvb - var(--app-header-height));
-  grid-template-columns: var(--library-rail-width) var(--event-list-width) minmax(0, 1fr);
+  grid-template-columns: var(--event-navigator-width) minmax(0, 1fr);
   overflow: hidden;
+}
+
+.event-navigator {
+  display: grid;
+  min-inline-size: 0;
+  min-block-size: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  border-inline-end: 1px solid var(--color-border);
+  background: var(--color-rail);
+}
+
+.theater-view-switch {
+  display: flex;
+  min-block-size: var(--control-min-size);
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: var(--space-1);
+  padding-inline: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.theater-view-switch button {
+  min-inline-size: 88px;
+  min-block-size: var(--control-min-size);
+  padding-inline: var(--space-3);
+  border-block-end: 2px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.theater-view-switch button[aria-pressed="true"] {
+  border-block-end-color: var(--color-accent-border);
+  color: var(--color-text-primary);
+}
+
+.theater-stage-row {
+  display: grid;
+  min-inline-size: 0;
+  min-block-size: 0;
+  flex: 1 1 auto;
+  grid-template-columns: minmax(0, 1fr) var(--event-inspector-width);
+  overflow: hidden;
+}
+
+.event-inspector {
+  min-inline-size: 0;
+  min-block-size: 0;
+  overflow: auto;
+  padding: var(--space-4);
+  border-inline-start: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.event-inspector dl,
+.event-inspector dl > div {
+  display: grid;
+}
+
+.event-inspector dl {
+  gap: var(--space-3);
+}
+
+.event-inspector dl > div {
+  gap: var(--space-1);
+}
+
+.event-inspector dt {
+  color: var(--color-text-muted);
+  font-size: var(--font-label);
+}
+
+.event-inspector dd {
+  overflow-wrap: anywhere;
+  font-size: var(--font-small);
 }
 
 .library-sidebar {

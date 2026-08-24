@@ -102,8 +102,10 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | `--space-12` | `48px` | 大きな間隔 |
 | `--space-16` | `64px` | ページ余白 |
 | `--space-20` | `80px` | welcomeの呼吸 |
-| `--library-rail-width` | `216px` | desktopライブラリレール幅 |
-| `--event-list-width` | `336px` | desktopイベント一覧幅 |
+| `--event-navigator-width` | `320px` | desktopイベントナビゲーション幅 |
+| `--event-inspector-width` | `240px` | desktopイベント詳細幅 |
+| `--camera-stage-spatial-min` | `720px` | 車両配置切り替えを許可するstage幅 |
+| `--playback-deck-height` | `196px` | desktop再生操作と日タイムラインの合計高 |
 | `--event-thumbnail-width` | `88px` | イベントカードのサムネイル幅 |
 | `--event-card-min-height` | `96px` | イベント行の最小高 |
 | `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
@@ -121,8 +123,9 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 ### Grid
 
 - 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力、得られる結果、ローカル処理の事実が一画面で読める。
-- 完成形のdesktopは216pxライブラリレール、336pxイベント一覧、残りを6カメラシアターへ割り当て、下端に全操作を収めた3段のトランスポートを固定する。
-- tabletはカテゴリを上部タブへ移し、イベント一覧を44px以上の開閉操作で折りたためる。mobileは一画面カメラを主とする。
+- 完成形のdesktopは320pxのEventNavigatorと残りのTheaterSessionに分け、TheaterSession内は可変CameraStageと240pxのEventInspectorを並べる。下端196pxはPlaybackControlsとDayTimelineが共有する。
+- CameraStageのcontent boxが720px以上のdesktopだけ車両配置を許可し、frontを上中央、pillarを車両左右、repeaterとbackを下段へ置く。同じcanonical orderの6動画要素を使い、中央の静的車両画像だけを`vehicle` areaへ置く。
+- 640–1024pxはEventNavigator、TheaterContext、3×2 CameraStage、PlaybackDeckを積層し、EventInspectorはstage領域から外す。639px以下は1画面カメラと6方向Camera switcherだけを局所横スクロールにする。
 - mobileでは6つのvideo要素を同期とObject URLのライフサイクル維持のためDOMへ残し、選択した一方向だけを表示する。6方向の切り替えはラベル付き横スクロール操作とする。
 - 検証幅は375px、768px、1280px。主コンテンツに横スクロールを発生させず、カメラ切り替えだけを局所的に横スクロール可能にする。
 - 外側余白は`clamp(var(--space-4), 5vw, var(--space-16))`を用いる。
@@ -179,6 +182,32 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - **Copy**: 正常時は`6/6 カメラ`と肯定形で示す。欠損時だけ`5/6 カメラ・右リピーターなし`のように方向を示す。`0台のカメラがありません`は使わない。
 - **Thumbnail**: 実際のposterがある場合だけ表示する。posterがない健康なイベントに空の画像枠やエラーアイコンを置かない。
 - **Layout**: cardを並べず、一覧面の中をdividerとselected barで区切る。
+- **Atomic labels**: 時刻とカテゴリを`minmax(0, 1fr) max-content`へ分け、カテゴリのLucideアイコンと`セントリー`、`保存済み`、`最近の走行`は縮小・改行させない。時刻だけを必要時に省略し、完全値はアクセシブル名とtitleで保持する。
+
+### Event navigator
+
+- **Structure**: source summary、category/date/query filters、Event listを一つの320px列へまとめる。
+- **Surface**: ライトトークンだけを使い、内部の一覧面が縦スクロールを所有する。
+- **Responsive**: 1024px以下では積層し、Event list disclosureで既存の開閉状態を維持する。
+
+### Event inspector
+
+- **Structure**: 選択イベントのカテゴリ、録画開始、検知、再生開始、長さ、セグメント、カメラ可用性、reasonだけを表示する。
+- **Surface**: desktopは240pxのライト面。1024px以下ではstage領域から外し、映像を優先する。
+- **Privacy**: 住所、座標、外部解析値を追加しない。
+
+### Vehicle spatial stage
+
+- **Structure**: `front`、`back`、`left-pillar`、`left-repeater`、`right-pillar`、`right-repeater`、`vehicle`のgrid areaを持つ。
+- **Persistence**: 見た目だけをCSS Gridで変え、canonical DOM order、6つのvideo、同期位置、Blob URLを維持する。映像は常に`object-fit: contain`とする。
+- **Surface**: CameraStageだけを暗いtheater tokenへ閉じ込め、glass、glow、gradient、shadowを使わない。
+
+### Playback deck and day timeline
+
+- **Structure**: desktop下端196pxにPlaybackControlsと選択日の24時間DayTimelineを連続配置する。rangeはイベント内位置、DayTimeline markerは別イベント選択を担当する。
+- **Surface**: PlaybackControlsはライト面、24時間のrulerとmarker領域は暗いevidence面にする。
+- **Semantics**: 録画開始時刻をローカル文字列のまま24時間位置へ変換し、Sentryは有効な検知時刻の15秒前から自動再生する。SavedClipsとRecentClipsは0秒から自動再生する。
+- **Responsive**: 768pxではrulerを短いイベント一覧へ縮退し、375pxでは前後イベント、選択時刻、同日件数を表示して新しい横スクロールを作らない。
 
 ### Theater context
 
@@ -253,6 +282,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - 全操作をキーボードで到達可能にし、focus-visibleを背景から明確に識別できる二重ringで示す。
 - タップ領域は44×44px以上。色に加えて文言とアイコンでカテゴリ、警告、状態を伝える。
 - 200%拡大、375px幅、日本語の長いラベル、reduced motion、Windows high contrastを考慮する。
+- forced colorsでは選択中の表示切り替えと日マーカーを3px Highlight outlineで示す。reduced motionでは全transitionを0msにし、stage、カメラ位置、timeline位置をアニメーションしない。
 - 走査進捗と再生エラーは後続実装でlive regionへ通知する。
 
 ### Accepted Debt

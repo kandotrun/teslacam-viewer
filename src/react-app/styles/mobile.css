@@ -157,15 +157,20 @@
     flex: 0 0 auto;
   }
 
+  .camera-switcher {
+    display: flex;
+  }
+
   .camera-grid,
-  .camera-grid[data-expanded="true"] {
+  .camera-grid[data-expanded="true"],
+  .camera-stage[data-view-mode="spatial"] {
     min-block-size: 46dvb;
     flex: 0 0 46dvb;
     grid-template-columns: 1fr;
     grid-template-rows: 1fr;
   }
 
-  .camera-grid .camera-tile:not([data-active="true"]) {
+  .camera-stage .camera-tile:not([data-active="true"]) {
     display: none;
   }
 
@@ -223,6 +228,25 @@
 
   .playback-controls__rate select {
     min-inline-size: 66px;
+  }
+
+  .day-timeline {
+    min-block-size: 92px;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .day-timeline__markers {
+    display: none;
+  }
+
+  .day-timeline__summary {
+    grid-template-columns: 1fr;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .day-timeline__summary p:first-child,
+  .day-timeline__summary p:last-child {
+    display: none;
   }
 }
 
