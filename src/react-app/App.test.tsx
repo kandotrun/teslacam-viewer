@@ -62,7 +62,7 @@ function firstCameraVideo(): HTMLVideoElement {
 afterEach(() => vi.restoreAllMocks())
 
 describe('welcome view', () => {
-  it('creates fresh paused playback for list and previous-next sentry selections without rewinding a reselected event', async () => {
+  it('autoplays fresh playback for list and previous-next sentry selections without rewinding a reselected event', async () => {
     const user = userEvent.setup()
     vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:camera')
     vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
@@ -74,7 +74,7 @@ describe('welcome view', () => {
     const firstVideo = firstCameraVideo()
     fireEvent.canPlay(firstVideo)
     expect(screen.getByLabelText('再生位置')).toHaveValue('65')
-    expect(screen.getByRole('button', { name: '再生' })).toBeVisible()
+    await waitFor(() => expect(screen.getByRole('button', { name: '一時停止' })).toBeVisible())
     expect(firstVideo.currentTime).toBe(5)
 
     firstVideo.currentTime = 9

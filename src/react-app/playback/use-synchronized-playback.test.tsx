@@ -62,7 +62,7 @@ describe('useSynchronizedPlayback', () => {
     expect(front.currentTime).toBe(9)
   })
 
-  it('starts every ready stream before settling and isolates one rejected play call', async () => {
+  it('automatically starts every ready stream and isolates one rejected play call', async () => {
     const rejected = video(Promise.reject(new DOMException('', 'NotAllowedError')))
     const playing = video()
     const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(2)))
@@ -73,7 +73,7 @@ describe('useSynchronizedPlayback', () => {
       hook.result.current.handleVideoEvent('front', rejected, 'ready')
       hook.result.current.handleVideoEvent('back', playing, 'ready')
     })
-    await act(async () => hook.result.current.play())
+    await act(async () => Promise.resolve())
 
     expect(rejected.play).toHaveBeenCalledTimes(1)
     expect(playing.play).toHaveBeenCalledTimes(1)
@@ -117,7 +117,7 @@ describe('useSynchronizedPlayback', () => {
       hook.result.current.unregisterVideo('front', stale)
       hook.result.current.handleVideoEvent('front', replacement, 'ready')
     })
-    await act(async () => hook.result.current.play())
+    await act(async () => Promise.resolve())
 
     expect(stale.play).not.toHaveBeenCalled()
     expect(replacement.play).toHaveBeenCalledTimes(1)

@@ -21,7 +21,7 @@
 - Keep `object-fit: contain` on every TeslaCam video.
 - Keep the same six camera video elements mounted across spatial, grid, and expanded views.
 - A repeated ready notification for the same media lifecycle must not reset `currentTime`.
-- Sentry selection starts paused at `max(0, detectionSeconds - 15)`; SavedClips and RecentClips start paused at zero.
+- Event selection creates muted autoplay intent: Sentry begins at `max(0, detectionSeconds - 15)` and SavedClips and RecentClips at zero once each stream is ready. Explicit pause cancels pending intent; repeated ready events neither replay nor rewind a stream.
 - Validate 1280×1000, 768×1024, and 375×844 without page-level horizontal overflow.
 - Use the existing Lucide icon dependency and the existing token system; do not add a UI framework.
 - Generate the neutral vehicle asset with ImageGen; do not draw it with CSS, inline SVG, emoji, or text symbols.
@@ -206,7 +206,7 @@ git commit -m "セントリー検知時刻の計算を正確にする"
 
 ---
 
-### Task 2: Paused playback at the Sentry pre-roll position
+### Task 2: Autoplay playback at the Sentry pre-roll position
 
 **Files:**
 
@@ -220,7 +220,7 @@ git commit -m "セントリー検知時刻の計算を正確にする"
 **Interfaces:**
 
 - Consumes: `sentryInitialElapsedSeconds(event)` from Task 1 and `locatePlaybackTime(event, elapsedSeconds)`.
-- Produces: `createPlaybackRuntime(elapsedSeconds?: number, segmentIndex?: number): PlaybackRuntime` and `useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera?: CameraId | null, initialElapsedSeconds?: number): SynchronizedPlayback`.
+- Produces: `createPlaybackRuntime(elapsedSeconds?: number, segmentIndex?: number, intended?: boolean): PlaybackRuntime` and `useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera?: CameraId | null, initialElapsedSeconds?: number): SynchronizedPlayback`.
 
 - [ ] **Step 1: Add failing non-zero initialization tests**
 
@@ -259,7 +259,7 @@ export function useSynchronizedPlayback(
 ): SynchronizedPlayback;
 ```
 
-Compute one clamped initial location with `locatePlaybackTime`. Use lazy `useState` initialization for elapsed seconds and `PlaybackRuntime`. Keep `intended` false and preserve the existing `wasReady` guard.
+Compute one clamped initial location with `locatePlaybackTime`. Use lazy `useState` initialization for elapsed seconds and `PlaybackRuntime`, with autoplay intent set before any media is ready. Preserve the existing `wasReady` guard so repeated ready events neither rewind nor replay.
 
 - [ ] **Step 4: Connect Theater to the pre-roll helper without an effect**
 
@@ -279,20 +279,20 @@ Keep `<TheaterSession key={event.id}>` as the event reset boundary at this stage
 
 ```ts
 expect(screen.getByLabelText("再生位置")).toHaveValue("65");
-expect(screen.getByRole("button", { name: "再生" })).toBeVisible();
 fireEvent.canPlay(screen.getAllByTestId("camera-video")[0]);
+expect(screen.getByRole("button", { name: "一時停止" })).toBeVisible();
 expect(screen.getAllByTestId("camera-video")[0]).toHaveProperty(
   "currentTime",
   5,
 );
 ```
 
-Add list selection and previous/next selection cases that each create a fresh paused Theater at the selected event’s own initial position. Re-selecting the same current event must not remount or seek.
+Add list selection and previous/next selection cases that each create a fresh Theater with autoplay intent at the selected event’s own initial position. Re-selecting the same current event must not remount or seek.
 
 - [ ] **Step 6: Run the focused playback and Theater suite**
 
 ```bash
-npm test -- --run src/react-app/event-detection.test.ts src/react-app/playback/use-synchronized-playback.test.tsx src/react-app/playback/use-synchronized-playback-transitions.test.tsx src/react-app/components/Theater.test.tsx src/react-app/App.test.tsx
+npm test -- --run src/react-app/event-detection.test.ts src/react-app/playback/use-synchronized-playback.test.tsx src/react-app/playback/use-synchronized-playback-autoplay.test.tsx src/react-app/playback/use-synchronized-playback-transitions.test.tsx src/react-app/components/Theater.test.tsx src/react-app/App.test.tsx
 npm run typecheck
 npm run lint
 ```
@@ -302,8 +302,8 @@ Expected: PASS.
 - [ ] **Step 7: Commit playback initialization**
 
 ```bash
-git add src/react-app/playback/playback-runtime.ts src/react-app/playback/use-synchronized-playback.ts src/react-app/playback/use-synchronized-playback.test.tsx src/react-app/playback/use-synchronized-playback-transitions.test.tsx src/react-app/components/Theater.tsx src/react-app/components/Theater.test.tsx src/react-app/App.test.tsx
-git commit -m "セントリーを検知15秒前から開く"
+git add src/react-app/playback/playback-runtime.ts src/react-app/playback/use-synchronized-playback.ts src/react-app/playback/use-synchronized-playback-autoplay.test.tsx src/react-app/components/Theater.test.tsx
+git commit -m "イベント選択時に自動再生する"
 ```
 
 ---
@@ -1012,7 +1012,7 @@ Confirm the intended GitHub repository is `kandotrun/teslacam-viewer`, the Cloud
 
 - [ ] **Step 2: Run real SSD QA in the user’s browser**
 
-Open the verified local preview, select `/Volumes/TESLADRIVE/TeslaCam`, and inspect one RecentClips, SavedClips, and SentryClips event. Confirm the selected Sentry starts paused at the valid detection pre-roll, all camera edges remain visible, spatial/grid mode preserves playback, the event inspector shows only allowed facts, the timeline selects the correct event, and the event row keeps `セントリー` on one line.
+Open the verified local preview, select `/Volumes/TESLADRIVE/TeslaCam`, and inspect one RecentClips, SavedClips, and SentryClips event. Confirm each selected event begins muted playback once ready, with Sentry at the valid detection pre-roll and SavedClips and RecentClips at zero; confirm all camera edges remain visible, spatial/grid mode preserves playback, the event inspector shows only allowed facts, the timeline selects the correct event, and the event row keeps `セントリー` on one line.
 
 Do not save screenshots containing real frames, filenames, location metadata, or volume paths. Inspect the browser Network panel and confirm no request URL or body contains TeslaCam media, Blob data, local filenames, timestamps, locations, or `/Volumes` paths.
 

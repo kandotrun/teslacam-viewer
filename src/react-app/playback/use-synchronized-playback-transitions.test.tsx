@@ -68,7 +68,7 @@ describe('useSynchronizedPlayback transitions', () => {
       hook.result.current.registerVideo('front', front)
       hook.result.current.handleVideoEvent('front', front, 'ready')
     })
-    await act(async () => hook.result.current.play())
+    await act(async () => Promise.resolve())
     act(() => {
       hook.result.current.handleVideoEvent('front', front, 'ended')
       hook.result.current.handleVideoEvent('front', front, 'loading')

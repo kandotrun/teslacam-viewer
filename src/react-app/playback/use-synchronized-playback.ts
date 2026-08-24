@@ -35,7 +35,7 @@ export function useSynchronizedPlayback(
   const [rate, setRateState] = useState(1)
   const [message, setMessage] = useState<string | null>(null)
   const [runtime] = useState<PlaybackRuntime>(() => (
-    createPlaybackRuntime(initialSeconds, initialLocation.segmentIndex)
+    createPlaybackRuntime(initialSeconds, initialLocation.segmentIndex, true)
   ))
   const updatePlaybackState = useCallback((resolution: PlaybackResolution): void => {
     setPlaying(resolution === 'playing')

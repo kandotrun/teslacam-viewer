@@ -67,14 +67,14 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('Theater', () => {
-  it('opens sentry playback paused at its pre-roll location', () => {
+  it('autoplays sentry playback at its pre-roll location once ready', async () => {
     render(<Theater event={sentryEventWithCameras('sentry-preroll')} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
 
     expect(screen.getByLabelText('再生位置')).toHaveValue('65')
-    expect(screen.getByRole('button', { name: '再生' })).toBeVisible()
     const firstVideo = firstCameraVideo()
     fireEvent.canPlay(firstVideo)
 
+    await waitFor(() => expect(screen.getByRole('button', { name: '一時停止' })).toBeVisible())
     expect(firstVideo.currentTime).toBe(5)
   })
 

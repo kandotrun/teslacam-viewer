@@ -20,7 +20,7 @@ export type PlaybackRuntime = {
   attemptId: number
 }
 
-export function createPlaybackRuntime(elapsedSeconds = 0, segmentIndex = 0): PlaybackRuntime {
+export function createPlaybackRuntime(elapsedSeconds = 0, segmentIndex = 0, intended = false): PlaybackRuntime {
   return {
     registrations: new Map(),
     lifecycles: new Map(),
@@ -32,7 +32,7 @@ export function createPlaybackRuntime(elapsedSeconds = 0, segmentIndex = 0): Pla
     elapsedSeconds,
     rate: 1,
     segmentIndex,
-    intended: false,
+    intended,
     intentGeneration: 0,
     sourceGeneration: 0,
     attemptId: 0,
