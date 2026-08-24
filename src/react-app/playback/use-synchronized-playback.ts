@@ -120,8 +120,10 @@ export function useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera: C
         runtime.lifecycles.set(cameraId, 'ready')
         runtime.readyCameras.add(cameraId)
         electSource()
-        const location = locatePlaybackTime(event, runtime.elapsedSeconds)
-        setMediaTime(element, location.offsetSeconds)
+        if (!wasReady) {
+          const location = locatePlaybackTime(event, runtime.elapsedSeconds)
+          setMediaTime(element, location.offsetSeconds)
+        }
         element.playbackRate = runtime.rate
         if (runtime.intended && (!wasReady || (!runtime.attempts.has(cameraId) && !runtime.successfulCameras.has(cameraId)))) {
           void coordinator.run([cameraId])

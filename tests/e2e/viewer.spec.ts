@@ -200,6 +200,32 @@ test('captures welcome and loaded states at the required viewports', async ({ br
   }
 })
 
+test('shows every camera frame without cropping at the required viewports', async ({ browser }) => {
+  const media = [...await readFile(fixturePath)]
+  for (const viewport of viewports) {
+    const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } })
+    await installPicker(context, media, 'full')
+    const page = await context.newPage()
+    await page.goto('/')
+    await selectFolder(page)
+    await page.getByRole('button', { name: /2026-08-20 20:45:00/ }).click()
+    await expect(page.locator('.camera-tile[data-status="ready"]')).toHaveCount(6)
+
+    const frames = await page.locator('.camera-tile video').evaluateAll((videos) => videos.map((video) => {
+      if (!(video instanceof HTMLVideoElement)) throw new Error('camera frame is not a video')
+      return {
+        fit: getComputedStyle(video).objectFit,
+        mediaWidth: video.videoWidth,
+        mediaHeight: video.videoHeight,
+      }
+    }))
+
+    expect(frames.every((frame) => frame.fit === 'contain')).toBe(true)
+    expect(frames.every((frame) => frame.mediaWidth > 0 && frame.mediaHeight > 0)).toBe(true)
+    await context.close()
+  }
+})
+
 test('drives categories, playback, camera and event keyboard controls without an HTTP leak', async ({ context, page }) => {
   const media = [...await readFile(fixturePath)]
   await installPicker(context, media, 'full')

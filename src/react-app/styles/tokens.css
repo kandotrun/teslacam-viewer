@@ -50,6 +50,7 @@
   --theater-event-list-max: 320px;
   --theater-representative-max: 40dvb;
   --theater-mobile-expanded-min: 60dvb;
+  --theater-video-fit: contain;
   --app-header-height: 56px;
   --transport-mobile-max: 140px;
   --radius-control: 6px;

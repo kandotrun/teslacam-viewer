@@ -106,6 +106,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | `--theater-event-list-max` | `320px` | tablet event listの最大高 |
 | `--theater-representative-max` | `40dvb` | 代表映像の最大表示高 |
 | `--theater-mobile-expanded-min` | `60dvb` | mobile expanded映像の最小高 |
+| `--theater-video-fit` | `contain` | 録画範囲を切らずに表示 |
 | `--app-header-height` | `56px` | desktop/tabletの固定ヘッダー高 |
 | `--transport-mobile-max` | `140px` | mobile transportの最大高 |
 
@@ -186,7 +187,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - **Terminal fallback**: 代表映像を併記するときはカメラ名とterminal状態を80pxタイルの左右へ分け、互いに重ねず、6状態・代表映像・transportを別領域に保つ。
 - **Accessibility**: 各タイルは日本語カメラ名と拡大状態を持ち、transportは可視ラベル、44px操作、range label、キーボードshortcutsを備える。
 - **Motion**: 状態色とborderの`--motion-fast`のみ。expanded切替で位置やサイズをアニメーションしない。
-- **Layout**: desktopは2×3、tablet/mobileは縦方向へ再配置し、375pxで横overflowを生じさせない。
+- **Layout**: desktopは2×3、tablet/mobileは縦方向へ再配置し、375pxで横overflowを生じさせない。各映像は録画された全範囲をクロップせず、シアター面の余白を許容して表示する。
 - **Persistence**: transportはdesktopでシアター下端にsticky、tablet/mobileではviewport下端に固定し、映像をスクロール中も操作可能にする。
 
 ### Camera switcher

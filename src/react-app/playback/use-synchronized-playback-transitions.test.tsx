@@ -26,6 +26,20 @@ function video(playResult: Promise<void> = Promise.resolve()): HTMLVideoElement 
 }
 
 describe('useSynchronizedPlayback transitions', () => {
+  it('keeps a ready stream at its current position when canplay repeats', () => {
+    const front = video()
+    const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(1)))
+
+    act(() => {
+      hook.result.current.registerVideo('front', front)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+      front.currentTime = 1.25
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+    })
+
+    expect(front.currentTime).toBe(1.25)
+  })
+
   it('ignores stale play settlement after pause', async () => {
     let settle: () => void = () => undefined
     const pending = new Promise<void>((resolve) => {
