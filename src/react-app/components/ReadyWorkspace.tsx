@@ -60,8 +60,11 @@ export function ReadyWorkspace({
             event={selectedEvent}
             hasNext={selectedIndex >= 0 && selectedIndex < matchingEvents.length - 1}
             hasPrevious={selectedIndex > 0}
+            selectedEventId={state.selectedEventId}
             sourceName={state.folderName}
             theaterRef={theaterRef}
+            timelineDateKey={state.filters.dateKey}
+            timelineEvents={matchingEvents}
             onNext={() => {
               const nextEvent = matchingEvents.at(selectedIndex + 1)
               if (nextEvent !== undefined) {
@@ -74,6 +77,7 @@ export function ReadyWorkspace({
                 dispatch({ kind: 'event-selected', eventId: previousEvent.id })
               }
             }}
+            onSelectEvent={onSelectEvent}
           />
         )}
       </main>

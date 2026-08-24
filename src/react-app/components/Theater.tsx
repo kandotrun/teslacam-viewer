@@ -7,6 +7,8 @@ import { ObjectUrlRegistry } from '../playback/object-url-registry'
 import { useSynchronizedPlayback } from '../playback/use-synchronized-playback'
 import { useTheaterShortcuts } from '../use-theater-shortcuts'
 import { CameraTile, type CameraStatus } from './CameraTile'
+import { DayTimeline } from './DayTimeline'
+import { PlaybackDeck } from './PlaybackDeck'
 import { PlaybackControls } from './PlaybackControls'
 import { RepresentativeVideo } from './RepresentativeVideo'
 import { TheaterContext } from './TheaterContext'
@@ -19,11 +21,31 @@ export type TheaterProps = {
   readonly hasNext: boolean
   readonly sourceName?: string
   readonly theaterRef?: RefObject<HTMLElement | null>
+  readonly timelineEvents?: readonly TeslaCamEvent[]
+  readonly timelineDateKey?: string | null
+  readonly selectedEventId?: string | null
+  readonly onSelectEvent?: (eventId: string) => void
 }
 
 const terminalStatuses: readonly CameraStatus[] = ['missing', 'unavailable', 'corrupt', 'unsupported']
 
-function TheaterSession({ event, onPrevious, onNext, hasPrevious, hasNext, sourceName = 'TeslaCam', theaterRef }: TheaterProps) {
+function ignoreEventSelection(_eventId: string): void {
+  return undefined
+}
+
+function TheaterSession({
+  event,
+  onPrevious,
+  onNext,
+  hasPrevious,
+  hasNext,
+  sourceName = 'TeslaCam',
+  theaterRef,
+  timelineEvents = [event],
+  timelineDateKey = null,
+  selectedEventId = event.id,
+  onSelectEvent = ignoreEventSelection,
+}: TheaterProps) {
   const registry = useMemo(() => new ObjectUrlRegistry(), [])
   const [expandedCamera, setExpandedCamera] = useState<CameraId | null>(null)
   const [activeCamera, setActiveCamera] = useState<CameraId>('front')
@@ -93,13 +115,26 @@ function TheaterSession({ event, onPrevious, onNext, hasPrevious, hasNext, sourc
         ))}
       </div>
       {representativeMode && <RepresentativeVideo event={event} registry={registry} />}
-      <PlaybackControls
-        detectionSeconds={markerSeconds}
-        hasNext={hasNext}
-        hasPrevious={hasPrevious}
-        onNext={onNext}
-        onPrevious={onPrevious}
-        playback={playback}
+      <PlaybackDeck
+        controls={(
+          <PlaybackControls
+            detectionSeconds={markerSeconds}
+            hasNext={hasNext}
+            hasPrevious={hasPrevious}
+            onNext={onNext}
+            onPrevious={onPrevious}
+            playback={playback}
+          />
+        )}
+        timeline={(
+          <DayTimeline
+            events={timelineEvents}
+            filterDateKey={timelineDateKey}
+            selectedEvent={event}
+            selectedEventId={selectedEventId}
+            onSelectEvent={onSelectEvent}
+          />
+        )}
       />
     </section>
   )
