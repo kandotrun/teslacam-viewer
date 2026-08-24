@@ -31,6 +31,14 @@ describe('health route', () => {
 })
 
 describe('API boundary', () => {
+  it('returns a structured JSON response for the exact API root', async () => {
+    const response = await app.request('/api')
+
+    expect(response.status).toBe(404)
+    expect(response.headers.get('Content-Type')).toContain('application/json')
+    await expect(response.json()).resolves.toEqual({ error: 'not_found' })
+  })
+
   it('returns a structured JSON response for an unknown API route', async () => {
     const response = await app.request('/api/missing')
 

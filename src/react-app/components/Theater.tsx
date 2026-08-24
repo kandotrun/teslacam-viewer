@@ -6,11 +6,9 @@ import { cameraLabels } from '../event-summary'
 import { ObjectUrlRegistry } from '../playback/object-url-registry'
 import { useSynchronizedPlayback } from '../playback/use-synchronized-playback'
 import { useTheaterShortcuts } from '../use-theater-shortcuts'
-import { CameraStage } from './CameraStage'
 import { CameraTile, type CameraStatus } from './CameraTile'
 import { DayTimeline } from './DayTimeline'
 import { EventInspector } from './EventInspector'
-import { PlaybackDeck } from './PlaybackDeck'
 import { PlaybackControls } from './PlaybackControls'
 import { RepresentativeVideo } from './RepresentativeVideo'
 import { TheaterContext } from './TheaterContext'
@@ -127,33 +125,30 @@ function TheaterSession({
         ))}
       </div>
       <div className="theater-stage-row">
-        <CameraStage mode={viewMode} expanded={expandedCamera !== null}>
+        <div className="camera-grid camera-stage" data-expanded={expandedCamera !== null} data-view-mode={viewMode}>
+          {viewMode === 'spatial' && <img alt="" height="240" src="/vehicle-top.png" width="120" />}
           {cameraTiles}
-        </CameraStage>
+        </div>
         <EventInspector event={event} />
       </div>
       {representativeMode && <RepresentativeVideo event={event} registry={registry} />}
-      <PlaybackDeck
-        controls={(
-          <PlaybackControls
-            detectionSeconds={markerSeconds}
-            hasNext={hasNext}
-            hasPrevious={hasPrevious}
-            onNext={onNext}
-            onPrevious={onPrevious}
-            playback={playback}
-          />
-        )}
-        timeline={(
-          <DayTimeline
-            events={timelineEvents}
-            filterDateKey={timelineDateKey}
-            selectedEvent={event}
-            selectedEventId={selectedEventId}
-            onSelectEvent={onSelectEvent}
-          />
-        )}
-      />
+      <div className="playback-deck">
+        <PlaybackControls
+          detectionSeconds={markerSeconds}
+          hasNext={hasNext}
+          hasPrevious={hasPrevious}
+          onNext={onNext}
+          onPrevious={onPrevious}
+          playback={playback}
+        />
+        <DayTimeline
+          events={timelineEvents}
+          filterDateKey={timelineDateKey}
+          selectedEvent={event}
+          selectedEventId={selectedEventId}
+          onSelectEvent={onSelectEvent}
+        />
+      </div>
     </section>
   )
 }
