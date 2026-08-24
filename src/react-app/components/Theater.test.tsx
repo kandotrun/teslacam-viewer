@@ -1,9 +1,11 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useState } from 'react'
 import { vi } from 'vitest'
 
 import { cameraIds, type CameraId, type LocalFileRef, type TeslaCamEvent } from '../../teslacam/types'
-import { Theater } from './Theater'
+import { Theater as TheaterComponent, type TheaterProps } from './Theater'
+import type { TheaterViewMode } from './TheaterViewSwitch'
 
 const labels = ['フロント', 'リア', '左ピラー', '左リピーター', '右ピラー', '右リピーター'] as const
 
@@ -11,16 +13,23 @@ function fileRef(name: string, getFile = async () => new File(['clip'], name, { 
   return { name, relativePath: `SavedClips/event/${name}`, size: 4, type: 'video/mp4', getFile }
 }
 
-function eventWithCameras(cameras: readonly CameraId[] = cameraIds): TeslaCamEvent {
+function eventWithCameras(cameras: readonly CameraId[] = cameraIds, id = 'event'): TeslaCamEvent {
   const refs: Partial<Record<CameraId, LocalFileRef>> = {}
   for (const cameraId of cameras) refs[cameraId] = fileRef(`${cameraId}.mp4`)
   return {
-    id: 'event',
+    id,
     category: 'saved',
     timestamp: '2026-08-21_12-00-00',
     metadata: { timestamp: '2026-08-21T12:00:30' },
     segments: [{ timestamp: '2026-08-21_12-00-00', cameras: refs }],
   }
+}
+
+type TheaterHarnessProps = Omit<TheaterProps, 'viewMode' | 'onViewMode'>
+
+function Theater(props: TheaterHarnessProps) {
+  const [viewMode, setViewMode] = useState<TheaterViewMode>('spatial')
+  return <TheaterComponent {...props} viewMode={viewMode} onViewMode={setViewMode} />
 }
 
 function firstCameraVideo(): HTMLVideoElement {
@@ -70,16 +79,7 @@ describe('Theater', () => {
   })
 
   it('keeps the selected evidence context next to the playback surface', () => {
-    render(
-      <Theater
-        event={eventWithCameras()}
-        hasNext
-        hasPrevious
-        sourceName="TeslaCam"
-        onNext={() => undefined}
-        onPrevious={() => undefined}
-      />,
-    )
+    render(<Theater event={eventWithCameras()} hasNext hasPrevious sourceName="TeslaCam" onNext={() => undefined} onPrevious={() => undefined} />)
 
     const context = screen.getByLabelText('再生中のイベント')
 
@@ -88,6 +88,42 @@ describe('Theater', () => {
     expect(context).toHaveTextContent('保存済み')
     expect(context).toHaveTextContent('6/6 カメラ')
     expect(context).toHaveTextContent('1分')
+    const stage = document.querySelector('[data-view-mode="spatial"]')
+    expect(stage?.parentElement).toContainElement(screen.getByLabelText('イベント詳細'))
+  })
+
+  it('switches the same six camera nodes between spatial and grid modes without reacquiring media', async () => {
+    const user = userEvent.setup()
+    render(<Theater event={eventWithCameras()} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(6))
+    const videos = screen.getAllByTestId('camera-video')
+
+    expect(screen.getByRole('button', { name: '車両配置' })).toHaveAttribute('aria-pressed', 'true')
+    await user.click(screen.getByRole('button', { name: '6分割' }))
+    expect(screen.getAllByTestId('camera-video')).toEqual(videos)
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(6)
+    expect(URL.revokeObjectURL).not.toHaveBeenCalled()
+    await user.click(screen.getByRole('button', { name: '車両配置' }))
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(6)
+    await user.click(screen.getByRole('button', { name: '6分割' }))
+    await user.click(screen.getByRole('button', { name: '左ピラーカメラを拡大' }))
+    expect(screen.getByRole('button', { name: '車両配置' })).toBeDisabled()
+    expect(screen.getAllByTestId('camera-video')).toHaveLength(6)
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(screen.getByRole('button', { name: '6分割' })).toHaveAttribute('aria-pressed', 'true')
+  })
+
+  it('preserves the selected view mode while an event-keyed session reacquires media', async () => {
+    const user = userEvent.setup()
+    const view = render(<Theater event={eventWithCameras(cameraIds, 'first')} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(6))
+    await user.click(screen.getByRole('button', { name: '6分割' }))
+
+    view.rerender(<Theater event={eventWithCameras(cameraIds, 'second')} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+
+    expect(screen.getByRole('button', { name: '6分割' })).toHaveAttribute('aria-pressed', 'true')
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(12))
+    expect(URL.revokeObjectURL).toHaveBeenCalledTimes(6)
   })
 
   it('offers a labeled six-camera switcher while keeping every video mounted', async () => {
@@ -111,6 +147,7 @@ describe('Theater', () => {
 
     const tiles = screen.getAllByRole('button', { name: /カメラを拡大/ })
     expect(tiles.map((tile) => tile.getAttribute('aria-label'))).toEqual(labels.map((label) => `${label}カメラを拡大`))
+    expect(tiles.map((tile) => tile.getAttribute('data-camera'))).toEqual(cameraIds)
     const leftPillar = tiles.at(2)
     if (leftPillar === undefined) throw new Error('left pillar tile is missing')
     await user.click(leftPillar)
@@ -210,6 +247,7 @@ describe('Theater', () => {
 
     expect(screen.getAllByText('映像がありません')).toHaveLength(5)
     await waitFor(() => expect(screen.getByText('映像を読み込めません')).toBeVisible())
+    expect(screen.queryByRole('group', { name: '表示レイアウト' })).not.toBeInTheDocument()
     expect(screen.getByText('代表映像（単独再生）')).toBeVisible()
     expect(screen.getByLabelText('代表映像')).toHaveTextContent('6カメラ同期映像ではありません。')
   })

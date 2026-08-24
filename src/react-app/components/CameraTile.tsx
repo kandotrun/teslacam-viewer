@@ -135,6 +135,7 @@ export function CameraTile({
       aria-label={`${label}カメラを${expanded ? 'グリッドへ戻す' : '拡大'}`}
       aria-pressed={expanded}
       className="camera-tile"
+      data-camera={cameraId}
       data-expanded={expanded}
       data-active={active}
       data-status={status}

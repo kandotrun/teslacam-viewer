@@ -6,12 +6,15 @@ import { cameraLabels } from '../event-summary'
 import { ObjectUrlRegistry } from '../playback/object-url-registry'
 import { useSynchronizedPlayback } from '../playback/use-synchronized-playback'
 import { useTheaterShortcuts } from '../use-theater-shortcuts'
+import { CameraStage } from './CameraStage'
 import { CameraTile, type CameraStatus } from './CameraTile'
 import { DayTimeline } from './DayTimeline'
+import { EventInspector } from './EventInspector'
 import { PlaybackDeck } from './PlaybackDeck'
 import { PlaybackControls } from './PlaybackControls'
 import { RepresentativeVideo } from './RepresentativeVideo'
 import { TheaterContext } from './TheaterContext'
+import { TheaterViewSwitch, type TheaterViewMode } from './TheaterViewSwitch'
 
 export type TheaterProps = {
   readonly event: TeslaCamEvent
@@ -25,6 +28,8 @@ export type TheaterProps = {
   readonly timelineDateKey?: string | null
   readonly selectedEventId?: string | null
   readonly onSelectEvent?: (eventId: string) => void
+  readonly viewMode: TheaterViewMode
+  readonly onViewMode: (mode: TheaterViewMode) => void
 }
 
 const terminalStatuses: readonly CameraStatus[] = ['missing', 'unavailable', 'corrupt', 'unsupported']
@@ -45,6 +50,8 @@ function TheaterSession({
   timelineDateKey = null,
   selectedEventId = event.id,
   onSelectEvent = ignoreEventSelection,
+  viewMode,
+  onViewMode,
 }: TheaterProps) {
   const registry = useMemo(() => new ObjectUrlRegistry(), [])
   const [expandedCamera, setExpandedCamera] = useState<CameraId | null>(null)
@@ -73,10 +80,36 @@ function TheaterSession({
   const allTerminal = cameraIds.every((cameraId) => terminalStatuses.includes(statuses[cameraId] ?? 'loading'))
   const representativeMode = allTerminal && event.representativeFile !== undefined
   const markerSeconds = representativeMode ? null : detectedSeconds
+  const cameraTiles = cameraIds.map((cameraId) => (
+    <CameraTile
+      cameraId={cameraId}
+      active={activeCamera === cameraId}
+      expanded={expandedCamera === cameraId}
+      fileRef={segment?.cameras[cameraId]}
+      key={cameraId}
+      label={cameraLabels[cameraId]}
+      onStatus={updateStatus}
+      onPlaybackEvent={playback.handleVideoEvent}
+      onToggle={() => {
+        setActiveCamera(cameraId)
+        setExpandedCamera((current) => current === cameraId ? null : cameraId)
+      }}
+      registerVideo={playback.registerVideo}
+      registry={registry}
+      unregisterVideo={playback.unregisterVideo}
+    />
+  ))
 
   return (
     <section className="theater" aria-label="6カメラシアター" data-representative={representativeMode} ref={theaterRef}>
       <TheaterContext event={event} sourceName={sourceName} />
+      {!representativeMode && (
+        <TheaterViewSwitch
+          disabled={expandedCamera !== null}
+          mode={viewMode}
+          onChange={onViewMode}
+        />
+      )}
       <div className="camera-switcher" role="group" aria-label="表示するカメラ">
         {cameraIds.map((cameraId) => (
           <button
@@ -93,26 +126,11 @@ function TheaterSession({
           </button>
         ))}
       </div>
-      <div className="camera-grid" data-expanded={expandedCamera !== null}>
-        {cameraIds.map((cameraId) => (
-          <CameraTile
-            cameraId={cameraId}
-            active={activeCamera === cameraId}
-            expanded={expandedCamera === cameraId}
-            fileRef={segment?.cameras[cameraId]}
-            key={cameraId}
-            label={cameraLabels[cameraId]}
-            onStatus={updateStatus}
-            onPlaybackEvent={playback.handleVideoEvent}
-            onToggle={() => {
-              setActiveCamera(cameraId)
-              setExpandedCamera((current) => current === cameraId ? null : cameraId)
-            }}
-            registerVideo={playback.registerVideo}
-            registry={registry}
-            unregisterVideo={playback.unregisterVideo}
-          />
-        ))}
+      <div className="theater-stage-row">
+        <CameraStage mode={viewMode} expanded={expandedCamera !== null}>
+          {cameraTiles}
+        </CameraStage>
+        <EventInspector event={event} />
       </div>
       {representativeMode && <RepresentativeVideo event={event} registry={registry} />}
       <PlaybackDeck

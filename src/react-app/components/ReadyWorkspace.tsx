@@ -1,10 +1,11 @@
-import type { Dispatch, RefObject } from 'react'
+import { useState, type Dispatch, type RefObject } from 'react'
 
 import { orderedMatchingEvents } from '../event-filters'
 import type { AppAction, ReadyState } from '../app-state'
 import { AppHeader } from './AppHeader'
 import { EventNavigator } from './EventNavigator'
 import { Theater } from './Theater'
+import type { TheaterViewMode } from './TheaterViewSwitch'
 
 type ReadyWorkspaceProps = {
   readonly state: ReadyState
@@ -21,6 +22,7 @@ export function ReadyWorkspace({
   onRescan,
   onSelectEvent,
 }: ReadyWorkspaceProps) {
+  const [viewMode, setViewMode] = useState<TheaterViewMode>('spatial')
   const matchingEvents = orderedMatchingEvents(state.library.events, state.filters)
   const selectedEvent = state.library.events.find((event) => event.id === state.selectedEventId)
   const selectedIndex = matchingEvents.findIndex((event) => event.id === state.selectedEventId)
@@ -62,6 +64,7 @@ export function ReadyWorkspace({
             theaterRef={theaterRef}
             timelineDateKey={state.filters.dateKey}
             timelineEvents={matchingEvents}
+            viewMode={viewMode}
             onNext={() => {
               const nextEvent = matchingEvents.at(selectedIndex + 1)
               if (nextEvent !== undefined) {
@@ -75,6 +78,7 @@ export function ReadyWorkspace({
               }
             }}
             onSelectEvent={onSelectEvent}
+            onViewMode={setViewMode}
           />
         )}
       </main>
