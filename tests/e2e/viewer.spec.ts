@@ -335,7 +335,7 @@ test('drives categories, playback, camera and event keyboard controls without an
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: '右リピーターカメラを拡大' })).toBeVisible()
   await page.getByRole('button', { name: '次のイベント' }).click()
-  await expect(page.getByRole('button', { name: /2026-08-20 20:40:00/ })).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: '2026-08-20 20:40:00', exact: true })).toHaveAttribute('aria-pressed', 'true')
   await page.getByRole('button', { name: '前のイベント' }).click()
   const visibleControls = page.locator('button:visible')
   const sizes = await visibleControls.evaluateAll((elements) => elements.map((element) => {

@@ -222,3 +222,14 @@
   grid-template-columns: repeat(6, minmax(0, 1fr));
   grid-template-rows: 1fr;
 }
+
+.theater[data-representative="true"] .camera-stage > img {
+  display: none;
+}
+
+.theater[data-representative="true"] .camera-tile__label {
+  inset-inline-end: var(--space-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
