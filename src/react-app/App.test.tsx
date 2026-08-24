@@ -1,10 +1,106 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { useReducer, useRef } from 'react'
+import { afterEach, vi } from 'vitest'
 
+import { appReducer, type ReadyState } from './app-state'
 import { App } from './App'
+import { ReadyWorkspace } from './components/ReadyWorkspace'
 import { ScanProgress } from './components/ScanProgress'
+import type { LocalFileRef, TeslaCamEvent, TeslaCamLibrary } from '../teslacam/types'
+
+function fileRef(name: string): LocalFileRef {
+  return { name, relativePath: `SentryClips/${name}`, size: 4, type: 'video/mp4', getFile: async () => new File(['clip'], name, { type: 'video/mp4' }) }
+}
+
+function sentryEvent(
+  id: string,
+  segments: readonly [string, string],
+  detectionTimestamp: string,
+): TeslaCamEvent {
+  return {
+    id, category: 'sentry', timestamp: segments[0],
+    metadata: { timestamp: detectionTimestamp },
+    segments: segments.map((timestamp) => ({ timestamp, cameras: { front: fileRef(`${id}-${timestamp}-front.mp4`) } })),
+  }
+}
+
+const preRollEvent = sentryEvent('sentry-preroll', ['2026-08-21_12-00-00', '2026-08-21_12-01-00'], '2026-08-21T12:01:20')
+const startEvent = sentryEvent('sentry-start', ['2026-08-21_13-00-00', '2026-08-21_13-01-00'], '2026-08-21T13:00:10')
+const selectionLibrary: TeslaCamLibrary = {
+  events: [startEvent, preRollEvent],
+  eventsByCategory: { recent: [], saved: [], sentry: [startEvent, preRollEvent] },
+  warnings: [],
+}
+const selectionState: ReadyState = {
+  kind: 'ready', folderName: 'TeslaCam', library: selectionLibrary,
+  filters: { category: 'all', dateKey: null, query: '' },
+  selectedEventId: preRollEvent.id,
+}
+
+function WorkspaceSelectionHarness() {
+  const [state, dispatch] = useReducer(appReducer, selectionState)
+  const theaterRef = useRef<HTMLElement>(null)
+  if (state.kind !== 'ready') throw new Error('workspace state is not ready')
+  return (
+    <ReadyWorkspace
+      dispatch={dispatch}
+      state={state}
+      theaterRef={theaterRef}
+      onRescan={() => undefined}
+      onSelectEvent={(eventId) => dispatch({ kind: 'event-selected', eventId })}
+    />
+  )
+}
+
+function firstCameraVideo(): HTMLVideoElement {
+  const video = screen.getAllByTestId('camera-video').find((element): element is HTMLVideoElement => element instanceof HTMLVideoElement)
+  if (video === undefined) throw new Error('first camera video is missing')
+  return video
+}
+
+afterEach(() => vi.restoreAllMocks())
 
 describe('welcome view', () => {
+  it('creates fresh paused playback for list and previous-next sentry selections without rewinding a reselected event', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:camera')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined)
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined)
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(async () => undefined)
+    const view = render(<WorkspaceSelectionHarness />)
+
+    const firstVideo = firstCameraVideo()
+    fireEvent.canPlay(firstVideo)
+    expect(screen.getByLabelText('再生位置')).toHaveValue('65')
+    expect(screen.getByRole('button', { name: '再生' })).toBeVisible()
+    expect(firstVideo.currentTime).toBe(5)
+
+    firstVideo.currentTime = 9
+    await user.click(screen.getByRole('button', { name: /2026-08-21 12:00:00/ }))
+    expect(firstVideo.currentTime).toBe(9)
+    await user.click(screen.getByRole('button', { name: 'イベント一覧を開く' }))
+    await user.click(screen.getByRole('button', { name: /2026-08-21 13:00:00/ }))
+    expect(screen.getByLabelText('再生位置')).toHaveValue('0')
+    const listSelectedVideo = firstCameraVideo()
+    fireEvent.canPlay(listSelectedVideo)
+    expect(listSelectedVideo.currentTime).toBe(0)
+
+    await user.click(screen.getByRole('button', { name: '次のイベント' }))
+    expect(screen.getByLabelText('再生位置')).toHaveValue('65')
+    const nextVideo = firstCameraVideo()
+    fireEvent.canPlay(nextVideo)
+    expect(nextVideo.currentTime).toBe(5)
+
+    await user.click(screen.getByRole('button', { name: '前のイベント' }))
+    expect(screen.getByLabelText('再生位置')).toHaveValue('0')
+    const previousVideo = firstCameraVideo()
+    fireEvent.canPlay(previousVideo)
+    expect(previousVideo.currentTime).toBe(0)
+    view.unmount()
+  })
+
   it('shows the folder selection action', () => {
     render(<App />)
 

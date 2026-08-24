@@ -40,6 +40,28 @@ function deferred(): {
 }
 
 describe('useSynchronizedPlayback', () => {
+  it('initializes a paused playback at a clamped non-zero segment position', () => {
+    const front = video()
+    const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(2), null, 65))
+
+    expect(hook.result.current.elapsedSeconds).toBe(65)
+    expect(hook.result.current.segmentIndex).toBe(1)
+    expect(hook.result.current.segmentOffsetSeconds).toBe(5)
+    expect(hook.result.current.playing).toBe(false)
+
+    act(() => {
+      hook.result.current.registerVideo('front', front)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+    })
+    expect(front.currentTime).toBe(5)
+
+    act(() => {
+      front.currentTime = 9
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+    })
+    expect(front.currentTime).toBe(9)
+  })
+
   it('starts every ready stream before settling and isolates one rejected play call', async () => {
     const rejected = video(Promise.reject(new DOMException('', 'NotAllowedError')))
     const playing = video()

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react'
 
 import { cameraIds, type CameraId, type TeslaCamEvent } from '../../teslacam/types'
-import { detectionSeconds } from '../event-detection'
+import { detectionSeconds, sentryInitialElapsedSeconds } from '../event-detection'
 import { cameraLabels } from '../event-summary'
 import { ObjectUrlRegistry } from '../playback/object-url-registry'
 import { useSynchronizedPlayback } from '../playback/use-synchronized-playback'
@@ -28,7 +28,9 @@ function TheaterSession({ event, onPrevious, onNext, hasPrevious, hasNext, sourc
   const [expandedCamera, setExpandedCamera] = useState<CameraId | null>(null)
   const [activeCamera, setActiveCamera] = useState<CameraId>('front')
   const [statuses, setStatuses] = useState<Readonly<Partial<Record<CameraId, CameraStatus>>>>({})
-  const playback = useSynchronizedPlayback(event, expandedCamera)
+  const detectedSeconds = detectionSeconds(event)
+  const initialElapsedSeconds = sentryInitialElapsedSeconds(event)
+  const playback = useSynchronizedPlayback(event, expandedCamera, initialElapsedSeconds)
   const segment = event.segments.at(playback.segmentIndex)
   const updateStatus = useCallback((cameraId: CameraId, status: CameraStatus): void => {
     setStatuses((current) => current[cameraId] === status ? current : { ...current, [cameraId]: status })
@@ -48,7 +50,7 @@ function TheaterSession({ event, onPrevious, onNext, hasPrevious, hasNext, sourc
 
   const allTerminal = cameraIds.every((cameraId) => terminalStatuses.includes(statuses[cameraId] ?? 'loading'))
   const representativeMode = allTerminal && event.representativeFile !== undefined
-  const markerSeconds = representativeMode ? null : detectionSeconds(event)
+  const markerSeconds = representativeMode ? null : detectedSeconds
 
   return (
     <section className="theater" aria-label="6カメラシアター" data-representative={representativeMode} ref={theaterRef}>

@@ -22,13 +22,21 @@ function setMediaTime(element: HTMLVideoElement, seconds: number): void {
   element.currentTime = seconds
 }
 
-export function useSynchronizedPlayback(event: TeslaCamEvent, preferredCamera: CameraId | null = null): SynchronizedPlayback {
+export function useSynchronizedPlayback(
+  event: TeslaCamEvent,
+  preferredCamera: CameraId | null = null,
+  initialElapsedSeconds = 0,
+): SynchronizedPlayback {
   const durationSeconds = eventDuration(event)
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const initialLocation = locatePlaybackTime(event, initialElapsedSeconds)
+  const initialSeconds = initialLocation.segmentIndex * 60 + initialLocation.offsetSeconds
+  const [elapsedSeconds, setElapsedSeconds] = useState(() => initialSeconds)
   const [playing, setPlaying] = useState(false)
   const [rate, setRateState] = useState(1)
   const [message, setMessage] = useState<string | null>(null)
-  const [runtime] = useState<PlaybackRuntime>(createPlaybackRuntime)
+  const [runtime] = useState<PlaybackRuntime>(() => (
+    createPlaybackRuntime(initialSeconds, initialLocation.segmentIndex)
+  ))
   const updatePlaybackState = useCallback((resolution: PlaybackResolution): void => {
     setPlaying(resolution === 'playing')
     if (resolution === 'playing') setMessage(null)

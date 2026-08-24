@@ -23,6 +23,30 @@ function eventWithCameras(cameras: readonly CameraId[] = cameraIds): TeslaCamEve
   }
 }
 
+function firstCameraVideo(): HTMLVideoElement {
+  const video = screen.getAllByTestId('camera-video').find(
+    (element): element is HTMLVideoElement => element instanceof HTMLVideoElement,
+  )
+  if (video === undefined) throw new Error('first camera video is missing')
+  return video
+}
+
+function sentryEventWithCameras(id: string): TeslaCamEvent {
+  const baseEvent = eventWithCameras()
+  const firstSegment = baseEvent.segments.at(0)
+  if (firstSegment === undefined) throw new Error('camera event is missing its first segment')
+  return {
+    ...baseEvent,
+    id,
+    category: 'sentry',
+    metadata: { timestamp: '2026-08-21T12:01:20' },
+    segments: [
+      firstSegment,
+      { ...firstSegment, timestamp: '2026-08-21_12-01-00' },
+    ],
+  }
+}
+
 beforeEach(() => {
   vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:camera')
   vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
@@ -34,6 +58,17 @@ beforeEach(() => {
 afterEach(() => vi.restoreAllMocks())
 
 describe('Theater', () => {
+  it('opens sentry playback paused at its pre-roll location', () => {
+    render(<Theater event={sentryEventWithCameras('sentry-preroll')} onPrevious={() => undefined} onNext={() => undefined} hasPrevious hasNext />)
+
+    expect(screen.getByLabelText('再生位置')).toHaveValue('65')
+    expect(screen.getByRole('button', { name: '再生' })).toBeVisible()
+    const firstVideo = firstCameraVideo()
+    fireEvent.canPlay(firstVideo)
+
+    expect(firstVideo.currentTime).toBe(5)
+  })
+
   it('keeps the selected evidence context next to the playback surface', () => {
     render(
       <Theater
