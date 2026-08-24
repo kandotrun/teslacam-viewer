@@ -199,3 +199,10 @@
   color: var(--color-text-secondary);
   font-size: var(--font-small);
 }
+
+@media (max-width: 639px) {
+  .playback-controls__primary .playback-controls__play {
+    padding-inline: 0;
+    white-space: nowrap;
+  }
+}
