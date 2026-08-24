@@ -1,4 +1,5 @@
 import type { LocalFileRef, ScanProgress } from './types'
+import { ensureDirectoryDepth, ensureScanEntryCount } from './scan-limits'
 
 export type DirectorySelectionResult =
   | {
@@ -32,6 +33,7 @@ function isFileHandle(entry: FileSystemHandle): entry is FileSystemFileHandle {
 
 async function countEntry(state: ScanState): Promise<void> {
   state.processed += 1
+  ensureScanEntryCount(state.processed)
   if (state.processed % 250 === 0) {
     state.report({ processed: state.processed, total: state.processed })
     await yieldToBrowser()
@@ -42,10 +44,12 @@ async function scanDirectory(
   directory: FileSystemDirectoryHandle,
   path: readonly string[],
   state: ScanState,
+  depth: number,
 ): Promise<void> {
+  ensureDirectoryDepth(depth)
   for await (const entry of directory.values()) {
-    if (isHidden(entry.name)) continue
     await countEntry(state)
+    if (isHidden(entry.name)) continue
     const relativePath = [...path, entry.name].join('/')
     if (isFileHandle(entry)) {
       const file = await entry.getFile()
@@ -57,7 +61,7 @@ async function scanDirectory(
         getFile: async () => file,
       })
     } else {
-      await scanDirectory(entry, [...path, entry.name], state)
+      await scanDirectory(entry, [...path, entry.name], state, depth + 1)
     }
   }
 }
@@ -85,7 +89,7 @@ export async function pickTeslaCamDirectory(
   }
 
   const state: ScanState = { files: [], report, processed: 0 }
-  await scanDirectory(root, [root.name], state)
+  await scanDirectory(root, [root.name], state, 0)
   report({ processed: state.processed, total: state.processed })
   return { status: 'selected', files: state.files, folderName: root.name }
 }

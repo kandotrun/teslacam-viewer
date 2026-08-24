@@ -3,6 +3,7 @@ import { useCallback, useRef, type Dispatch, type RefObject } from 'react'
 import { buildTeslaCamLibrary } from '../teslacam/build-library'
 import { filesFromDirectoryInput } from '../teslacam/directory-input'
 import { pickTeslaCamDirectory } from '../teslacam/directory-picker'
+import { ScanLimitError } from '../teslacam/scan-limits'
 import type { LocalFileRef } from '../teslacam/types'
 import type { AppAction } from './app-state'
 
@@ -21,39 +22,51 @@ function folderNameFromFiles(files: readonly LocalFileRef[]): string {
 
 export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
   const fallbackInputRef = useRef<HTMLInputElement>(null)
+  const scanGenerationRef = useRef(0)
   const isNativePickerAvailable = globalThis.showDirectoryPicker !== undefined
 
   const buildLibrary = useCallback(
-    async (files: readonly LocalFileRef[], folderName: string): Promise<void> => {
+    async (
+      files: readonly LocalFileRef[],
+      folderName: string,
+      generation: number,
+    ): Promise<void> => {
+      const isCurrent = (): boolean => scanGenerationRef.current === generation
       if (files.length === 0) {
-        dispatch({ kind: 'scan-invalid' })
+        if (isCurrent()) dispatch({ kind: 'scan-invalid' })
         return
       }
       try {
         const library = await buildTeslaCamLibrary(files, (progress) => {
-          dispatch({ kind: 'scan-progressed', progress })
+          if (isCurrent()) dispatch({ kind: 'scan-progressed', progress })
         })
+        if (!isCurrent()) return
         if (library.events.length === 0) {
           dispatch({ kind: 'scan-invalid' })
           return
         }
         dispatch({ kind: 'library-ready', folderName, library })
       } catch {
-        dispatch({ kind: 'scan-failed' })
+        if (isCurrent()) dispatch({ kind: 'scan-failed' })
       }
     },
     [dispatch],
   )
 
   const selectNativeDirectory = useCallback(async (): Promise<void> => {
+    scanGenerationRef.current += 1
+    const generation = scanGenerationRef.current
     dispatch({ kind: 'scan-started' })
     try {
       const selection = await pickTeslaCamDirectory((progress) => {
-        dispatch({ kind: 'scan-progressed', progress })
+        if (scanGenerationRef.current === generation) {
+          dispatch({ kind: 'scan-progressed', progress })
+        }
       })
+      if (scanGenerationRef.current !== generation) return
       switch (selection.status) {
         case 'selected':
-          await buildLibrary(selection.files, selection.folderName)
+          await buildLibrary(selection.files, selection.folderName, generation)
           return
         case 'cancelled':
           dispatch({ kind: 'scan-cancelled' })
@@ -67,7 +80,9 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
           return
       }
     } catch {
-      dispatch({ kind: 'scan-failed' })
+      if (scanGenerationRef.current === generation) {
+        dispatch({ kind: 'scan-failed' })
+      }
     }
   }, [buildLibrary, dispatch])
 
@@ -81,9 +96,24 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
 
   const handleDirectoryInput = useCallback(
     (files: FileList | null): void => {
-      const selectedFiles = files === null ? [] : filesFromDirectoryInput(files)
+      scanGenerationRef.current += 1
+      const generation = scanGenerationRef.current
       dispatch({ kind: 'scan-started' })
-      void buildLibrary(selectedFiles, folderNameFromFiles(selectedFiles))
+      let selectedFiles: readonly LocalFileRef[]
+      try {
+        selectedFiles = files === null ? [] : filesFromDirectoryInput(files)
+      } catch (error) {
+        if (error instanceof ScanLimitError) {
+          dispatch({ kind: 'scan-failed' })
+          return
+        }
+        throw error
+      }
+      void buildLibrary(
+        selectedFiles,
+        folderNameFromFiles(selectedFiles),
+        generation,
+      )
     },
     [buildLibrary, dispatch],
   )

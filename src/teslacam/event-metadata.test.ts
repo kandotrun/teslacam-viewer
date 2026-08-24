@@ -1,4 +1,5 @@
 import { parseEventMetadata } from './event-metadata'
+import { MAX_METADATA_STRING_LENGTH, ScanLimitError } from './scan-limits'
 
 describe('parseEventMetadata', () => {
   it('retains every known string field from valid metadata', () => {
@@ -41,4 +42,16 @@ describe('parseEventMetadata', () => {
   ])('returns null instead of coercing invalid metadata', (value) => {
     expect(parseEventMetadata(value)).toBeNull()
   })
+
+  it.each(['timestamp', 'city', 'street', 'est_lat', 'est_lon', 'reason', 'camera'])(
+    'rejects an oversized %s string instead of retaining or truncating it',
+    (field) => {
+      const metadata = {
+        timestamp: '2026-08-21_14-30-45',
+        [field]: 'x'.repeat(MAX_METADATA_STRING_LENGTH + 1),
+      }
+
+      expect(() => parseEventMetadata(metadata)).toThrow(ScanLimitError)
+    },
+  )
 })

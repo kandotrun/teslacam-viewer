@@ -1,6 +1,7 @@
-import { parseEventMetadata } from './event-metadata'
+import { readEventMetadata } from './event-metadata'
 import { parseClipFileName } from './filename'
-import type { CameraId, ClipCategory, EventMetadata, LocalFileRef, ScanProgress, ScanWarning, TeslaCamEvent, TeslaCamLibrary, TeslaCamSegment } from './types'
+import { ensureScanEntryCount } from './scan-limits'
+import type { CameraId, ClipCategory, LocalFileRef, ScanProgress, ScanWarning, TeslaCamEvent, TeslaCamLibrary, TeslaCamSegment } from './types'
 
 type DirectoryEvent = {
   category: Exclude<ClipCategory, 'recent'>
@@ -98,16 +99,6 @@ function createSegments(
     }))
 }
 
-async function readMetadata(file: LocalFileRef): Promise<EventMetadata | null> {
-  try {
-    const contents = await (await file.getFile()).text()
-    return parseEventMetadata(JSON.parse(contents))
-  } catch (error) {
-    if (error instanceof Error) return null
-    throw error
-  }
-}
-
 function yieldToBrowser(): Promise<void> {
   return new Promise((resolve) => {
     globalThis.setTimeout(resolve, 0)
@@ -135,6 +126,7 @@ export async function buildTeslaCamLibrary(
   files: readonly LocalFileRef[],
   report: (progress: ScanProgress) => void,
 ): Promise<TeslaCamLibrary> {
+  ensureScanEntryCount(files.length)
   const directoryEvents = new Map<string, DirectoryEvent>()
   const recentClips = new Map<string, Map<CameraId, LocalFileRef>>()
   const warningCounts = new Map<ScanWarning['kind'], number>()
@@ -204,7 +196,7 @@ export async function buildTeslaCamLibrary(
     const metadata =
       directoryEvent.metadataFile === undefined
         ? undefined
-        : await readMetadata(directoryEvent.metadataFile)
+        : await readEventMetadata(directoryEvent.metadataFile)
     if (directoryEvent.metadataFile !== undefined && metadata === null) {
       addWarning('invalid-metadata-file')
     }
