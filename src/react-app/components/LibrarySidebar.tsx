@@ -106,15 +106,20 @@ export function LibrarySidebar({
         </label>
       </div>
       {warnings.length > 0 ? (
-        <section className="scan-warnings" aria-label="読み込み時の注意">
-          <ShieldAlert aria-hidden="true" size={18} strokeWidth={1.8} />
-          <div>
-            <p className="sidebar-label">読み込み時の注意</p>
+        <details className="scan-warnings">
+          <summary>
+            <span>
+              <ShieldAlert aria-hidden="true" size={18} strokeWidth={1.8} />
+              読み込みの注意
+            </span>
+            <span>{warnings.length}件</span>
+          </summary>
+          <div className="scan-warnings__body">
             {warnings.map((warning) => (
               <p key={warning.kind}>{warningCopy(warning)}</p>
             ))}
           </div>
-        </section>
+        </details>
       ) : null}
     </section>
   )

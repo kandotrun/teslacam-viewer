@@ -8,6 +8,7 @@
 - Target composition: 明るいライブラリレールとイベント一覧、暗い6カメラ映像面、明るい永続トランスポートバー。初期画面から閲覧画面まで同じトークンと状態規則を使う。
 - 2026-08-23 redesign audit: 公開版と375px、768px、1280pxの実画面を監査し、英語の大文字eyebrow、中央カード型welcome、均一な角丸枠、再生中の証拠文脈不足をAI生成サービスらしさの主因と特定した。Tesla、Apple、Raycastを候補に再比較し、映像そのものを主役にできるTeslaのradical subtractionを継続採用する。装飾は足さず、フォルダ、イベント時刻、カテゴリ、カメラ可用性を先に読ませる。
 - 2026-08-24 light-theme audit: SSD接続中の長時間探索では、作業面を明るくして一覧と操作の境界を先に読ませる。映像そのもの、カメラ名、欠損状態だけを暗い映像面へ閉じ込め、テーマ切り替えを設けずライトを標準とする。
+- 2026-08-25 density audit: 公開画面ではフォルダ名、ローカル処理説明、イベント文脈が複数面へ重複し、TheaterContextと操作ツールバーの二段構成が映像開始位置を下げていた。プライバシー境界は実装とネットワーク検証で維持し、常設説明は置かない。製品ヘッダー、読み込み元、選択イベント、操作の各情報を一度だけ表示し、イベント文脈と表示・書き出し操作を一つの面へ統合する。
 
 ## 1. Atmosphere & Identity
 
@@ -136,7 +137,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 ### Grid
 
-- 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力、得られる結果、ローカル処理の事実が一画面で読める。
+- 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力と得られる結果が一画面で読める。
 - 完成形のdesktopは320pxのEventNavigatorと残りのTheaterSessionに分け、TheaterSession内は可変CameraStageと240pxのEventInspectorを並べる。下端224pxはPlaybackControlsとDayTimelineが共有する。
 - CameraStageのcontent boxが720px以上のdesktopだけ車両配置を許可し、frontを上中央、pillarを車両左右、repeaterとbackを下段へ置く。同じcanonical orderの6動画要素を使い、中央の静的車両画像だけを`vehicle` areaへ置く。
 - 640–1024pxはEventNavigator、TheaterContext、3×2 CameraStage、開閉式EventInspector、PlaybackDeckを積層する。閉じたEventInspectorでもカテゴリ、時刻、カメラ可用性を読める。639px以下は1画面カメラと6方向Camera switcherだけを局所横スクロールにする。
@@ -162,19 +163,9 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - **Motion**: 色と境界の160msのみ。位置や大きさを動かさない。
 - **Layout**: inline cluster。狭幅では内容幅に収まり、テキストを途中で切らない。
 
-### Trust statement
-
-- **Structure**: ShieldCheckアイコン、短い見出し、ローカル処理説明。
-- **Variants**: standardのみ。
-- **Spacing**: `--space-3`、`--space-4`。
-- **States**: 常時表示。操作状態は持たない。
-- **Accessibility**: アイコンは装飾扱い、文言だけで意味が完結する。
-- **Motion**: なし。
-- **Layout**: 左揃えのcluster。小画面では本文が自然に折り返す。
-
 ### 作業開始画面
 
-- **Structure**: compact product header、入力を示す見出し、primary action、`RecentClips / SavedClips / SentryClips → イベント一覧 / 6カメラ`の結果説明、local-only statement、browser guidance。
+- **Structure**: compact product header、入力を示す見出し、primary action、`RecentClips / SavedClips / SentryClips → イベント一覧 / 6カメラ`の結果説明、browser guidance。
 - **Variants**: desktop、tablet、mobile。
 - **Spacing**: `--space-4`から`--space-20`。
 - **States**: emptyが標準。errorとloadingは後続タスクで追加する。
@@ -184,10 +175,15 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 ### Source summary
 
-- **Structure**: 選択したフォルダ名、総イベント件数、読み込み警告、再選択操作。
-- **States**: standard、warning。warningだけを色とアイコンで強調する。
+- **Structure**: 左レールに選択したフォルダ名と総イベント件数を置き、再選択操作は製品ヘッダー右端へ一度だけ置く。読み込み警告は件数だけをsummaryへ示し、詳細を閉じた状態から確認できるようにする。
+- **States**: standard、warning collapsed、warning expanded。warningだけを色とアイコンで強調する。
 - **Accessibility**: フォルダ名は省略表示してもtitle相当の全文を読み取れる。再選択は可視ラベルを持つ。
 - **Layout**: desktopでは左レール上部、tablet/mobileではheader直下に置く。
+
+### App header
+
+- **Structure**: 製品名とフォルダ再選択だけを置く。選択フォルダ名、ローカル処理説明、状態badgeを重複表示しない。
+- **Layout**: すべての幅で一段、56pxを基準とし、再選択操作は44px以上を維持する。
 
 ### Event row
 
@@ -206,9 +202,9 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 ### Event inspector
 
-- **Structure**: 選択イベントのカテゴリ、録画開始、検知、再生開始、長さ、セグメント、カメラ可用性、reasonだけを表示する。
-- **Surface**: desktopは240pxのライト面。640–1024pxでは映像直下の開閉領域とし、639px以下では非表示にして映像を優先する。
-- **Privacy**: 住所、座標、外部解析値を追加しない。
+- **Structure**: 場所、推定座標、検知、再生開始、欠損カメラを先に置き、カテゴリ、録画開始、長さ、セグメント、カメラ可用性を続ける。生の`reason`は閉じた`技術情報`へ退避する。`event.json`に`city`または`street`がある場合だけ`場所（Teslaの推定値）`を、`est_lat`と`est_lon`が揃う場合だけ`推定座標`を追加し、空のラベルや片方だけの座標は表示しない。
+- **Surface**: desktopは240pxのライト面。640–1024pxでは映像直下の開閉領域とする。639px以下では位置情報があるイベントだけ44px以上の`場所を確認`開閉領域を残し、開いた領域には場所、座標、閉じた`技術情報`だけを表示する。位置情報がないイベントでは非表示にして映像を優先する。
+- **Privacy**: SSD内の`event.json`に記録されたTeslaの推定値だけをブラウザ内で表示する。外部地図、逆ジオコーディング、位置情報API、外部リンクを追加せず、位置情報を外部へ送信しない。
 
 ### Vehicle spatial stage
 
@@ -218,13 +214,13 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 ### Composite video export
 
-- **Structure**: TheaterContext直下のツールバーに中立な`書き出す`操作を置き、表示切替とは別の操作群にする。開始前だけ確認ダイアログを開き、選択イベント、全区間、車両配置、1280 × 720、検出済み形式、ローカル処理を確認できるようにする。
+- **Structure**: TheaterContextの操作群に中立な`書き出す`操作を置き、表示切替と同じ一段へまとめる。開始前だけ確認ダイアログを開き、選択イベント、全区間、車両配置、1280 × 720、検出済み形式を確認できるようにする。
 - **Output**: 選択中イベントの全セグメントを一つのCanvasへ描画し、常に`front / left-pillar / vehicle / right-pillar / left-repeater / back / right-repeater`の車両配置で録画する。中央車両はライブ画面と同じ`/vehicle-top.png`をexport sessionごとに一度だけ読み込み、透過を保って`contain`描画する。各映像も`contain`で端まで残し、欠損方向にはカメラ名と`記録なし`を表示する。
 - **Token hand-off**: Canvasは開始時にrootの`--color-composite-*`と`--font-composite-label`を一度だけ解決してsessionへ渡し、フレーム描画中にCSSを読み直さない。保存映像の背景、欠損面、ラベルscrim、文字色、書体を通常UIと同じdesign systemで管理する。
 - **Format**: ブラウザがMediaRecorderで対応するMP4を優先し、未対応時はWebMへ切り替える。拡張子と形式は検出結果と一致させ、MP4対応を仮定した文言を表示しない。
-- **Progress**: 開始後は確認ダイアログを閉じ、同じツールバーで経過、全長、progress、中止を表示する。完了後だけ保存操作を出し、中止した未完成Blobは保存させない。WebCodecsが利用できる場合は実時間を待たずにMP4へ書き出し、利用できない場合だけMediaRecorderによるリアルタイム書き出しへ切り替える。
+- **Progress**: 開始後は確認ダイアログを閉じ、同じ文脈面で経過、全長、progress、中止を表示する。完了後だけ保存操作を出し、中止した未完成Blobは保存させない。WebCodecsが利用できる場合は実時間を待たずにMP4へ書き出し、利用できない場合だけMediaRecorderによるリアルタイム書き出しへ切り替える。
 - **Privacy**: File、Blob、Canvas、MediaStreamはブラウザ内に閉じ、映像、ファイル名、時刻、位置情報をWorkerや外部へ送らない。通常再生のvideo、Object URL、同期runtimeとは別のexport sessionとして扱う。
-- **Responsive**: 1280pxでは表示切替と同じツールバーの別群、768pxでは書き出しだけを右寄せ、375pxでは44px幅いっぱいの操作と二段の進捗にする。ダイアログは狭幅で画面下端へ接続し、ページ全体に横スクロールを作らない。
+- **Responsive**: 1280pxでは表示切替と同じ一段の別群、768pxでは書き出しだけを右寄せ、375pxではイベント文脈の右側に44px以上の操作を置き、進捗中だけ専用行を確保する。ダイアログは狭幅で画面下端へ接続し、ページ全体に横スクロールを作らない。
 - **Accessibility**: 確認はnative `dialog`、見出しと説明の関連付け、Esc終了、triggerへのfocus復帰を持つ。進捗は`progress`とpolite status、開始・中止・保存は可視ラベル付き44px操作にする。
 
 ### Playback deck and day timeline
@@ -238,10 +234,10 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 
 ### Theater context
 
-- **Structure**: source folder、category、local timestamp、event duration、segment count、camera availability。
+- **Structure**: category、local timestamp、event duration、segment count、camera availability、表示切替、書き出し。source folderは左レールへ一度だけ置く。
 - **States**: complete、partial、terminal fallback。
 - **Accessibility**: 色だけに依存せず、シアター単体のスクリーンショットでも現在の証拠を特定できる。
-- **Layout**: camera gridの直上に常設し、mobileでもイベント一覧を読み戻さず確認できる。
+- **Layout**: camera gridの直上に一段で常設し、mobileでもイベント一覧を読み戻さず確認できる。書き出し進捗だけは文脈情報と競合しない専用行へ展開する。
 
 ### 6-camera theater
 

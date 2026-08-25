@@ -22,9 +22,10 @@ test('drives categories, playback, camera and event keyboard controls without an
     { name: /^保存済み\s*1$/u, count: '1件' },
     { name: /^セントリー\s*1$/u, count: '1件' },
   ] as const
+  const eventListPanel = page.getByRole('region', { name: 'イベント', exact: true })
   for (const category of categories) {
     await page.getByRole('button', { name: category.name }).click()
-    await expect(page.getByText(category.count, { exact: true })).toBeVisible()
+    await expect(eventListPanel.getByText(category.count, { exact: true })).toBeVisible()
   }
   await page.getByRole('button', { name: /^すべて\s*3$/u }).click()
   await page.getByRole('button', { name: /2026-08-20 20:45:00/ }).click()
@@ -62,7 +63,7 @@ test('drives categories, playback, camera and event keyboard controls without an
   expect(runtimeErrors).toEqual([])
 })
 
-test('autoplays each selected event at its local offset without exposing Sentry location metadata', async ({ context, page }) => {
+test('autoplays each selected event at its local offset while keeping displayed Sentry location metadata local', async ({ context, page }) => {
   const media = [...await readFile(fixturePath)]
   await installPicker(context, media, 'full')
   const requests: Array<{ readonly url: string; readonly body: string }> = []
@@ -76,13 +77,16 @@ test('autoplays each selected event at its local offset without exposing Sentry 
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
   await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeGreaterThanOrEqual(15)
   await expect(page.getByText('検知の15秒前から開始', { exact: true })).toBeVisible()
-  await expect(page.getByText('sentry_aware_object_detection', { exact: true })).toBeVisible()
+  const detectionReason = page.getByText('sentry_aware_object_detection', { exact: true })
+  await expect(detectionReason).not.toBeVisible()
+  await page.getByText('技術情報', { exact: true }).click()
+  await expect(detectionReason).toBeVisible()
   await expect(page.getByText('2026-08-20T20:35:30', { exact: true })).toBeVisible()
   expect(await textSpansSingleLine(page.locator('.event-card[data-selected="true"]'), 'セントリー')).toBe(true)
-  await expect(page.getByText('SYNTHETIC_PRIVATE_CITY', { exact: true })).toHaveCount(0)
-  await expect(page.getByText('SYNTHETIC_PRIVATE_STREET', { exact: true })).toHaveCount(0)
-  await expect(page.getByText('SYNTHETIC_PRIVATE_LAT', { exact: true })).toHaveCount(0)
-  await expect(page.getByText('SYNTHETIC_PRIVATE_LON', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('場所（Teslaの推定値）', { exact: true })).toBeVisible()
+  await expect(page.getByText('SYNTHETIC_PRIVATE_CITY SYNTHETIC_PRIVATE_STREET', { exact: true })).toBeVisible()
+  await expect(page.getByText('推定座標', { exact: true })).toBeVisible()
+  await expect(page.getByText('SYNTHETIC_PRIVATE_LAT, SYNTHETIC_PRIVATE_LON', { exact: true })).toBeVisible()
 
   await page.getByRole('button', { name: '一時停止' }).click()
   await page.getByRole('button', { name: '新しい記録' }).click()

@@ -9,9 +9,9 @@ describe('welcome view', () => {
     expect(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' })).toBeVisible()
   })
 
-  it('explains that videos stay on this computer', () => {
+  it('keeps the welcome view focused on folder selection', () => {
     render(<App />)
-    expect(screen.getByText(/外部へ送信されません/)).toBeVisible()
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
   })
 
   it('guides users to a supported desktop browser', () => {

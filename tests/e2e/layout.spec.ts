@@ -15,7 +15,6 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     await expect(page.getByRole('heading', { name: 'SSDのTeslaCamフォルダを開く' })).toBeVisible()
     await expect(page.getByText('選ぶもの', { exact: true })).toBeVisible()
     await expect(page.getByText('表示されるもの', { exact: true })).toBeVisible()
-    await expect(page.getByText(/外部へ送信されません/)).toBeVisible()
     expect(await textSpansSingleLine(page.getByRole('heading', { name: 'SSDのTeslaCamフォルダを開く' }), 'フォルダを開く')).toBe(true)
     const welcomeColors = await page.locator('body').evaluate((element) => {
       const styles = getComputedStyle(element)
@@ -48,6 +47,7 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     await selection.click()
     await expect(page.getByText(/250 ファイルを確認中です/)).toBeVisible()
     await expect(page.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
+    expect(await page.locator('.app-header').evaluate((element) => element.getBoundingClientRect().height)).toBeLessThanOrEqual(64)
     if (viewport.mode === 'tablet') {
       await expect(page.getByRole('button', { name: 'イベント一覧を閉じる' })).toBeVisible()
     }
@@ -55,9 +55,18 @@ test('captures welcome and loaded states at the required viewports', async ({ br
     await page.getByRole('button', { name: /2026-08-20 20:45:00/ }).click()
     await expect(page.locator('video')).toHaveCount(6)
     const evidenceContext = page.getByLabel('再生中のイベント')
-    await expect(evidenceContext).toContainText('TeslaCam')
+    await expect(page.getByText('TeslaCam', { exact: true })).toHaveCount(1)
     await expect(evidenceContext).toContainText('2026-08-20 20:45:00')
     await expect(evidenceContext).toContainText('6/6 カメラ')
+    await expect(evidenceContext.locator('.theater-context__actions')).toBeVisible()
+    const contextBounds = await evidenceContext.boundingBox()
+    const exportBounds = await page.getByRole('button', { name: '合成動画を書き出す' }).boundingBox()
+    if (contextBounds === null || exportBounds === null) throw new Error('compact theater context geometry is missing')
+    expect(exportBounds.y).toBeGreaterThanOrEqual(contextBounds.y)
+    expect(exportBounds.y + exportBounds.height).toBeLessThanOrEqual(contextBounds.y + contextBounds.height)
+    const scanWarnings = page.locator('.scan-warnings')
+    await expect(scanWarnings).not.toHaveAttribute('open')
+    await expect(scanWarnings.locator('summary')).toBeVisible()
     const surfaceColors = await page.locator('.library-sidebar, .event-list-panel, .theater-context, .camera-switcher, .playback-controls').evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor))
     expect(surfaceColors.every((color) => relativeLuminance(color) > 0.75)).toBe(true)
     const theaterColors = await page.locator('.camera-grid, .camera-tile').evaluateAll((elements) => elements.map((element) => getComputedStyle(element).backgroundColor))
@@ -115,6 +124,30 @@ test('shows every camera frame without cropping at the required viewports', asyn
     expect(frames.every((frame) => frame.mediaWidth > 0 && frame.mediaHeight > 0)).toBe(true)
     await context.close()
   }
+})
+
+test('keeps the loaded product header on one line at 320px', async ({ browser }) => {
+  const media = [...await readFile(fixturePath)]
+  const context = await browser.newContext({ viewport: { width: 320, height: 844 } })
+  await installPicker(context, media, 'full')
+  const page = await context.newPage()
+  await page.goto('/')
+  await selectFolder(page)
+
+  const header = page.locator('.app-header')
+  const identity = header.locator('.app-header__identity')
+  const action = header.getByRole('button', { name: '別のフォルダを選ぶ' })
+  const geometry = await Promise.all([identity.boundingBox(), action.boundingBox()])
+  const identityBounds = geometry.at(0)
+  const actionBounds = geometry.at(1)
+  if (identityBounds === null || actionBounds === null) throw new Error('compact app header geometry is missing')
+  const identityCenter = identityBounds.y + (identityBounds.height / 2)
+  const actionCenter = actionBounds.y + (actionBounds.height / 2)
+  expect(Math.abs(identityCenter - actionCenter)).toBeLessThanOrEqual(1)
+  expect(identityBounds.x + identityBounds.width).toBeLessThanOrEqual(actionBounds.x)
+  expect(await header.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true)
+  expect(await textSpansSingleLine(action, 'フォルダを選ぶ')).toBe(true)
+  await context.close()
 })
 
 test('keeps responsive disclosures, mobile cameras, reduced motion and expanded evidence accurate', async ({ browser }) => {

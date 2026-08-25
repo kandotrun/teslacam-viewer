@@ -9,11 +9,6 @@
     gap: var(--space-6);
   }
 
-  .welcome-brand {
-    display: grid;
-    gap: var(--space-1);
-  }
-
   .welcome-copy h1 {
     font-size: var(--font-display-mobile);
     line-height: 1.1;
@@ -37,23 +32,17 @@
   }
 
   .app-header {
-    min-block-size: 92px;
-    flex-wrap: wrap;
+    min-block-size: var(--app-header-height);
     padding: var(--space-2) var(--space-3);
   }
 
   .app-header__identity {
-    inline-size: 100%;
-    justify-content: space-between;
+    flex: 1 1 auto;
   }
 
   .app-header__actions {
-    inline-size: 100%;
+    flex: 0 0 auto;
     justify-content: flex-end;
-  }
-
-  .app-header__privacy {
-    margin-inline-end: auto;
   }
 
   .quiet-action {
@@ -116,21 +105,16 @@
   }
 
   .selection-placeholder {
-    min-block-size: calc(100dvb - 92px);
+    min-block-size: calc(100dvb - var(--app-header-height));
   }
 
   .theater {
-    min-block-size: calc(100dvb - 92px);
-    scroll-margin-block-start: 92px;
+    min-block-size: calc(100dvb - var(--app-header-height));
+    scroll-margin-block-start: var(--app-header-height);
   }
 
-  .theater-toolbar {
-    padding-inline: var(--space-3);
-  }
-
-  .composite-export-control,
-  .composite-export-trigger {
-    inline-size: 100%;
+  .composite-export-control {
+    max-inline-size: 100%;
   }
 
   .composite-export-toolbar-status,
@@ -158,31 +142,44 @@
   }
 
   .theater-context {
-    min-block-size: 112px;
+    min-block-size: 96px;
     grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
     gap: var(--space-2) var(--space-3);
     padding: var(--space-3);
   }
 
-  .theater-context__source {
-    grid-column: 1 / -1;
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: baseline;
-    gap: var(--space-2);
-  }
-
   .theater-context__event {
+    grid-column: 1;
+    grid-row: 1;
     grid-template-columns: 1fr;
     gap: var(--space-1);
   }
 
   .theater-context__facts {
-    max-inline-size: 142px;
-    justify-content: flex-end;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    max-inline-size: none;
+    justify-content: flex-start;
+  }
+
+  .theater-context__actions {
+    grid-column: 2;
+    grid-row: 1;
   }
 
   .theater-context__warning {
-    text-align: end;
+    flex-basis: auto;
+    text-align: start;
+  }
+
+  .theater-context__actions:has(.composite-export-control[data-status]:not([data-status='idle'])) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .theater-context:has(.composite-export-control[data-status]:not([data-status='idle'])) .theater-context__facts {
+    grid-row: 3;
   }
 
   .camera-switcher button {
@@ -263,8 +260,32 @@
     min-inline-size: 66px;
   }
 
-  .event-inspector {
+  .event-inspector[data-location='unavailable'] {
     display: none;
+  }
+
+  .event-inspector[data-location='available'] .event-inspector__summary-default,
+  .event-inspector[data-location='available'] .event-inspector__summary-context {
+    display: none;
+  }
+
+  .event-inspector[data-location='available'] .event-inspector__summary-location {
+    display: inline;
+  }
+
+  .event-inspector[data-location='available'] dl {
+    gap: var(--space-2);
+    padding-block: var(--space-2) var(--space-3);
+  }
+
+  .event-inspector[data-location='available'] dl > div:not(.event-inspector__location, .event-inspector__coordinates, .event-inspector__technical-row) {
+    display: none;
+  }
+
+  .event-inspector[data-location='available'] :is(.event-inspector__location, .event-inspector__coordinates) {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+    align-items: start;
+    gap: var(--space-2);
   }
 
   .day-timeline {
@@ -306,10 +327,6 @@
 }
 
 @media (max-width: 359px) {
-  .app-header__privacy {
-    display: none;
-  }
-
   .event-category svg {
     display: none;
   }

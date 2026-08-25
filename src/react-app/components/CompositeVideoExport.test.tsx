@@ -27,17 +27,14 @@ afterEach(() => {
 })
 
 describe('CompositeVideoExport', () => {
-  it('explains the local accelerated export before starting', async () => {
+  it('shows the output settings before starting', async () => {
     const user = userEvent.setup()
     render(<CompositeVideoExport event={eventWithCameras()} />)
 
     await user.click(screen.getByRole('button', { name: '合成動画を書き出す' }))
 
-    expect(screen.getByRole('dialog', { name: '合成動画を書き出す' })).toBeVisible()
-    expect(screen.getByText((_, element) => (
-      element?.classList.contains('composite-export-dialog__privacy') === true
-      && element.textContent === '映像はこのMacの中だけで処理され、外部へ送信されません。'
-    ))).toBeVisible()
+    const dialog = screen.getByRole('dialog', { name: '合成動画を書き出す' })
+    expect(dialog).toBeVisible()
     expect(screen.getByText('1280 × 720')).toBeVisible()
     expect(screen.getByText('MP4（失敗時はWebM）')).toBeVisible()
     expect(screen.getByText(/対応ブラウザでは高速に書き出します/)).toBeVisible()

@@ -1,4 +1,4 @@
-import { FolderOpen, ShieldCheck } from 'lucide-react'
+import { FolderOpen } from 'lucide-react'
 
 type EmptyStateProps = {
   readonly error: 'denied' | 'invalid' | 'failed' | null
@@ -46,7 +46,6 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
       <section className="welcome-panel" aria-labelledby="welcome-title">
         <header className="welcome-brand">
           <strong>TeslaCam Viewer</strong>
-          <span>ローカル映像ビューア</span>
         </header>
         <div className="welcome-copy">
           <h1 id="welcome-title">
@@ -70,13 +69,6 @@ export function EmptyState({ error, onSelect }: EmptyStateProps) {
             </div>
           </dl>
         )}
-        <div className="trust-statement" role="note">
-          <ShieldCheck aria-hidden="true" size={22} strokeWidth={1.8} />
-          <div>
-            <strong>映像はこのMacだけで処理</strong>
-            <p>選択した映像やファイル情報は外部へ送信されません。</p>
-          </div>
-        </div>
         <p className="browser-guidance">
           MacのChromeまたはEdgeに対応しています。
         </p>

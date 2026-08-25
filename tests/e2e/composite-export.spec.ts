@@ -19,7 +19,6 @@ test('exports the selected event as one local vehicle-layout video', async ({ co
   await page.getByRole('button', { name: '合成動画を書き出す' }).click()
   const dialog = page.getByRole('dialog', { name: '合成動画を書き出す' })
   await expect(dialog).toBeVisible()
-  await expect(dialog.getByText('映像はこのMacの中だけで処理され、外部へ送信されません。')).toBeVisible()
   await expect(dialog.getByText(/MP4|WEBM/u)).toBeVisible()
   await page.screenshot({ path: `${evidenceRoot}/composite-export-dialog-1280.png` })
   await dialog.getByRole('button', { name: '書き出しを開始' }).click()

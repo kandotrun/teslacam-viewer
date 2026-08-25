@@ -17,8 +17,7 @@
 .app-header__identity {
   display: flex;
   min-inline-size: 0;
-  align-items: baseline;
-  gap: var(--space-3);
+  align-items: center;
 }
 
 .app-header__identity strong {
@@ -26,16 +25,7 @@
   letter-spacing: -0.015em;
 }
 
-.app-header__source {
-  overflow: hidden;
-  color: var(--color-text-muted);
-  font-size: var(--font-small);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .app-header__actions,
-.app-header__privacy,
 .quiet-action {
   display: flex;
   align-items: center;
@@ -43,13 +33,6 @@
 
 .app-header__actions {
   flex: 0 0 auto;
-  gap: var(--space-4);
-}
-
-.app-header__privacy {
-  gap: var(--space-2);
-  color: var(--color-text-muted);
-  font-size: var(--font-small);
 }
 
 .quiet-action {
@@ -85,24 +68,11 @@
   background: var(--color-rail);
 }
 
-.theater-toolbar {
-  display: flex;
-  min-block-size: var(--control-min-size);
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-1);
-  padding-inline: var(--space-4);
-  border-block-end: 1px solid var(--color-border);
-  background: var(--color-surface);
-}
-
 .theater-view-switch {
   display: flex;
   min-block-size: var(--control-min-size);
   align-items: stretch;
   gap: var(--space-1);
-  margin-inline-start: auto;
 }
 
 .theater-view-switch button {
@@ -216,7 +186,6 @@
 }
 
 .composite-export-dialog > header > div,
-.composite-export-dialog__privacy,
 .composite-export-dialog > footer button {
   display: inline-flex;
   align-items: center;
@@ -271,10 +240,6 @@
   margin: 0;
   color: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
-}
-
-.composite-export-dialog__privacy {
-  color: var(--color-text-primary);
 }
 
 .composite-export-dialog__notice {
@@ -354,6 +319,32 @@
 .event-inspector dd {
   overflow-wrap: anywhere;
   font-size: var(--font-small);
+}
+
+.event-inspector__summary-location {
+  display: none;
+}
+
+.event-inspector__coordinates dd {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.event-inspector__technical summary {
+  min-block-size: 32px;
+  align-content: center;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  font-size: var(--font-small);
+}
+
+.event-inspector__technical code {
+  display: block;
+  margin-block-start: var(--space-2);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: var(--font-label);
+  overflow-wrap: anywhere;
 }
 
 .library-sidebar {
@@ -454,24 +445,45 @@
 }
 
 .scan-warnings {
-  display: flex;
-  gap: var(--space-2);
   margin-block-start: auto;
-  padding-block-start: var(--space-4);
   border-block-start: 1px solid var(--color-warning);
   color: var(--color-warning);
 }
 
-.scan-warnings svg {
-  flex: 0 0 auto;
+.scan-warnings > summary {
+  display: flex;
+  min-block-size: var(--control-min-size);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-label);
+  font-weight: 560;
+  list-style: none;
 }
 
-.scan-warnings div {
-  display: grid;
+.scan-warnings > summary::-webkit-details-marker {
+  display: none;
+}
+
+.scan-warnings > summary > span {
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
 }
 
-.scan-warnings p:not(.sidebar-label) {
+.scan-warnings > summary > span:last-child {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.scan-warnings__body {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-1) var(--space-3);
+}
+
+.scan-warnings__body p {
   color: var(--color-text-secondary);
   font-size: var(--font-label);
   line-height: 1.5;

@@ -67,7 +67,7 @@ describe('directory picker', () => {
     expect(fallbackInput).toHaveValue('')
   })
 
-  it('shows encrypted-file notice after a local library scan and can recover from invalid input', async () => {
+  it('collapses encrypted-file notice after a local library scan and can recover from invalid input', async () => {
     const user = userEvent.setup()
     Object.defineProperty(window, 'showDirectoryPicker', {
       configurable: true,
@@ -98,6 +98,15 @@ describe('directory picker', () => {
     render(<App />)
     await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
     await waitFor(() => expect(screen.getByLabelText('読み込み元')).toHaveTextContent('Private Drive'))
+    const warningSummary = screen.getByText('読み込みの注意')
+    const warnings = warningSummary.closest('details')
+    if (warnings === null) {
+      throw new Error('読み込みの注意がdetails要素ではありません')
+    }
+    expect(warnings).not.toHaveAttribute('open')
+    expect(screen.getByText(/暗号化されたファイル 1 件/)).not.toBeVisible()
+    await user.click(warningSummary)
+    expect(warnings).toHaveAttribute('open')
     expect(screen.getByText(/暗号化されたファイル 1 件/)).toBeVisible()
     expect(screen.getByRole('button', { name: 'すべて1' })).toBeVisible()
     const fallbackInput = screen.getByLabelText('TeslaCamフォルダを選ぶ（互換モード）')

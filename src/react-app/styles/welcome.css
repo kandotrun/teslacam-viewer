@@ -26,11 +26,6 @@
   letter-spacing: -0.015em;
 }
 
-.welcome-brand span {
-  color: var(--color-text-muted);
-  font-size: var(--font-small);
-}
-
 .welcome-copy {
   display: grid;
   gap: var(--space-4);
@@ -102,29 +97,6 @@
   line-height: 1.6;
 }
 
-.trust-statement {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-3);
-  color: var(--color-text-secondary);
-}
-
-.trust-statement svg {
-  flex: 0 0 auto;
-  color: var(--color-text-muted);
-}
-
-.trust-statement div {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.trust-statement strong {
-  color: var(--color-text-primary);
-  font-size: var(--font-small);
-}
-
-.trust-statement p,
 .browser-guidance {
   color: var(--color-text-muted);
   font-size: var(--font-small);

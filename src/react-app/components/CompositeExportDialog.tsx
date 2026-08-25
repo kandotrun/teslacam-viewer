@@ -1,4 +1,4 @@
-import { Film, ShieldCheck, X } from 'lucide-react'
+import { Film, X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 
 import type { TeslaCamEvent } from '../../teslacam/types'
@@ -69,10 +69,6 @@ export function CompositeExportDialog({
             <dd>{format.label}{format.fallbackLabel === undefined ? '' : `（失敗時は${format.fallbackLabel}）`}</dd>
           </div>
         </dl>
-        <p className="composite-export-dialog__privacy">
-          <ShieldCheck aria-hidden="true" size={16} strokeWidth={1.75} />
-          <span>映像はこのMacの中だけで処理され、<span className="composite-export-dialog__atomic">外部へ送信されません。</span></span>
-        </p>
         <p className="composite-export-dialog__notice">
           <span className="composite-export-dialog__atomic">対応ブラウザでは高速に書き出します。</span><span className="composite-export-dialog__atomic">完了まではタブを閉じないでください。</span>
         </p>

@@ -38,7 +38,7 @@ export function ReadyWorkspace({
 
   return (
     <div className="library-shell">
-      <AppHeader folderName={state.folderName} onRescan={onRescan} />
+      <AppHeader onRescan={onRescan} />
       <main className="library-workspace">
         <EventNavigator
           events={matchingEvents}
@@ -64,7 +64,6 @@ export function ReadyWorkspace({
             hasNext={selectedIndex >= 0 && selectedIndex < matchingEvents.length - 1}
             hasPrevious={selectedIndex > 0}
             selectedEventId={state.selectedEventId}
-            sourceName={state.folderName}
             theaterRef={theaterRef}
             timelineDateKey={state.filters.dateKey}
             timelineEvents={timelineEvents}

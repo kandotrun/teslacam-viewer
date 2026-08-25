@@ -21,7 +21,6 @@ export type TheaterProps = {
   readonly onNext: () => void
   readonly hasPrevious: boolean
   readonly hasNext: boolean
-  readonly sourceName?: string
   readonly theaterRef?: RefObject<HTMLElement | null>
   readonly timelineEvents?: readonly TeslaCamEvent[]
   readonly timelineDateKey?: string | null
@@ -48,7 +47,6 @@ function TheaterSession({
   onNext,
   hasPrevious,
   hasNext,
-  sourceName = 'TeslaCam',
   theaterRef,
   timelineEvents = [event],
   timelineDateKey = null,
@@ -107,9 +105,7 @@ function TheaterSession({
 
   return (
     <section className="theater" aria-label="6カメラシアター" data-representative={representativeMode} ref={theaterRef}>
-      <TheaterContext event={event} sourceName={sourceName} />
-      <div className="theater-toolbar">
-        <CompositeVideoExport event={event} />
+      <TheaterContext event={event}>
         {!representativeMode && (
           <TheaterViewSwitch
             disabled={expandedCamera !== null}
@@ -117,7 +113,8 @@ function TheaterSession({
             onChange={onViewMode}
           />
         )}
-      </div>
+        <CompositeVideoExport event={event} />
+      </TheaterContext>
       <div className="camera-switcher" role="group" aria-label="表示するカメラ">
         {cameraIds.map((cameraId) => (
           <button

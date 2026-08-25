@@ -19,14 +19,15 @@ describe('Theater layout', () => {
     expect(firstVideo.currentTime).toBe(5)
   })
 
-  it('keeps the selected evidence context next to the playback surface', () => {
-    render(<Theater event={eventWithCameras()} hasNext hasPrevious sourceName="TeslaCam" onNext={() => undefined} onPrevious={() => undefined} />)
+  it('keeps the selected evidence context and its actions in one surface', () => {
+    render(<Theater event={eventWithCameras()} hasNext hasPrevious onNext={() => undefined} onPrevious={() => undefined} />)
     const context = screen.getByLabelText('再生中のイベント')
-    expect(context).toHaveTextContent('TeslaCam')
     expect(context).toHaveTextContent('2026-08-21 12:00:00')
     expect(context).toHaveTextContent('保存済み')
     expect(context).toHaveTextContent('6/6 カメラ')
     expect(context).toHaveTextContent('1分')
+    expect(context).toContainElement(screen.getByRole('button', { name: '合成動画を書き出す' }))
+    expect(context).toContainElement(screen.getByRole('button', { name: '車両配置' }))
     const stage = document.querySelector('[data-view-mode="spatial"]')
     expect(stage?.parentElement).toContainElement(screen.getByLabelText('イベント詳細'))
   })

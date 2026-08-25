@@ -43,6 +43,7 @@
   --font-body: 1rem;
   --font-small: 0.875rem;
   --font-label: 0.75rem;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --font-composite-label: 500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
   --size-composite-label-inset: 8px;
   --size-composite-label-padding-inline: 8px;

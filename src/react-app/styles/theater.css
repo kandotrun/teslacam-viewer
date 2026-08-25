@@ -9,32 +9,19 @@
 
 .theater-context {
   display: grid;
-  min-block-size: 72px;
-  grid-template-columns: minmax(120px, 0.7fr) minmax(210px, 1fr) auto;
+  min-block-size: 64px;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
   align-items: center;
-  gap: var(--space-5);
-  padding: var(--space-3) var(--space-4);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border-block-end: 1px solid var(--color-border);
   background: var(--color-surface);
 }
 
-.theater-context__source,
 .theater-context__event {
   display: grid;
   min-inline-size: 0;
   gap: var(--space-1);
-}
-
-.theater-context__source > span {
-  color: var(--color-text-muted);
-  font-size: var(--font-label);
-}
-
-.theater-context__source strong {
-  overflow: hidden;
-  font-size: var(--font-small);
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .theater-context__event {
@@ -59,10 +46,22 @@
   font-size: var(--font-label);
 }
 
+.theater-context__facts > span {
+  white-space: nowrap;
+}
+
 .theater-context__warning {
   flex-basis: 100%;
   color: var(--color-warning);
   text-align: end;
+}
+
+.theater-context__actions {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-1);
 }
 
 .camera-switcher {
