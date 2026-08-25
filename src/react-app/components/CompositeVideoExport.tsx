@@ -3,8 +3,10 @@ import { useEffect, useReducer, useRef } from 'react'
 
 import type { TeslaCamEvent } from '../../teslacam/types'
 import {
-  compositeRecordingFormat,
+  compositeExportPotentiallySupported,
   exportCompositeVideo,
+  resolveCompositeRecordingFormat,
+  type CompositeRecordingFormat,
 } from '../export/composite-video'
 import { cameraAvailability } from '../event-summary'
 import { eventDuration } from '../playback/timeline'
@@ -16,13 +18,13 @@ type CompositeVideoExportProps = {
 
 type ExportResult = Awaited<ReturnType<typeof exportCompositeVideo>>
 type ExportState =
-  | { readonly status: 'idle'; readonly dialogOpen: boolean; readonly notice: string | null }
+  | { readonly status: 'idle'; readonly dialogOpen: boolean; readonly format: CompositeRecordingFormat | null; readonly notice: string | null }
   | { readonly status: 'exporting'; readonly progress: number }
   | { readonly status: 'complete'; readonly result: ExportResult }
   | { readonly status: 'error'; readonly error: string }
 
 type ExportAction =
-  | { readonly kind: 'dialog-opened' }
+  | { readonly kind: 'dialog-opened'; readonly format: CompositeRecordingFormat }
   | { readonly kind: 'dialog-closed' }
   | { readonly kind: 'started' }
   | { readonly kind: 'progressed'; readonly progress: number }
@@ -34,13 +36,14 @@ type ExportAction =
 const initialExportState: ExportState = {
   status: 'idle',
   dialogOpen: false,
+  format: null,
   notice: null,
 }
 
 function exportReducer(state: ExportState, action: ExportAction): ExportState {
   switch (action.kind) {
     case 'dialog-opened':
-      return { status: 'idle', dialogOpen: true, notice: null }
+      return { status: 'idle', dialogOpen: true, format: action.format, notice: null }
     case 'dialog-closed':
       return state.status === 'idle' ? { ...state, dialogOpen: false } : state
     case 'started':
@@ -54,7 +57,7 @@ function exportReducer(state: ExportState, action: ExportAction): ExportState {
     case 'failed':
       return { status: 'error', error: action.error }
     case 'cancelled':
-      return { status: 'idle', dialogOpen: false, notice: '書き出しを中止しました。' }
+      return { status: 'idle', dialogOpen: false, format: null, notice: '書き出しを中止しました。' }
     case 'reset':
       return initialExportState
   }
@@ -75,17 +78,25 @@ export function CompositeVideoExport({ event }: CompositeVideoExportProps) {
   const [state, dispatch] = useReducer(exportReducer, initialExportState)
   const abortController = useRef<AbortController | null>(null)
   const trigger = useRef<HTMLButtonElement | null>(null)
-  const format = compositeRecordingFormat()
   const availability = cameraAvailability(event)
-  const exportAvailable = format !== null && availability.available > 0
+  const exportAvailable = compositeExportPotentiallySupported() && availability.available > 0
   const durationSeconds = eventDuration(event)
-  const dialogOpen = state.status === 'idle' && state.dialogOpen
+  const dialogOpen = state.status === 'idle' && state.dialogOpen && state.format !== null
 
   useEffect(() => () => abortController.current?.abort(), [])
 
   function close(): void {
     dispatch({ kind: 'dialog-closed' })
     requestAnimationFrame(() => trigger.current?.focus())
+  }
+
+  async function open(): Promise<void> {
+    const format = await resolveCompositeRecordingFormat(event)
+    if (format === null) {
+      dispatch({ kind: 'failed', error: 'このブラウザは動画書き出しに対応していません。' })
+      return
+    }
+    dispatch({ kind: 'dialog-opened', format })
   }
 
   async function start(): Promise<void> {
@@ -132,7 +143,7 @@ export function CompositeVideoExport({ event }: CompositeVideoExportProps) {
           disabled={!exportAvailable}
           ref={trigger}
           type="button"
-          onClick={() => dispatch({ kind: 'dialog-opened' })}
+          onClick={() => void open()}
         >
           <Download aria-hidden="true" size={16} strokeWidth={1.75} />
           書き出す
@@ -168,7 +179,7 @@ export function CompositeVideoExport({ event }: CompositeVideoExportProps) {
           <span>{state.error}</span>
           <button
             type="button"
-            onClick={() => dispatch({ kind: 'dialog-opened' })}
+            onClick={() => void open()}
           >
             もう一度
           </button>
@@ -182,10 +193,10 @@ export function CompositeVideoExport({ event }: CompositeVideoExportProps) {
             : 'このブラウザは書き出しに未対応です'}
         </span>
       )}
-      {dialogOpen && format !== null && (
+      {dialogOpen && state.status === 'idle' && state.format !== null && (
         <CompositeExportDialog
           event={event}
-          format={format}
+          format={state.format}
           onCancel={close}
           onStart={() => void start()}
         />

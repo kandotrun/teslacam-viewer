@@ -4,11 +4,15 @@ import { buildCompositeLayout, containRect, drawCompositeFrame } from './composi
 import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
 
 const visualTokens: CompositeCanvasVisualTokens = {
-  canvas: 'rgb(8, 11, 16)',
-  cameraSurface: 'rgb(17, 23, 32)',
+  canvas: 'rgb(0, 0, 0)',
+  cameraSurface: 'rgb(0, 0, 0)',
   labelScrim: 'rgb(0, 0, 0, 0.72)',
   labelText: 'rgb(255, 255, 255)',
-  labelFont: '600 18px Inter, sans-serif',
+  labelFont: '500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif',
+  labelInset: 8,
+  labelPaddingInline: 8,
+  labelHeight: 24,
+  labelBaseline: 17,
 }
 
 describe('buildCompositeLayout', () => {
@@ -58,6 +62,7 @@ describe('buildCompositeLayout', () => {
         drawImage: (...arguments_: [CanvasImageSource, number, number, number, number]) => calls.push(arguments_),
         fillRect: () => undefined,
         fillText: () => undefined,
+        measureText: () => ({ width: 80 }),
       }),
     })
     const context = canvas.getContext('2d')
@@ -66,5 +71,43 @@ describe('buildCompositeLayout', () => {
     drawCompositeFrame(context, layout, [], vehicle, visualTokens)
 
     expect(calls).toContainEqual([vehicle, 594, 260, 92, 184])
+  })
+
+  it('draws compact fitted camera labels over neutral black letterboxing', () => {
+    const layout = buildCompositeLayout()
+    const vehicle = document.createElement('img')
+    Object.defineProperties(vehicle, {
+      naturalWidth: { value: 360 },
+      naturalHeight: { value: 720 },
+    })
+    const rectangles: { readonly fill: string; readonly width: number; readonly height: number }[] = []
+    const labels: string[] = []
+    let fillStyle = ''
+    let font = ''
+    const canvas = document.createElement('canvas')
+    Object.defineProperty(canvas, 'getContext', {
+      value: () => ({
+        drawImage: () => undefined,
+        fillRect: (_x: number, _y: number, width: number, height: number) => rectangles.push({ fill: fillStyle, width, height }),
+        fillText: (text: string) => labels.push(text),
+        measureText: (text: string) => ({ width: text.length * 13 }),
+        get fillStyle() { return fillStyle },
+        set fillStyle(value: string) { fillStyle = value },
+        get font() { return font },
+        set font(value: string) { font = value },
+      }),
+    })
+    const context = canvas.getContext('2d')
+    if (context === null) throw new Error('canvas context is missing')
+
+    drawCompositeFrame(context, layout, [], vehicle, visualTokens)
+
+    const cameraSurfaces = rectangles.filter(({ fill }) => fill === visualTokens.cameraSurface)
+    const labelScrims = rectangles.filter(({ fill }) => fill === visualTokens.labelScrim)
+    expect(cameraSurfaces).toHaveLength(7)
+    expect(labelScrims).toHaveLength(6)
+    expect(labelScrims.every(({ width, height }) => width < 190 && height === visualTokens.labelHeight)).toBe(true)
+    expect(labels).toContain('右ピラー・記録なし')
+    expect(font).toBe(visualTokens.labelFont)
   })
 })

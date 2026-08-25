@@ -24,7 +24,10 @@ export type CompositeLayout = {
 
 export type CompositeDrawable = {
   readonly cameraId: CameraId
-  readonly video: HTMLVideoElement
+  readonly source: CanvasImageSource
+  readonly width: number
+  readonly height: number
+  readonly playable: boolean
 }
 
 type Size = {
@@ -81,16 +84,20 @@ export function drawCompositeFrame(
     context.fillStyle = visualTokens.cameraSurface
     context.fillRect(x, y, width, height)
     const clip = clips.find(({ cameraId }) => cameraId === slot.cameraId)
-    const playable = clip !== undefined && clip.video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !clip.video.ended
+    const playable = clip?.playable === true
     if (playable && clip !== undefined) {
-      const destination = containRect({ width: clip.video.videoWidth, height: clip.video.videoHeight }, slot.frame)
-      context.drawImage(clip.video, destination.x, destination.y, destination.width, destination.height)
+      const destination = containRect({ width: clip.width, height: clip.height }, slot.frame)
+      context.drawImage(clip.source, destination.x, destination.y, destination.width, destination.height)
     }
-    context.fillStyle = visualTokens.labelScrim
-    context.fillRect(x + 8, y + 8, playable ? 112 : 190, 30)
-    context.fillStyle = visualTokens.labelText
+    const label = playable ? slot.label : `${slot.label}・記録なし`
     context.font = visualTokens.labelFont
-    context.fillText(playable ? slot.label : `${slot.label}・記録なし`, x + 18, y + 30)
+    const labelX = x + visualTokens.labelInset
+    const labelY = y + visualTokens.labelInset
+    const labelWidth = Math.ceil(context.measureText(label).width) + visualTokens.labelPaddingInline * 2
+    context.fillStyle = visualTokens.labelScrim
+    context.fillRect(labelX, labelY, labelWidth, visualTokens.labelHeight)
+    context.fillStyle = visualTokens.labelText
+    context.fillText(label, labelX + visualTokens.labelPaddingInline, labelY + visualTokens.labelBaseline)
   }
   const vehicle = containRect({ width: vehicleImage.naturalWidth, height: vehicleImage.naturalHeight }, layout.vehicle)
   context.drawImage(vehicleImage, vehicle.x, vehicle.y, vehicle.width, vehicle.height)

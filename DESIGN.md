@@ -50,8 +50,8 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | Theater accent border | `--color-theater-accent-border` | `#8bb9ff` | 選択中の映像境界 |
 | Theater warning | `--color-theater-warning` | `#e1a74d` | 映像内の欠損、注意 |
 | Scrim | `--color-scrim` | `rgb(5 6 8 / 64%)` | 合成動画の確認ダイアログ背面 |
-| Composite canvas | `--color-composite-canvas` | `#080b10` | 合成動画のCanvas背景 |
-| Composite camera surface | `--color-composite-camera-surface` | `#111720` | 合成動画の欠損カメラ面 |
+| Composite canvas | `--color-composite-canvas` | `#000000` | 合成動画のCanvas背景 |
+| Composite camera surface | `--color-composite-camera-surface` | `#000000` | 合成動画の欠損カメラ面とcontain余白 |
 | Composite label scrim | `--color-composite-label-scrim` | `rgb(0 0 0 / 72%)` | 合成動画のカメラ名背景 |
 | Composite label text | `--color-composite-label-text` | `#ffffff` | 合成動画のカメラ名 |
 
@@ -75,7 +75,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | Body | `--font-body` | `1rem` | 400 | 1.6 | `0` | 標準本文、操作 |
 | Small | `--font-small` | `0.875rem` | 450 | 1.5 | `0` | ブラウザ案内 |
 | Label | `--font-label` | `0.75rem` | 560 | 1.35 | `0.01em` | カテゴリ、メタデータ |
-| Composite label | `--font-composite-label` | `600 18px Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif` | 600 | 1.35 | `0` | 保存する合成動画のカメラ名 |
+| Composite label | `--font-composite-label` | `500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif` | 500 | 1.35 | `0` | 保存する合成動画のカメラ名 |
 
 ### Font Stack
 
@@ -129,6 +129,10 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | `--composite-export-progress-inline-size` | `min(240px, 22vi)` | desktop/tablet書き出し進捗の幅 |
 | `--composite-export-dialog-inline-size` | `520px` | 書き出し確認ダイアログの最大幅 |
 | `--composite-export-detail-label-inline-size` | `88px` | 書き出し確認の項目名列幅 |
+| `--size-composite-label-inset` | `8px` | 保存する合成動画のカメラ名を映像端から離す距離 |
+| `--size-composite-label-padding-inline` | `8px` | 保存する合成動画のカメラ名背景の左右余白 |
+| `--size-composite-label-height` | `24px` | 保存する合成動画のカメラ名背景の高さ |
+| `--size-composite-label-baseline` | `17px` | 保存する合成動画のカメラ名のbaseline位置 |
 
 ### Grid
 
@@ -218,7 +222,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - **Output**: 選択中イベントの全セグメントを一つのCanvasへ描画し、常に`front / left-pillar / vehicle / right-pillar / left-repeater / back / right-repeater`の車両配置で録画する。中央車両はライブ画面と同じ`/vehicle-top.png`をexport sessionごとに一度だけ読み込み、透過を保って`contain`描画する。各映像も`contain`で端まで残し、欠損方向にはカメラ名と`記録なし`を表示する。
 - **Token hand-off**: Canvasは開始時にrootの`--color-composite-*`と`--font-composite-label`を一度だけ解決してsessionへ渡し、フレーム描画中にCSSを読み直さない。保存映像の背景、欠損面、ラベルscrim、文字色、書体を通常UIと同じdesign systemで管理する。
 - **Format**: ブラウザがMediaRecorderで対応するMP4を優先し、未対応時はWebMへ切り替える。拡張子と形式は検出結果と一致させ、MP4対応を仮定した文言を表示しない。
-- **Progress**: 開始後は確認ダイアログを閉じ、同じツールバーで経過、全長、progress、中止を表示する。完了後だけ保存操作を出し、中止した未完成Blobは保存させない。リアルタイム合成のため録画時間と同程度かかることを開始前に伝える。
+- **Progress**: 開始後は確認ダイアログを閉じ、同じツールバーで経過、全長、progress、中止を表示する。完了後だけ保存操作を出し、中止した未完成Blobは保存させない。WebCodecsが利用できる場合は実時間を待たずにMP4へ書き出し、利用できない場合だけMediaRecorderによるリアルタイム書き出しへ切り替える。
 - **Privacy**: File、Blob、Canvas、MediaStreamはブラウザ内に閉じ、映像、ファイル名、時刻、位置情報をWorkerや外部へ送らない。通常再生のvideo、Object URL、同期runtimeとは別のexport sessionとして扱う。
 - **Responsive**: 1280pxでは表示切替と同じツールバーの別群、768pxでは書き出しだけを右寄せ、375pxでは44px幅いっぱいの操作と二段の進捗にする。ダイアログは狭幅で画面下端へ接続し、ページ全体に横スクロールを作らない。
 - **Accessibility**: 確認はnative `dialog`、見出しと説明の関連付け、Esc終了、triggerへのfocus復帰を持つ。進捗は`progress`とpolite status、開始・中止・保存は可視ラベル付き44px操作にする。

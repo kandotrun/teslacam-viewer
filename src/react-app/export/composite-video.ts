@@ -13,7 +13,18 @@ import { readCompositeCanvasVisualTokens, type CompositeCanvasVisualTokens } fro
 export { CompositeVideoExportError } from './composite-recorder'
 export type { CompositeRecorder, CompositeVideoExportErrorCode } from './composite-recorder'
 
-export type CompositeRecordingFormat = { readonly mimeType: string; readonly extension: 'mp4' | 'webm'; readonly label: 'MP4' | 'WebM' }
+export type CompositeRecordingFormat = {
+  readonly mimeType: string
+  readonly extension: 'mp4' | 'webm'
+  readonly label: 'MP4' | 'WebM'
+  readonly fallbackLabel?: 'MP4' | 'WebM'
+}
+
+export type CompositeFormatDependencies = {
+  readonly canUseAcceleratedExport: (event: TeslaCamEvent) => Promise<boolean>
+  readonly isMediaRecorderAvailable: () => boolean
+  readonly isTypeSupported: (mimeType: string) => boolean
+}
 
 export type CompositeVideoDependencies = {
   readonly createCanvas: () => HTMLCanvasElement; readonly createVideo: () => HTMLVideoElement; readonly createImage: () => HTMLImageElement
@@ -47,6 +58,8 @@ const recordingFormats = [
   { mimeType: 'video/webm', extension: 'webm', label: 'WebM' },
 ] as const satisfies readonly CompositeRecordingFormat[]
 
+const acceleratedFormat: CompositeRecordingFormat = { mimeType: 'video/mp4', extension: 'mp4', label: 'MP4' }
+
 function browserDependencies(): CompositeVideoDependencies {
   return {
     createCanvas: () => document.createElement('canvas'),
@@ -54,7 +67,7 @@ function browserDependencies(): CompositeVideoDependencies {
     createImage: () => new Image(),
     createObjectURL: (file) => URL.createObjectURL(file),
     revokeObjectURL: (url) => URL.revokeObjectURL(url),
-    isTypeSupported: (mimeType) => MediaRecorder.isTypeSupported(mimeType),
+    isTypeSupported: (mimeType) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(mimeType),
     createRecorder: (stream, mimeType) => new MediaRecorder(stream, { mimeType }),
     requestAnimationFrame: (callback) => window.requestAnimationFrame(callback),
     cancelAnimationFrame: (handle) => window.cancelAnimationFrame(handle),
@@ -79,9 +92,35 @@ export function chooseCompositeRecordingFormat(
   return recordingFormats.find(({ mimeType }) => isTypeSupported(mimeType)) ?? null
 }
 
-export function compositeRecordingFormat(): CompositeRecordingFormat | null {
-  if (typeof MediaRecorder === 'undefined') return null
-  return chooseCompositeRecordingFormat((mimeType) => MediaRecorder.isTypeSupported(mimeType))
+function browserFormatDependencies(): CompositeFormatDependencies {
+  return {
+    canUseAcceleratedExport: async (event) => {
+      const { canExportCompositeWithWebCodecs } = await import('./composite-webcodecs')
+      return canExportCompositeWithWebCodecs(event)
+    },
+    isMediaRecorderAvailable: () => typeof MediaRecorder !== 'undefined',
+    isTypeSupported: (mimeType) => typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(mimeType),
+  }
+}
+
+export function compositeExportPotentiallySupported(): boolean {
+  return (typeof VideoEncoder !== 'undefined' && typeof VideoDecoder !== 'undefined') || typeof MediaRecorder !== 'undefined'
+}
+
+export async function resolveCompositeRecordingFormat(
+  event: TeslaCamEvent,
+  dependencies: CompositeFormatDependencies = browserFormatDependencies(),
+): Promise<CompositeRecordingFormat | null> {
+  const accelerated = await dependencies.canUseAcceleratedExport(event).catch(() => false)
+  if (accelerated) {
+    if (!dependencies.isMediaRecorderAvailable()) return acceleratedFormat
+    const fallback = chooseCompositeRecordingFormat(dependencies.isTypeSupported)
+    return fallback !== null && fallback.label !== acceleratedFormat.label
+      ? { ...acceleratedFormat, fallbackLabel: fallback.label }
+      : acceleratedFormat
+  }
+  if (!dependencies.isMediaRecorderAvailable()) return null
+  return chooseCompositeRecordingFormat(dependencies.isTypeSupported)
 }
 
 function waitForMetadata(video: HTMLVideoElement, signal: AbortSignal | undefined): Promise<void> {
@@ -150,17 +189,40 @@ export async function exportCompositeVideo(options: CompositeVideoExportOptions)
   assertActive(options.signal)
   const dependencies = options.dependencies ?? browserDependencies()
   const format = chooseCompositeRecordingFormat(dependencies.isTypeSupported)
-  if (format === null) throw new CompositeVideoExportError('unsupported', 'このブラウザは動画書き出しに対応していません。')
+  if (options.dependencies !== undefined && format === null) {
+    throw new CompositeVideoExportError('unsupported', 'このブラウザは動画書き出しに対応していません。')
+  }
   const layout = buildCompositeLayout()
   const canvas = dependencies.createCanvas()
   canvas.width = layout.width
   canvas.height = layout.height
   const context = canvas.getContext('2d')
-  if (context === null || typeof canvas.captureStream !== 'function') {
-    throw new CompositeVideoExportError('unsupported', 'このブラウザはCanvas録画に対応していません。')
-  }
+  if (context === null) throw new CompositeVideoExportError('unsupported', 'このブラウザはCanvas録画に対応していません。')
   const visualTokens = dependencies.readCompositeCanvasVisualTokens()
   const vehicleImage = await loadCompositeVehicleImage(dependencies, options.signal)
+  if (options.dependencies === undefined) {
+    try {
+      const { tryExportCompositeWithWebCodecs } = await import('./composite-webcodecs')
+      const accelerated = await tryExportCompositeWithWebCodecs({
+        event: options.event,
+        canvas,
+        context,
+        vehicleImage,
+        visualTokens,
+        createCanvas: dependencies.createCanvas,
+        signal: options.signal,
+        onProgress: options.onProgress,
+      })
+      if (accelerated !== null) return accelerated
+    } catch (error) {
+      if (options.signal?.aborted === true) throw exportAborted()
+      if (error instanceof CompositeVideoExportError && error.code === 'aborted') throw error
+    }
+  }
+  if (format === null) throw new CompositeVideoExportError('unsupported', 'このブラウザは動画書き出しに対応していません。')
+  if (typeof canvas.captureStream !== 'function') {
+    throw new CompositeVideoExportError('unsupported', 'このブラウザはCanvas録画に対応していません。')
+  }
   let lifecycle: CompositeRecorderLifecycle | undefined
   let stream: MediaStream | undefined
   let paused = false

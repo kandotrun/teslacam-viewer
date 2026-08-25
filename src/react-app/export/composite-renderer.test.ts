@@ -10,11 +10,15 @@ import {
 import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
 
 const visualTokens: CompositeCanvasVisualTokens = {
-  canvas: 'rgb(8, 11, 16)',
-  cameraSurface: 'rgb(17, 23, 32)',
+  canvas: 'rgb(0, 0, 0)',
+  cameraSurface: 'rgb(0, 0, 0)',
   labelScrim: 'rgb(0, 0, 0, 0.72)',
   labelText: 'rgb(255, 255, 255)',
-  labelFont: '600 18px Inter, sans-serif',
+  labelFont: '500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif',
+  labelInset: 8,
+  labelPaddingInline: 8,
+  labelHeight: 24,
+  labelBaseline: 17,
 }
 
 type AnimationDriver = {
@@ -68,6 +72,7 @@ function context(drawImage: () => void): CanvasRenderingContext2D {
       drawImage,
       fillRect: () => undefined,
       fillText: () => undefined,
+      measureText: () => ({ width: 80 }),
     }),
   })
   const value = canvas.getContext('2d')

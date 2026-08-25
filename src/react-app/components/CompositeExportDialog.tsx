@@ -49,7 +49,7 @@ export function CompositeExportDialog({
       </header>
       <div className="composite-export-dialog__body">
         <p id="composite-export-description">
-          選択中の記録を、6カメラと車両配置を含む1本の動画にまとめます。利用できないカメラは「記録なし」と表示します。
+          選択中の記録を、6カメラと車両配置を含む<span className="composite-export-dialog__atomic">1本の動画にまとめます。</span><span className="composite-export-dialog__atomic">利用できないカメラは「記録なし」と表示します。</span>
         </p>
         <dl>
           <div>
@@ -66,15 +66,15 @@ export function CompositeExportDialog({
           </div>
           <div>
             <dt>形式</dt>
-            <dd>{format.label}</dd>
+            <dd>{format.label}{format.fallbackLabel === undefined ? '' : `（失敗時は${format.fallbackLabel}）`}</dd>
           </div>
         </dl>
         <p className="composite-export-dialog__privacy">
           <ShieldCheck aria-hidden="true" size={16} strokeWidth={1.75} />
-          映像はこのMacの中だけで処理され、外部へ送信されません。
+          <span>映像はこのMacの中だけで処理され、<span className="composite-export-dialog__atomic">外部へ送信されません。</span></span>
         </p>
         <p className="composite-export-dialog__notice">
-          録画時間と同程度かかります。完了するまでこのタブを表示したままにしてください。
+          <span className="composite-export-dialog__atomic">対応ブラウザでは高速に書き出します。</span><span className="composite-export-dialog__atomic">完了まではタブを閉じないでください。</span>
         </p>
       </div>
       <footer>

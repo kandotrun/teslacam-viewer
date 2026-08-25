@@ -5,6 +5,7 @@ import {
   CompositeVideoExportError,
   chooseCompositeRecordingFormat,
   exportCompositeVideo,
+  resolveCompositeRecordingFormat,
   type CompositeVideoDependencies,
   type CompositeRecorder,
 } from './composite-video'
@@ -16,6 +17,10 @@ const visualTokens: CompositeCanvasVisualTokens = {
   labelScrim: 'rgb(0, 0, 0, 0.72)',
   labelText: 'rgb(255, 255, 255)',
   labelFont: '600 18px Inter, sans-serif',
+  labelInset: 8,
+  labelPaddingInline: 8,
+  labelHeight: 24,
+  labelBaseline: 17,
 }
 
 function fileRef(name: string): LocalFileRef {
@@ -49,6 +54,7 @@ function dependencies(
           drawImage: () => undefined,
           fillRect: () => undefined,
           fillText,
+          measureText: (text: string) => ({ width: text.length * 8 }),
         }),
       })
       Object.defineProperty(canvas, 'captureStream', { value: () => ({ getTracks: () => [] }) })
@@ -128,6 +134,51 @@ function compositeRecorder(): CompositeRecorder {
 }
 
 describe('chooseCompositeRecordingFormat', () => {
+  it('reports MP4 when AVC WebCodecs export is available without MediaRecorder', async () => {
+    await expect(resolveCompositeRecordingFormat(event(), {
+      canUseAcceleratedExport: async () => true,
+      isMediaRecorderAvailable: () => false,
+      isTypeSupported: () => false,
+    })).resolves.toEqual({
+      mimeType: 'video/mp4',
+      extension: 'mp4',
+      label: 'MP4',
+    })
+  })
+
+  it('reports the WebM fallback when accelerated MP4 can fail at runtime', async () => {
+    await expect(resolveCompositeRecordingFormat(event(), {
+      canUseAcceleratedExport: async () => true,
+      isMediaRecorderAvailable: () => true,
+      isTypeSupported: (mimeType) => mimeType === 'video/webm',
+    })).resolves.toEqual({
+      mimeType: 'video/mp4',
+      extension: 'mp4',
+      label: 'MP4',
+      fallbackLabel: 'WebM',
+    })
+  })
+
+  it('reports the WebM fallback when AVC WebCodecs encoding is unavailable', async () => {
+    await expect(resolveCompositeRecordingFormat(event(), {
+      canUseAcceleratedExport: async () => false,
+      isMediaRecorderAvailable: () => true,
+      isTypeSupported: (mimeType) => mimeType === 'video/webm',
+    })).resolves.toEqual({
+      mimeType: 'video/webm',
+      extension: 'webm',
+      label: 'WebM',
+    })
+  })
+
+  it('reports no format when neither AVC WebCodecs nor MediaRecorder is available', async () => {
+    await expect(resolveCompositeRecordingFormat(event(), {
+      canUseAcceleratedExport: async () => false,
+      isMediaRecorderAvailable: () => false,
+      isTypeSupported: () => false,
+    })).resolves.toBeNull()
+  })
+
   it('prefers a supported MP4 format over WebM', () => {
     const supported = vi.fn((mimeType: string) => mimeType.includes('webm') || mimeType === 'video/mp4')
 
@@ -172,7 +223,7 @@ describe('exportCompositeVideo', () => {
     expect(result.blob).toMatchObject({ size: 5, type: 'video/webm' })
     expect(progress.mock.calls.flat()).toEqual([0, 1, 1])
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:front')
-    expect(fillText).toHaveBeenCalledWith('リア・記録なし', 418, 522)
+    expect(fillText).toHaveBeenCalledWith('リア・記録なし', 416, 517)
   })
 
   it('resolves composite Canvas visual tokens once before rendering', async () => {
@@ -189,6 +240,7 @@ describe('exportCompositeVideo', () => {
             drawImage: () => undefined,
             fillRect: () => undefined,
             fillText: () => undefined,
+            measureText: (text: string) => ({ width: text.length * 8 }),
             set fillStyle(value: string) { fillStyles.push(value) },
             set font(value: string) { fonts.push(value) },
           }),
@@ -316,7 +368,12 @@ describe('exportCompositeVideo', () => {
       createCanvas: () => {
         const canvas = document.createElement('canvas')
         Object.defineProperty(canvas, 'getContext', {
-          value: () => ({ drawImage: () => undefined, fillRect: () => undefined, fillText: () => undefined }),
+          value: () => ({
+            drawImage: () => undefined,
+            fillRect: () => undefined,
+            fillText: () => undefined,
+            measureText: (text: string) => ({ width: text.length * 8 }),
+          }),
         })
         Object.defineProperty(canvas, 'captureStream', { value: () => ({ getTracks: () => [{ stop: stopTrack }] }) })
         return canvas

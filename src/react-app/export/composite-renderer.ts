@@ -1,5 +1,5 @@
 import type { CameraId } from '../../teslacam/types'
-import { buildCompositeLayout, drawCompositeFrame } from './composite-layout'
+import { buildCompositeLayout, drawCompositeFrame, type CompositeDrawable } from './composite-layout'
 import { CompositeVideoExportError, exportAborted } from './composite-recorder'
 import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
 
@@ -98,7 +98,14 @@ export async function renderCompositeSegment(options: CompositeRenderOptions): P
       }
       previousTimestamp = timestamp
       if (logicalMilliseconds - lastDrawMilliseconds >= frameIntervalMilliseconds) {
-        drawCompositeFrame(options.context, layout, activeClips, options.vehicleImage, options.visualTokens)
+        const drawables: CompositeDrawable[] = activeClips.map(({ cameraId, video }) => ({
+          cameraId,
+          source: video,
+          width: video.videoWidth,
+          height: video.videoHeight,
+          playable: video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.ended,
+        }))
+        drawCompositeFrame(options.context, layout, drawables, options.vehicleImage, options.visualTokens)
         lastDrawMilliseconds = logicalMilliseconds
       }
       const finished = logicalMilliseconds >= duration * 1000

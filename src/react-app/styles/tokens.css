@@ -32,8 +32,8 @@
   --color-theater-accent-border: #8bb9ff;
   --color-theater-warning: #e1a74d;
   --color-scrim: rgb(5 6 8 / 64%);
-  --color-composite-canvas: #080b10;
-  --color-composite-camera-surface: #111720;
+  --color-composite-canvas: #000000;
+  --color-composite-camera-surface: #000000;
   --color-composite-label-scrim: rgb(0 0 0 / 72%);
   --color-composite-label-text: #ffffff;
   --font-display: clamp(2rem, 4vw, 3rem);
@@ -43,7 +43,11 @@
   --font-body: 1rem;
   --font-small: 0.875rem;
   --font-label: 0.75rem;
-  --font-composite-label: 600 18px Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  --font-composite-label: 500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif;
+  --size-composite-label-inset: 8px;
+  --size-composite-label-padding-inline: 8px;
+  --size-composite-label-height: 24px;
+  --size-composite-label-baseline: 17px;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;

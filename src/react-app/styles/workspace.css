@@ -281,6 +281,10 @@
   color: var(--color-warning);
 }
 
+.composite-export-dialog__atomic {
+  white-space: nowrap;
+}
+
 .composite-export-dialog > footer {
   justify-content: flex-end;
   border-block-start: 1px solid var(--color-border);
