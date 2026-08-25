@@ -49,6 +49,11 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | Theater border strong | `--color-theater-border-strong` | `#74808e` | 映像タイルの操作境界 |
 | Theater accent border | `--color-theater-accent-border` | `#8bb9ff` | 選択中の映像境界 |
 | Theater warning | `--color-theater-warning` | `#e1a74d` | 映像内の欠損、注意 |
+| Scrim | `--color-scrim` | `rgb(5 6 8 / 64%)` | 合成動画の確認ダイアログ背面 |
+| Composite canvas | `--color-composite-canvas` | `#080b10` | 合成動画のCanvas背景 |
+| Composite camera surface | `--color-composite-camera-surface` | `#111720` | 合成動画の欠損カメラ面 |
+| Composite label scrim | `--color-composite-label-scrim` | `rgb(0 0 0 / 72%)` | 合成動画のカメラ名背景 |
+| Composite label text | `--color-composite-label-text` | `#ffffff` | 合成動画のカメラ名 |
 
 ### Rules
 
@@ -70,6 +75,7 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | Body | `--font-body` | `1rem` | 400 | 1.6 | `0` | 標準本文、操作 |
 | Small | `--font-small` | `0.875rem` | 450 | 1.5 | `0` | ブラウザ案内 |
 | Label | `--font-label` | `0.75rem` | 560 | 1.35 | `0.01em` | カテゴリ、メタデータ |
+| Composite label | `--font-composite-label` | `600 18px Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif` | 600 | 1.35 | `0` | 保存する合成動画のカメラ名 |
 
 ### Font Stack
 
@@ -105,7 +111,8 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | `--event-navigator-width` | `320px` | desktopイベントナビゲーション幅 |
 | `--event-inspector-width` | `240px` | desktopイベント詳細幅 |
 | `--camera-stage-spatial-min` | `720px` | 車両配置切り替えを許可するstage幅 |
-| `--playback-deck-height` | `196px` | desktop再生操作と日タイムラインの合計高 |
+| `--playback-deck-height` | `224px` | desktop再生操作と履歴タイムラインの合計高 |
+| `--playback-deck-expanded-height` | `268px` | desktopで近接記録clusterを開いたときの合計高 |
 | `--event-thumbnail-width` | `88px` | イベントカードのサムネイル幅 |
 | `--event-card-min-height` | `96px` | イベント行の最小高 |
 | `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
@@ -119,11 +126,14 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 | `--theater-video-fit` | `contain` | 録画範囲を切らずに表示 |
 | `--app-header-height` | `56px` | desktop/tabletの固定ヘッダー高 |
 | `--transport-mobile-max` | `140px` | mobile transportの最大高 |
+| `--composite-export-progress-inline-size` | `min(240px, 22vi)` | desktop/tablet書き出し進捗の幅 |
+| `--composite-export-dialog-inline-size` | `520px` | 書き出し確認ダイアログの最大幅 |
+| `--composite-export-detail-label-inline-size` | `88px` | 書き出し確認の項目名列幅 |
 
 ### Grid
 
 - 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力、得られる結果、ローカル処理の事実が一画面で読める。
-- 完成形のdesktopは320pxのEventNavigatorと残りのTheaterSessionに分け、TheaterSession内は可変CameraStageと240pxのEventInspectorを並べる。下端196pxはPlaybackControlsとDayTimelineが共有する。
+- 完成形のdesktopは320pxのEventNavigatorと残りのTheaterSessionに分け、TheaterSession内は可変CameraStageと240pxのEventInspectorを並べる。下端224pxはPlaybackControlsとDayTimelineが共有する。
 - CameraStageのcontent boxが720px以上のdesktopだけ車両配置を許可し、frontを上中央、pillarを車両左右、repeaterとbackを下段へ置く。同じcanonical orderの6動画要素を使い、中央の静的車両画像だけを`vehicle` areaへ置く。
 - 640–1024pxはEventNavigator、TheaterContext、3×2 CameraStage、開閉式EventInspector、PlaybackDeckを積層する。閉じたEventInspectorでもカテゴリ、時刻、カメラ可用性を読める。639px以下は1画面カメラと6方向Camera switcherだけを局所横スクロールにする。
 - mobileでは6つのvideo要素を同期とObject URLのライフサイクル維持のためDOMへ残し、選択した一方向だけを表示する。6方向の切り替えはラベル付き横スクロール操作とする。
@@ -202,12 +212,25 @@ AI生成サービスらしさを避けるため、宣伝見出し、英語の大
 - **Persistence**: 見た目だけをCSS Gridで変え、canonical DOM order、6つのvideo、同期位置、Blob URLを維持する。映像は常に`object-fit: contain`とする。
 - **Surface**: CameraStageだけを暗いtheater tokenへ閉じ込め、glass、glow、gradient、shadowを使わない。
 
+### Composite video export
+
+- **Structure**: TheaterContext直下のツールバーに中立な`書き出す`操作を置き、表示切替とは別の操作群にする。開始前だけ確認ダイアログを開き、選択イベント、全区間、車両配置、1280 × 720、検出済み形式、ローカル処理を確認できるようにする。
+- **Output**: 選択中イベントの全セグメントを一つのCanvasへ描画し、常に`front / left-pillar / vehicle / right-pillar / left-repeater / back / right-repeater`の車両配置で録画する。中央車両はライブ画面と同じ`/vehicle-top.png`をexport sessionごとに一度だけ読み込み、透過を保って`contain`描画する。各映像も`contain`で端まで残し、欠損方向にはカメラ名と`記録なし`を表示する。
+- **Token hand-off**: Canvasは開始時にrootの`--color-composite-*`と`--font-composite-label`を一度だけ解決してsessionへ渡し、フレーム描画中にCSSを読み直さない。保存映像の背景、欠損面、ラベルscrim、文字色、書体を通常UIと同じdesign systemで管理する。
+- **Format**: ブラウザがMediaRecorderで対応するMP4を優先し、未対応時はWebMへ切り替える。拡張子と形式は検出結果と一致させ、MP4対応を仮定した文言を表示しない。
+- **Progress**: 開始後は確認ダイアログを閉じ、同じツールバーで経過、全長、progress、中止を表示する。完了後だけ保存操作を出し、中止した未完成Blobは保存させない。リアルタイム合成のため録画時間と同程度かかることを開始前に伝える。
+- **Privacy**: File、Blob、Canvas、MediaStreamはブラウザ内に閉じ、映像、ファイル名、時刻、位置情報をWorkerや外部へ送らない。通常再生のvideo、Object URL、同期runtimeとは別のexport sessionとして扱う。
+- **Responsive**: 1280pxでは表示切替と同じツールバーの別群、768pxでは書き出しだけを右寄せ、375pxでは44px幅いっぱいの操作と二段の進捗にする。ダイアログは狭幅で画面下端へ接続し、ページ全体に横スクロールを作らない。
+- **Accessibility**: 確認はnative `dialog`、見出しと説明の関連付け、Esc終了、triggerへのfocus復帰を持つ。進捗は`progress`とpolite status、開始・中止・保存は可視ラベル付き44px操作にする。
+
 ### Playback deck and day timeline
 
-- **Structure**: desktop下端196pxにPlaybackControlsと選択日の24時間DayTimelineを連続配置する。rangeはイベント内位置、DayTimeline markerは別イベント選択を担当する。
+- **Structure**: desktop下端224pxにPlaybackControlsと選択日の24時間DayTimelineを連続配置する。rangeはイベント内位置、DayTimeline markerは別イベント選択を担当する。日付ヘッダーには記録が存在する前後の日、現在日、同日件数を置き、記録のない日を飛ばして移動する。
 - **Surface**: PlaybackControlsはライト面、24時間のrulerとmarker領域は暗いevidence面にする。
-- **Semantics**: 録画開始時刻をローカル文字列のまま24時間位置へ変換し、Sentryは有効な検知時刻の15秒前から自動再生する。SavedClipsとRecentClipsは0秒から自動再生する。
-- **Responsive**: 768pxではrulerを短いイベント一覧へ縮退し、375pxでは前後イベント、選択時刻、同日件数を表示して新しい横スクロールを作らない。
+- **Semantics**: 録画開始時刻をローカル文字列のまま24時間位置へ変換し、Sentryは有効な検知時刻の15秒前から自動再生する。SavedClipsとRecentClipsは0秒から自動再生する。日付移動は左の一覧の日付filterと同期し、移動先で最も新しい記録を選択して再生する。イベント移動は一覧位置ではなく、`過去の記録`と`新しい記録`の時間方向で表す。
+- **Dense history**: 44pxの操作面が重なる近接記録は一つのclusterへまとめ、`20:35–20:45・3件`のように時間幅と件数を示す。clusterを開くとタイムライン内に専用行を確保して時刻順の記録buttonを表示し、日付移動や再生操作を覆わず、色だけに依存せず時刻、カテゴリ、選択状態を読めるようにする。
+- **Responsive**: 1280pxでは24時間rulerとclusterを表示する。768pxではrulerを時刻順のイベント一覧へ縮退する。375pxでは前後の記録日と`履歴を開く`を常設し、展開した縦一覧からイベントを選べるようにして、ページ全体へ新しい横スクロールを作らない。
+- **Interaction**: marker、cluster、記録日の操作は44px以上とし、左右キーで同日の記録、Home/Endで同日の先頭と末尾へfocusを移す。日付移動と履歴展開は位置や高さをアニメーションせず、選択色と境界だけを`--motion-fast`で変える。
 
 ### Theater context
 

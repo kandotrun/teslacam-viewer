@@ -29,6 +29,7 @@ describe('workspace event selection', () => {
     expect(firstVideo.currentTime).toBe(5)
 
     firstVideo.currentTime = 9
+    await user.click(screen.getByRole('button', { name: '12:00–13:00・2件を開く' }))
     const timelineMarker = document.querySelector<HTMLButtonElement>('[data-day-event-id="sentry-preroll"]')
     if (timelineMarker === null) throw new Error('timeline marker is missing')
     await user.click(timelineMarker)
@@ -41,7 +42,7 @@ describe('workspace event selection', () => {
     if (nextTimelineMarker === null) throw new Error('next timeline marker is missing')
     await user.click(nextTimelineMarker)
     await waitFor(() => {
-      const selectedTimelineMarker = document.querySelector<HTMLButtonElement>('[data-day-event-id="sentry-start"]')
+      const selectedTimelineMarker = document.querySelector<HTMLButtonElement>('[data-day-cluster-event-ids~="sentry-start"]')
       expect(selectedTimelineMarker).toHaveFocus()
     })
     expect(screen.getByLabelText('再生位置')).toHaveValue('0')
@@ -49,17 +50,37 @@ describe('workspace event selection', () => {
     fireEvent.canPlay(listSelectedVideo)
     expect(listSelectedVideo.currentTime).toBe(0)
 
-    await user.click(screen.getByRole('button', { name: '次のイベント' }))
+    await user.click(screen.getByRole('button', { name: '過去の記録' }))
     expect(screen.getByLabelText('再生位置')).toHaveValue('65')
     const nextVideo = firstCameraVideo()
     fireEvent.canPlay(nextVideo)
     expect(nextVideo.currentTime).toBe(5)
 
-    await user.click(screen.getByRole('button', { name: '前のイベント' }))
+    await user.click(screen.getByRole('button', { name: '新しい記録' }))
     expect(screen.getByLabelText('再生位置')).toHaveValue('0')
     const previousVideo = firstCameraVideo()
     fireEvent.canPlay(previousVideo)
     expect(previousVideo.currentTime).toBe(0)
     view.unmount()
+  })
+
+  it('filters to an earlier recorded day and autoplays its newest event', async () => {
+    const user = userEvent.setup()
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:camera')
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+    vi.spyOn(HTMLMediaElement.prototype, 'load').mockImplementation(() => undefined)
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(() => undefined)
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(async () => undefined)
+    render(<WorkspaceSelectionHarness />)
+
+    await user.click(screen.getByRole('button', { name: '前の記録日 2026-08-20' }))
+    const selectedEvent = screen.getByRole('button', { name: /^2026-08-20 20:00:00$/ })
+    const video = firstCameraVideo()
+    fireEvent.canPlay(video)
+
+    expect(selectedEvent).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByLabelText('日付')).toHaveValue('2026-08-20')
+    expect(screen.getByLabelText('再生位置')).toHaveValue('0')
+    await waitFor(() => expect(screen.getByRole('button', { name: '一時停止' })).toBeVisible())
   })
 })

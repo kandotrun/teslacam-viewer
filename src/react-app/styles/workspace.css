@@ -85,15 +85,24 @@
   background: var(--color-rail);
 }
 
-.theater-view-switch {
+.theater-toolbar {
   display: flex;
   min-block-size: var(--control-min-size);
   flex: 0 0 auto;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-1);
   padding-inline: var(--space-4);
   border-block-end: 1px solid var(--color-border);
   background: var(--color-surface);
+}
+
+.theater-view-switch {
+  display: flex;
+  min-block-size: var(--control-min-size);
+  align-items: stretch;
+  gap: var(--space-1);
+  margin-inline-start: auto;
 }
 
 .theater-view-switch button {
@@ -103,6 +112,198 @@
   border-block-end: 2px solid transparent;
   background: transparent;
   color: var(--color-text-secondary);
+}
+
+.composite-export-control {
+  display: flex;
+  min-inline-size: 0;
+  min-block-size: var(--control-min-size);
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.composite-export-trigger,
+.composite-export-toolbar-status button,
+.composite-export-toolbar-result button,
+.composite-export-toolbar-error button {
+  display: inline-flex;
+  min-block-size: var(--control-min-size);
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-label);
+  white-space: nowrap;
+}
+
+.composite-export-toolbar-status,
+.composite-export-toolbar-result,
+.composite-export-toolbar-error {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-label);
+}
+
+.composite-export-toolbar-status > div {
+  display: flex;
+  gap: var(--space-2);
+  white-space: nowrap;
+}
+
+.composite-export-toolbar-status progress {
+  inline-size: var(--composite-export-progress-inline-size);
+  accent-color: var(--color-accent);
+}
+
+.composite-export-toolbar-result > span,
+.composite-export-toolbar-error > span,
+.composite-export-notice,
+.composite-export-unavailable {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.composite-export-toolbar-result button:first-of-type {
+  border-color: var(--color-accent-contrast);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
+}
+
+.composite-export-toolbar-error,
+.composite-export-unavailable {
+  color: var(--color-warning);
+}
+
+.composite-export-notice,
+.composite-export-unavailable {
+  font-size: var(--font-label);
+}
+
+.composite-export-dialog {
+  inline-size: min(var(--composite-export-dialog-inline-size), calc(100vi - var(--space-8)));
+  max-inline-size: none;
+  padding: 0;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+.composite-export-dialog::backdrop {
+  background: var(--color-scrim);
+}
+
+.composite-export-dialog > header,
+.composite-export-dialog > footer {
+  display: flex;
+  min-block-size: var(--control-min-size);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+
+.composite-export-dialog > header {
+  border-block-end: 1px solid var(--color-border);
+}
+
+.composite-export-dialog > header > div,
+.composite-export-dialog__privacy,
+.composite-export-dialog > footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.composite-export-dialog h2,
+.composite-export-dialog p {
+  margin: 0;
+}
+
+.composite-export-dialog h2 {
+  font-size: var(--font-body);
+}
+
+.composite-export-dialog > header > button {
+  min-inline-size: var(--control-min-size);
+  min-block-size: var(--control-min-size);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.composite-export-dialog__body {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5) var(--space-4);
+  color: var(--color-text-secondary);
+  font-size: var(--font-small);
+  line-height: 1.6;
+}
+
+.composite-export-dialog dl {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-3) 0;
+  border-block: 1px solid var(--color-border);
+}
+
+.composite-export-dialog dl > div {
+  display: grid;
+  grid-template-columns: var(--composite-export-detail-label-inline-size) minmax(0, 1fr);
+  gap: var(--space-3);
+}
+
+.composite-export-dialog dt {
+  color: var(--color-text-muted);
+}
+
+.composite-export-dialog dd {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.composite-export-dialog__privacy {
+  color: var(--color-text-primary);
+}
+
+.composite-export-dialog__notice {
+  color: var(--color-warning);
+}
+
+.composite-export-dialog > footer {
+  justify-content: flex-end;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.composite-export-dialog > footer button {
+  min-block-size: var(--control-min-size);
+  justify-content: center;
+  padding-inline: var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-control);
+  font-size: var(--font-small);
+}
+
+.composite-export-secondary {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.composite-export-dialog > footer .composite-export-primary {
+  border-color: var(--color-accent-contrast);
+  background: var(--color-accent);
+  color: var(--color-text-on-accent);
 }
 
 .theater-view-switch button[aria-pressed="true"] {

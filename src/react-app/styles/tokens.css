@@ -31,6 +31,11 @@
   --color-theater-border-strong: #74808e;
   --color-theater-accent-border: #8bb9ff;
   --color-theater-warning: #e1a74d;
+  --color-scrim: rgb(5 6 8 / 64%);
+  --color-composite-canvas: #080b10;
+  --color-composite-camera-surface: #111720;
+  --color-composite-label-scrim: rgb(0 0 0 / 72%);
+  --color-composite-label-text: #ffffff;
   --font-display: clamp(2rem, 4vw, 3rem);
   --font-display-mobile: 1.75rem;
   --font-heading: 1.5rem;
@@ -38,6 +43,7 @@
   --font-body: 1rem;
   --font-small: 0.875rem;
   --font-label: 0.75rem;
+  --font-composite-label: 600 18px Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -52,7 +58,8 @@
   --event-navigator-width: 320px;
   --event-inspector-width: 240px;
   --camera-stage-spatial-min: 720px;
-  --playback-deck-height: 196px;
+  --playback-deck-height: 224px;
+  --playback-deck-expanded-height: 268px;
   --event-thumbnail-width: 88px;
   --event-card-min-height: 96px;
   --theater-tile-min: 120px;
@@ -64,6 +71,9 @@
   --theater-video-fit: contain;
   --app-header-height: 56px;
   --transport-mobile-max: 140px;
+  --composite-export-progress-inline-size: min(240px, 22vi);
+  --composite-export-dialog-inline-size: 520px;
+  --composite-export-detail-label-inline-size: 88px;
   --radius-control: 6px;
   --radius-panel: 8px;
   --control-min-size: 44px;

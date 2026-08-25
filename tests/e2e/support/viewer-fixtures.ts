@@ -14,7 +14,7 @@ export const viewports = [
   { name: '375', mode: 'mobile', width: 375, height: 844 },
 ] as const
 
-type PickerVariant = 'full' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
+type PickerVariant = 'full' | 'history' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
 
 function colorChannels(color: string): readonly number[] {
   const hex = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/iu.exec(color)
@@ -69,6 +69,10 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
       ...clips('2026-08-20_20-40-00', cameraNames),
       file('event.mp4'),
     ])
+    const previousSaved = directory('event-saved-previous', [
+      ...clips('2026-08-19_19-30-00', cameraNames),
+      file('event.mp4'),
+    ])
     const sentryCameras = pickerVariant === 'missing' ? cameraNames.slice(0, 5) : cameraNames
     const sentry = directory('event-sentry', [
       ...clips('2026-08-20_20-35-00', sentryCameras, sentryMedia),
@@ -88,6 +92,12 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
       directory('Noise', syntheticNoise),
       recent,
       directory('SavedClips', [saved]),
+      directory('SentryClips', [sentry]),
+    ])
+    const historyRoot = directory('TeslaCam', [
+      directory('Noise', syntheticNoise),
+      recent,
+      directory('SavedClips', [saved, previousSaved]),
       directory('SentryClips', [sentry]),
     ])
     const corruptRoot = directory('TeslaCam', [
@@ -111,6 +121,8 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
             return wrongRoot
           case 'corrupt':
             return corruptRoot
+          case 'history':
+            return historyRoot
           case 'full':
           case 'missing':
             return fullRoot

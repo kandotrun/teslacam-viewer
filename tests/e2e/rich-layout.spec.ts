@@ -27,7 +27,7 @@ test.describe('rich investigation layout', () => {
       && bounds.top >= 0
       && bounds.bottom <= 1000
     ))).toBe(true)
-    const dayTimelineGeometry = await page.locator('.day-timeline__marker:visible, .day-timeline__summary *:visible').evaluateAll((elements) => {
+    const dayTimelineGeometry = await page.locator('.day-timeline button:visible, .day-timeline__summary *:visible').evaluateAll((elements) => {
       const timeline = document.querySelector('.day-timeline')
       if (timeline === null) throw new Error('day timeline is missing')
       const container = timeline.getBoundingClientRect()
@@ -114,10 +114,13 @@ test.describe('rich investigation layout', () => {
     await expect(page.locator('.camera-tile:visible')).toHaveCount(1)
     await expect(page.locator('.event-inspector')).toBeHidden()
     const timelineSummary = page.locator('.day-timeline__summary')
-    await expect(timelineSummary.getByLabel('前のイベント')).toBeVisible()
-    await expect(timelineSummary.getByLabel('選択中のイベント')).toBeVisible()
-    await expect(timelineSummary.getByLabel('次のイベント')).toBeVisible()
-    await expect(timelineSummary.getByLabel('この日のイベント数')).toHaveText(/同日: 3件/)
+    await expect(page.getByRole('button', { name: '履歴を開く（3件）' })).toBeVisible()
+    await page.getByRole('button', { name: '履歴を開く（3件）' }).click()
+    await expect(page.getByRole('button', { name: '2026-08-20 20:35:00 セントリー' })).toBeVisible()
+    await expect(timelineSummary.getByLabel('過去の記録')).toBeVisible()
+    await expect(timelineSummary.getByLabel('選択中の記録')).toBeVisible()
+    await expect(timelineSummary.getByLabel('新しい記録')).toBeVisible()
+    await expect(timelineSummary.getByLabel('この日の記録数')).toHaveText(/同日: 3件/)
     expect(await switcher.evaluate((element) => element.scrollWidth > element.clientWidth)).toBe(true)
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     const outsideScrollers = await page.locator('body *').evaluateAll((elements) => elements.filter((element) => (

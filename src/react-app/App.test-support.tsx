@@ -26,9 +26,22 @@ function sentryEvent(id: string, segments: readonly [string, string], detectionT
 
 const preRollEvent = sentryEvent('sentry-preroll', ['2026-08-21_12-00-00', '2026-08-21_12-01-00'], '2026-08-21T12:01:20')
 const startEvent = sentryEvent('sentry-start', ['2026-08-21_13-00-00', '2026-08-21_13-01-00'], '2026-08-21T13:00:10')
+const previousDayEvent: TeslaCamEvent = {
+  id: 'saved-previous-day',
+  category: 'saved',
+  timestamp: '2026-08-20_20-00-00',
+  segments: [{
+    timestamp: '2026-08-20_20-00-00',
+    cameras: { front: fileRef('saved-previous-day-front.mp4') },
+  }],
+}
 const selectionLibrary: TeslaCamLibrary = {
-  events: [startEvent, preRollEvent],
-  eventsByCategory: { recent: [], saved: [], sentry: [startEvent, preRollEvent] },
+  events: [startEvent, preRollEvent, previousDayEvent],
+  eventsByCategory: {
+    recent: [],
+    saved: [previousDayEvent],
+    sentry: [startEvent, preRollEvent],
+  },
   warnings: [],
 }
 const selectionState: ReadyState = {

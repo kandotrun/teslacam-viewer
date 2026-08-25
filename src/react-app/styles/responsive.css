@@ -5,6 +5,10 @@
 }
 
 @media (max-width: 1279px) {
+  .composite-export-control {
+    margin-inline-start: auto;
+  }
+
   .theater-view-switch,
   .camera-stage[data-view-mode="spatial"] > img {
     display: none;
@@ -177,7 +181,7 @@
   }
 
   .day-timeline {
-    min-block-size: 116px;
+    min-block-size: 164px;
     grid-template-rows: auto minmax(44px, 1fr) auto;
   }
 
@@ -185,23 +189,9 @@
     display: none;
   }
 
-  .day-timeline__markers {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
-    gap: var(--space-1);
-    margin: var(--space-2) var(--space-4);
-    border-block-start: 0;
-  }
-
-  .day-timeline__marker {
-    position: static;
-    border: 1px solid var(--color-theater-border-strong);
-    transform: none;
-  }
-
   .day-timeline__summary {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: var(--space-2);
     padding: 0 var(--space-4) var(--space-2);
     color: var(--color-theater-text-secondary);

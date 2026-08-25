@@ -24,6 +24,10 @@ export function ReadyWorkspace({
 }: ReadyWorkspaceProps) {
   const [viewMode, setViewMode] = useState<TheaterViewMode>('spatial')
   const matchingEvents = orderedMatchingEvents(state.library.events, state.filters)
+  const timelineEvents = orderedMatchingEvents(state.library.events, {
+    ...state.filters,
+    dateKey: null,
+  })
   const selectedEvent = state.library.events.find((event) => event.id === state.selectedEventId)
   const selectedIndex = matchingEvents.findIndex((event) => event.id === state.selectedEventId)
   const counts = {
@@ -63,7 +67,7 @@ export function ReadyWorkspace({
             sourceName={state.folderName}
             theaterRef={theaterRef}
             timelineDateKey={state.filters.dateKey}
-            timelineEvents={matchingEvents}
+            timelineEvents={timelineEvents}
             viewMode={viewMode}
             onNext={() => {
               const nextEvent = matchingEvents.at(selectedIndex + 1)
@@ -78,6 +82,10 @@ export function ReadyWorkspace({
               }
             }}
             onSelectEvent={onSelectEvent}
+            onSelectTimelineDate={({ dateKey, eventId }) => {
+              dispatch({ kind: 'date-filtered', dateKey })
+              onSelectEvent(eventId)
+            }}
             onViewMode={setViewMode}
           />
         )}

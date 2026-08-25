@@ -44,9 +44,9 @@ test('drives categories, playback, camera and event keyboard controls without an
   await expect(page.getByRole('button', { name: '右リピーターカメラをグリッドへ戻す' })).toBeVisible()
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: '右リピーターカメラを拡大' })).toBeVisible()
-  await page.getByRole('button', { name: '次のイベント' }).click()
+  await page.getByRole('button', { name: '過去の記録' }).click()
   await expect(page.getByRole('button', { name: '2026-08-20 20:40:00', exact: true })).toHaveAttribute('aria-pressed', 'true')
-  await page.getByRole('button', { name: '前のイベント' }).click()
+  await page.getByRole('button', { name: '新しい記録' }).click()
   const visibleControls = page.locator('button:visible')
   const sizes = await visibleControls.evaluateAll((elements) => elements.map((element) => {
     const bounds = element.getBoundingClientRect()
@@ -85,16 +85,17 @@ test('autoplays each selected event at its local offset without exposing Sentry 
   await expect(page.getByText('SYNTHETIC_PRIVATE_LON', { exact: true })).toHaveCount(0)
 
   await page.getByRole('button', { name: '一時停止' }).click()
-  await page.getByRole('button', { name: '前のイベント' }).click()
+  await page.getByRole('button', { name: '新しい記録' }).click()
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
   await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeLessThan(1)
 
   await page.getByRole('button', { name: '一時停止' }).click()
-  await page.getByRole('button', { name: '次のイベント' }).click()
+  await page.getByRole('button', { name: '過去の記録' }).click()
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
   await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeGreaterThanOrEqual(15)
 
   await page.getByRole('button', { name: '一時停止' }).click()
+  await page.getByRole('button', { name: '20:35–20:45・3件を開く' }).click()
   await page.getByRole('button', { name: '2026-08-20 20:45:00 最近の走行', exact: true }).click()
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
   await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeLessThan(1)

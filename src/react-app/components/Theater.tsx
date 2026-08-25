@@ -7,7 +7,8 @@ import { ObjectUrlRegistry } from '../playback/object-url-registry'
 import { useSynchronizedPlayback } from '../playback/use-synchronized-playback'
 import { useTheaterShortcuts } from '../use-theater-shortcuts'
 import { CameraTile, type CameraStatus } from './CameraTile'
-import { DayTimeline } from './DayTimeline'
+import { CompositeVideoExport } from './CompositeVideoExport'
+import { DayTimeline, type TimelineDateSelection } from './DayTimeline'
 import { EventInspector } from './EventInspector'
 import { PlaybackControls } from './PlaybackControls'
 import { RepresentativeVideo } from './RepresentativeVideo'
@@ -25,6 +26,7 @@ export type TheaterProps = {
   readonly timelineEvents?: readonly TeslaCamEvent[]
   readonly timelineDateKey?: string | null
   readonly selectedEventId?: string | null
+  readonly onSelectTimelineDate?: (selection: TimelineDateSelection) => void
   readonly onSelectEvent?: (eventId: string) => void
   readonly viewMode: TheaterViewMode
   readonly onViewMode: (mode: TheaterViewMode) => void
@@ -33,6 +35,10 @@ export type TheaterProps = {
 const terminalStatuses: readonly CameraStatus[] = ['missing', 'unavailable', 'corrupt', 'unsupported']
 
 function ignoreEventSelection(_eventId: string): void {
+  return undefined
+}
+
+function ignoreTimelineDateSelection(_selection: TimelineDateSelection): void {
   return undefined
 }
 
@@ -47,6 +53,7 @@ function TheaterSession({
   timelineEvents = [event],
   timelineDateKey = null,
   selectedEventId = event.id,
+  onSelectTimelineDate = ignoreTimelineDateSelection,
   onSelectEvent = ignoreEventSelection,
   viewMode,
   onViewMode,
@@ -101,13 +108,16 @@ function TheaterSession({
   return (
     <section className="theater" aria-label="6カメラシアター" data-representative={representativeMode} ref={theaterRef}>
       <TheaterContext event={event} sourceName={sourceName} />
-      {!representativeMode && (
-        <TheaterViewSwitch
-          disabled={expandedCamera !== null}
-          mode={viewMode}
-          onChange={onViewMode}
-        />
-      )}
+      <div className="theater-toolbar">
+        <CompositeVideoExport event={event} />
+        {!representativeMode && (
+          <TheaterViewSwitch
+            disabled={expandedCamera !== null}
+            mode={viewMode}
+            onChange={onViewMode}
+          />
+        )}
+      </div>
       <div className="camera-switcher" role="group" aria-label="表示するカメラ">
         {cameraIds.map((cameraId) => (
           <button
@@ -146,6 +156,7 @@ function TheaterSession({
           filterDateKey={timelineDateKey}
           selectedEvent={event}
           selectedEventId={selectedEventId}
+          onSelectDate={onSelectTimelineDate}
           onSelectEvent={onSelectEvent}
         />
       </div>

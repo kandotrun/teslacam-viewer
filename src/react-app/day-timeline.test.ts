@@ -1,6 +1,12 @@
 import type { ClipCategory, TeslaCamEvent } from '../teslacam/types'
 
-import { buildDayTimelineMarkers, selectTimelineDate } from './day-timeline'
+import {
+  adjacentTimelineDays,
+  buildDayTimelineClusters,
+  buildDayTimelineMarkers,
+  buildTimelineDays,
+  selectTimelineDate,
+} from './day-timeline'
 
 function event(
   id: string,
@@ -116,5 +122,83 @@ describe('buildDayTimelineMarkers', () => {
 
     expect(buildDayTimelineMarkers([malformed], '2026-02-29')).toEqual([])
     expect(buildDayTimelineMarkers([malformed], null)).toEqual([])
+  })
+})
+
+describe('buildTimelineDays', () => {
+  it('derives unique ascending local recording days from the supplied filtered events', () => {
+    const events = [
+      event('late', 'saved', '2026-08-25_23-00-00'),
+      event('first', 'sentry', '2026-08-23_10-00-00'),
+      event('middle', 'saved', '2026-08-24_12-00-00'),
+      event(
+        'recent-session',
+        'recent',
+        '2026-08-25_00-00-20',
+        ['2026-08-24_23-59-30', '2026-08-25_00-00-20'],
+      ),
+      event('invalid', 'saved', '2026-02-29_12-00-00'),
+    ]
+
+    expect(buildTimelineDays(events)).toEqual([
+      { dateKey: '2026-08-23', eventIds: ['first'] },
+      { dateKey: '2026-08-24', eventIds: ['middle', 'recent-session'] },
+      { dateKey: '2026-08-25', eventIds: ['late'] },
+    ])
+  })
+})
+
+describe('adjacentTimelineDays', () => {
+  it('finds the closest recorded days before and after the current local day', () => {
+    const days = buildTimelineDays([
+      event('first', 'sentry', '2026-08-23_10-00-00'),
+      event('middle', 'saved', '2026-08-25_12-00-00'),
+      event('last', 'recent', '2026-08-28_15-00-00'),
+    ])
+
+    expect(adjacentTimelineDays(days, '2026-08-26')).toEqual({
+      previous: { dateKey: '2026-08-25', eventIds: ['middle'] },
+      next: { dateKey: '2026-08-28', eventIds: ['last'] },
+    })
+  })
+})
+
+describe('buildDayTimelineClusters', () => {
+  it('groups markers whose centered 44px desktop targets overlap while retaining their span and members', () => {
+    const events = [
+      event('near-a', 'sentry', '2026-08-24_10-00-00'),
+      event('near-b', 'saved', '2026-08-24_10-00-30'),
+      event('separate', 'recent', '2026-08-24_12-00-00'),
+    ]
+
+    const clusters = buildDayTimelineClusters(events, '2026-08-24', 1_000)
+
+    expect(clusters.map((cluster) => ({
+      id: cluster.id,
+      count: cluster.count,
+      startSecondsOfDay: cluster.startSecondsOfDay,
+      endSecondsOfDay: cluster.endSecondsOfDay,
+      durationSeconds: cluster.durationSeconds,
+      eventIds: cluster.markers.map((marker) => marker.eventId),
+    }))).toEqual([
+      {
+        id: 'near-a',
+        count: 2,
+        startSecondsOfDay: 36_000,
+        endSecondsOfDay: 36_030,
+        durationSeconds: 30,
+        eventIds: ['near-a', 'near-b'],
+      },
+      {
+        id: 'separate',
+        count: 1,
+        startSecondsOfDay: 43_200,
+        endSecondsOfDay: 43_200,
+        durationSeconds: 0,
+        eventIds: ['separate'],
+      },
+    ])
+    expect(clusters[0]?.startPositionPercent).toBeCloseTo(36_000 / 86_399 * 100)
+    expect(clusters[0]?.endPositionPercent).toBeCloseTo(36_030 / 86_399 * 100)
   })
 })

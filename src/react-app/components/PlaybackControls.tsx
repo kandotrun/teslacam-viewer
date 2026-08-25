@@ -24,9 +24,9 @@ export function PlaybackControls({ playback, onPrevious, onNext, hasPrevious, ha
   return (
     <div className="playback-controls" aria-label="再生コントロール">
       <div className="playback-controls__primary">
-        <button type="button" disabled={!hasPrevious} onClick={onPrevious} aria-label="前のイベント">
+        <button type="button" disabled={!hasNext} onClick={onNext} aria-label="過去の記録">
           <ChevronLeft aria-hidden="true" size={20} />
-          前へ
+          過去
         </button>
         <button type="button" onClick={() => playback.skip(-10)} aria-label="10秒戻る">
           <RotateCcw aria-hidden="true" size={19} />
@@ -40,8 +40,8 @@ export function PlaybackControls({ playback, onPrevious, onNext, hasPrevious, ha
           <RotateCw aria-hidden="true" size={19} />
           +10秒
         </button>
-        <button type="button" disabled={!hasNext} onClick={onNext} aria-label="次のイベント">
-          次へ
+        <button type="button" disabled={!hasPrevious} onClick={onPrevious} aria-label="新しい記録">
+          新しい
           <ChevronRight aria-hidden="true" size={20} />
         </button>
       </div>
