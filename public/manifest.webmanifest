@@ -1,7 +1,7 @@
 {
   "name": "TeslaCam Viewer",
   "short_name": "TeslaCam",
-  "description": "SSD上のTeslaCam映像をブラウザ内だけで整理して確認します。",
+  "description": "SSD上のTeslaCam映像をイベントごとに整理して見やすく再生します。",
   "lang": "ja",
   "start_url": "/",
   "display": "standalone",
