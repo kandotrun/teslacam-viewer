@@ -230,7 +230,9 @@ pre-roll, the start shows a hollow tick labelled `検知の15秒前`.
 
 Glass dialog, 22 px radius, max 520 px, centred on the stage over `scrim`. Shows the event, the full
 range, the layout (a thumbnail of the export frame), `1280 × 720`, the detected format, and
-`書き出しを開始`. After completion the actions pill shows `MP4を保存` / `WEBMを保存`.
+`書き出しを開始`. After completion the actions pill shows `MP4を保存` / `WEBMを保存` on the web. The Mac
+asks for the destination with the native save panel when `書き出しを開始` is pressed, so its finished state
+shows `書き出し完了` with `Finderで表示` instead.
 
 ### Export frame (1280 × 720, both platforms)
 
@@ -270,7 +272,8 @@ The saved video looks like the app. Rects are in `packages/contract/composite-la
 ## 8. Copy
 
 - Japanese, plain verbs, sentence-final punctuation only in paragraphs.
-- Actions keep one name through the flow: `書き出す` → `書き出し中` → `書き出し完了` → `MP4を保存`.
+- Actions keep one name through the flow: `書き出す` → `書き出し中` → `書き出し完了` → `MP4を保存` (web) /
+  `Finderで表示` (Mac).
 - Healthy states are stated positively (`6カメラ`); faults name the direction (`右リピーターの記録がありません`).
 - No `·`-joined meta strings, no `0台のカメラがありません`, no English labels except the wordmark.
 
