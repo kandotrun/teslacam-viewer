@@ -7,6 +7,7 @@ const base: ShortcutInput = {
   expandedCamera: null,
   playing: false,
   dialogOpen: false,
+  clockSuspended: false,
 }
 
 describe('theaterShortcut', () => {
@@ -36,6 +37,12 @@ describe('theaterShortcut', () => {
     expect(theaterShortcut({ ...base, key: '1', modifiers: { meta: true, ctrl: false, alt: false } })).toEqual({ action: 'none' })
     expect(theaterShortcut({ ...base, key: ' ', dialogOpen: true })).toEqual({ action: 'none' })
   })
+
+  it('leaves the paused six-camera clock alone while the representative video plays on its own', () => {
+    expect(theaterShortcut({ ...base, key: ' ', clockSuspended: true })).toEqual({ action: 'none' })
+    expect(theaterShortcut({ ...base, key: 'ArrowRight', clockSuspended: true })).toEqual({ action: 'none' })
+    expect(theaterShortcut({ ...base, key: ']', clockSuspended: true })).toEqual({ action: 'newerEvent' })
+  })
 })
 
 describe('shortcutFocus', () => {
@@ -47,6 +54,14 @@ describe('shortcutFocus', () => {
     expect(shortcutFocus(document.createElement('select'))).toBe('select')
     expect(shortcutFocus(radio)).toBe('button')
     expect(shortcutFocus(document.body)).toBe('none')
+    expect(shortcutFocus(document.createElement('summary'))).toBe('button')
     expect(shortcutFocus(null)).toBe('none')
+  })
+
+  it('treats a media element with native controls as a control and a bare one as not', () => {
+    const player = document.createElement('video')
+    player.controls = true
+    expect(shortcutFocus(player)).toBe('button')
+    expect(shortcutFocus(document.createElement('video'))).toBe('none')
   })
 })

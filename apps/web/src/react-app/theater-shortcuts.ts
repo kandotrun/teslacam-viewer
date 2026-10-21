@@ -13,6 +13,8 @@ export type ShortcutInput = {
   readonly expandedCamera: CameraId | null
   readonly playing: boolean
   readonly dialogOpen: boolean
+  /** The six-camera clock is paused for the 代表映像 view, whose own player owns playback (DESIGN.md §6). */
+  readonly clockSuspended: boolean
 }
 
 export type ShortcutAction =
@@ -26,6 +28,7 @@ export type ShortcutAction =
   | { readonly action: 'newerEvent' }
 
 const none: ShortcutAction = { action: 'none' }
+const clockKeys: ReadonlySet<string> = new Set([' ', 'ArrowLeft', 'ArrowRight'])
 
 export function theaterShortcut(input: ShortcutInput): ShortcutAction {
   if (input.dialogOpen) return none
@@ -33,6 +36,7 @@ export function theaterShortcut(input: ShortcutInput): ShortcutAction {
   // Escape returns to the layout even when a camera window or another control has focus.
   if (input.key === 'Escape') return input.expandedCamera === null ? none : { action: 'collapse' }
   if (input.focus !== 'none') return none
+  if (input.clockSuspended && clockKeys.has(input.key)) return none
   switch (input.key) {
     case ' ':
       return { action: input.playing ? 'pause' : 'play' }
@@ -63,7 +67,12 @@ export function shortcutFocus(target: EventTarget | null): ShortcutFocus {
     case 'SELECT':
       return 'select'
     case 'BUTTON':
+    case 'SUMMARY':
       return 'button'
+    case 'VIDEO':
+    case 'AUDIO':
+      // Native media controls handle Space and the arrow keys themselves.
+      return target instanceof HTMLMediaElement && target.controls ? 'button' : 'none'
     default:
       return target.getAttribute('role') === 'radio' || target.getAttribute('role') === 'menuitem' ? 'button' : 'none'
   }

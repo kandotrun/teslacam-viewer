@@ -96,6 +96,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
         expandedCamera,
         playing: playback.playing,
         dialogOpen: exportDialogOpen,
+        clockSuspended: view === 'representative',
       })
       switch (shortcut.action) {
         case 'none':
@@ -126,7 +127,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
     }
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
-  }, [expandedCamera, exportDialogOpen, onNewer, onOlder, playback, toggleCamera])
+  }, [expandedCamera, exportDialogOpen, onNewer, onOlder, playback, toggleCamera, view])
 
   return (
     <>
