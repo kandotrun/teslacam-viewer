@@ -80,6 +80,17 @@ svg {
   white-space: nowrap;
 }
 
+/* Japanese wraps at phrase boundaries, never leaving a lone kana or 。 on the last line. */
+h1,
+h2,
+h3,
+p,
+dd,
+.details__warning {
+  word-break: auto-phrase;
+  text-wrap: pretty;
+}
+
 .visually-hidden,
 .directory-input {
   position: absolute !important;
