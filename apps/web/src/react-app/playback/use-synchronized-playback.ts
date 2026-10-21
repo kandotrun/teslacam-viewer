@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { cameraIds, type CameraId, type TeslaCamEvent } from '../../teslacam/types'
 import { createPlaybackAttemptCoordinator, type PlaybackAttemptCoordinator } from './playback-attempt-coordinator'
@@ -7,6 +7,7 @@ import {
   createPlaybackRuntime,
   setPlaybackPosition,
   setPlaybackRate,
+  setNoPlayableRequest,
   setPlaybackSegment,
   type PlaybackRuntime,
 } from './playback-runtime'
@@ -37,16 +38,27 @@ export function useSynchronizedPlayback(
   const [runtime] = useState<PlaybackRuntime>(() => (
     createPlaybackRuntime(initialSeconds, initialLocation.segmentIndex, true)
   ))
+  // Read through refs so that every media callback keeps its identity: changing the expanded camera must
+  // never re-run the camera windows' source effects (which would reload all six videos).
+  const preferredCameraRef = useRef(preferredCamera)
   const updatePlaybackState = useCallback((resolution: PlaybackResolution): void => {
     setPlaying(resolution === 'playing')
-    if (resolution === 'playing') setMessage(null)
-    if (resolution === 'failed') setMessage(rejectedMessage)
-  }, [])
+    if (resolution === 'playing') {
+      setNoPlayableRequest(runtime, false)
+      setMessage(null)
+    }
+    if (resolution === 'failed') setMessage(runtime.noPlayableRequest ? noPlayableMessage : rejectedMessage)
+  }, [runtime])
   const [coordinator] = useState<PlaybackAttemptCoordinator>(() => (
     createPlaybackAttemptCoordinator(runtime, updatePlaybackState)
   ))
 
   const electSource = useCallback((): void => {
+    electPlaybackSource(runtime, preferredCameraRef.current)
+  }, [runtime])
+
+  useEffect(() => {
+    preferredCameraRef.current = preferredCamera
     electPlaybackSource(runtime, preferredCamera)
   }, [preferredCamera, runtime])
 
@@ -80,9 +92,9 @@ export function useSynchronizedPlayback(
 
   const play = useCallback(async (): Promise<void> => {
     coordinator.start()
-    setMessage(null)
     const playable = cameraIds.filter((cameraId) => runtime.readyCameras.has(cameraId))
-    if (playable.length === 0) setMessage(noPlayableMessage)
+    setNoPlayableRequest(runtime, playable.length === 0)
+    setMessage(playable.length === 0 ? noPlayableMessage : null)
     await coordinator.run(playable)
   }, [coordinator, runtime])
 
@@ -134,6 +146,7 @@ export function useSynchronizedPlayback(
         }
         element.playbackRate = runtime.rate
         if (runtime.intended && (!wasReady || (!runtime.attempts.has(cameraId) && !runtime.successfulCameras.has(cameraId)))) {
+          setNoPlayableRequest(runtime, false)
           void coordinator.run([cameraId])
         }
         return

@@ -15,6 +15,8 @@ export type PlaybackRuntime = {
   rate: number
   segmentIndex: number
   intended: boolean
+  /** The latest play request found no ready camera; a failure then keeps the no-playable message. */
+  noPlayableRequest: boolean
   intentGeneration: number
   sourceGeneration: number
   attemptId: number
@@ -33,6 +35,7 @@ export function createPlaybackRuntime(elapsedSeconds = 0, segmentIndex = 0, inte
     rate: 1,
     segmentIndex,
     intended,
+    noPlayableRequest: false,
     intentGeneration: 0,
     sourceGeneration: 0,
     attemptId: 0,
@@ -50,4 +53,8 @@ export function setPlaybackRate(runtime: PlaybackRuntime, rate: number): void {
 
 export function setPlaybackSegment(runtime: PlaybackRuntime, segmentIndex: number): void {
   runtime.segmentIndex = segmentIndex
+}
+
+export function setNoPlayableRequest(runtime: PlaybackRuntime, noPlayableRequest: boolean): void {
+  runtime.noPlayableRequest = noPlayableRequest
 }

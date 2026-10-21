@@ -1,7 +1,7 @@
 import { act, renderHook } from '@testing-library/react'
 import { vi } from 'vitest'
 
-import type { TeslaCamEvent } from '../../teslacam/types'
+import type { CameraId, TeslaCamEvent } from '../../teslacam/types'
 import { useSynchronizedPlayback } from './use-synchronized-playback'
 
 function eventWithSegments(count: number): TeslaCamEvent {
@@ -230,4 +230,30 @@ describe('useSynchronizedPlayback', () => {
     expect(hook.result.current.playing).toBe(true)
   })
 
+  it('keeps every media callback stable when the expanded camera changes', () => {
+    const event = eventWithSegments(1)
+    const initialProps: { readonly preferred: CameraId | null } = { preferred: null }
+    const hook = renderHook(({ preferred }) => useSynchronizedPlayback(event, preferred), { initialProps })
+    const before = hook.result.current
+
+    hook.rerender({ preferred: 'back' })
+
+    expect(hook.result.current.handleVideoEvent).toBe(before.handleVideoEvent)
+    expect(hook.result.current.registerVideo).toBe(before.registerVideo)
+    expect(hook.result.current.unregisterVideo).toBe(before.unregisterVideo)
+  })
+
+  it('keeps the no-playable-camera message when play is pressed with every camera unavailable', async () => {
+    const front = video()
+    const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(1)))
+
+    act(() => {
+      hook.result.current.registerVideo('front', front)
+      hook.result.current.handleVideoEvent('front', front, 'unavailable')
+    })
+    await act(async () => hook.result.current.play())
+
+    expect(hook.result.current.playing).toBe(false)
+    expect(hook.result.current.message).toBe('再生できるカメラ映像がありません。\n読み込み後に再試行してください。')
+  })
 })
