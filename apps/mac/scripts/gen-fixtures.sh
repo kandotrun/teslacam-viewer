@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Generate TeslaCam-like fixtures for the Mac spike.
+# Generate TeslaCam-like fixtures for the Mac app tests.
 #
 # Layout (mirrors a real TeslaCam USB drive):
 #   apps/mac/.fixtures/TeslaCam/SavedClips/2026-10-20_12-01-30/
@@ -15,7 +15,7 @@
 # Blocks sit on the 16x16 macroblock grid so H.264 keeps them crisp.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/.fixtures/TeslaCam/SavedClips/2026-10-20_12-01-30"
 mkdir -p "$OUT"
 

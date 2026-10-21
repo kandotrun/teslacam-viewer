@@ -78,7 +78,7 @@ mac-run:
 [group('mac')]
 [working-directory('apps/mac')]
 mac-fixtures:
-    ./scripts/gen-fixtures.sh .fixtures
+    ./scripts/gen-fixtures.sh
 
 # ---------------------------------------------------------------------------
 # Shared contract (packages/contract)
