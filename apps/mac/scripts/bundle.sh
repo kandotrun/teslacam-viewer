@@ -73,4 +73,15 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 PLIST
 
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
+
+# Seal the whole bundle with an ad-hoc signature (no Developer ID, not notarized) so a downloaded copy
+# is reported as from an unidentified developer rather than as damaged.
+codesign --force --deep --sign - --identifier "$BUNDLE_ID" "$APP"
+
+# A zip for GitHub Releases; ditto keeps the bundle's metadata and signature intact.
+ZIP="$(dirname "$APP")/TeslaCam-Viewer-$VERSION-macos-arm64.zip"
+rm -f "$ZIP"
+ditto -c -k --keepParent "$APP" "$ZIP"
+
 echo "$APP"
+echo "$ZIP"
