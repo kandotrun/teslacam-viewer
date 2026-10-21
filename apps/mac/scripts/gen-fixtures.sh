@@ -15,12 +15,14 @@
 #     event.mp4            20 s, 1280x720, camera id 7 (representative video)
 #     event.json
 #
-# Every frame carries a machine-readable counter in its top-left corner:
-#   row y=0..15  : 16 blocks of 16x16, bit k (LSB first) of the EVENT-wide frame index
+# Every frame carries a machine-readable counter near its top-left corner, at (32, 32) so that the
+# 12 px rounded corners of the export frame never cover it:
+#   row y=32..47 : 16 blocks of 16x16 from x=32, bit k (LSB first) of the EVENT-wide frame index
 #                  (round(offset_seconds * 36) + n) is white when set.
-#   x=256..271   : parity block (white when popcount(index) is odd).
-#   row y=16..31 : 3 blocks encoding (camera index + 1), LSB first (7 = event.mp4).
+#   x=288..303   : parity block (white when popcount(index) is odd).
+#   row y=48..63 : 3 blocks encoding (camera index + 1), LSB first (7 = event.mp4).
 # Blocks sit on the 16x16 macroblock grid so H.264 keeps them crisp. Clips are 36 fps, 1280x960.
+# Files generated before the counter moved are detected and regenerated.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -28,16 +30,19 @@ SAVED="$ROOT/.fixtures/TeslaCam/SavedClips"
 FPS=36
 CAMERAS=(front back left_pillar left_repeater right_pillar right_repeater)
 FONT=/System/Library/Fonts/Supplemental/Arial.ttf
+OX=32 # counter origin
+OY=32
+LAYOUT_VERSION=2 # bump when the burned-in layout changes
 
 filter_for() {
   local id=$1 offset_frames=$2 caption=$3 hue=$4
   local f="hue=h=${hue}"
   f+=",drawtext=fontfile=${FONT}:text='${caption}':fontsize=110:fontcolor=white:borderw=6:x=(w-tw)/2:y=(h-th)/2"
   f+=",drawtext=fontfile=${FONT}:text='frame %{eif\\:n+${offset_frames}\\:d}':fontsize=48:fontcolor=yellow:borderw=4:x=(w-tw)/2:y=h/2+90"
-  f+=",drawbox=x=0:y=0:w=272:h=32:color=black:t=fill"
+  f+=",drawbox=x=$((OX - 16)):y=$((OY - 16)):w=304:h=64:color=black:t=fill"
   local k
   for k in $(seq 0 15); do
-    f+=",drawbox=x=$((k * 16)):y=0:w=16:h=16:color=white:t=fill:enable='mod(floor((n+${offset_frames})/$((1 << k))),2)'"
+    f+=",drawbox=x=$((OX + k * 16)):y=${OY}:w=16:h=16:color=white:t=fill:enable='mod(floor((n+${offset_frames})/$((1 << k))),2)'"
   done
   # Parity of the 16 counter bits.
   local parity="mod("
@@ -45,11 +50,11 @@ filter_for() {
     parity+="mod(floor((n+${offset_frames})/$((1 << k))),2)+"
   done
   parity+="0,2)"
-  f+=",drawbox=x=256:y=0:w=16:h=16:color=white:t=fill:enable='${parity}'"
+  f+=",drawbox=x=$((OX + 256)):y=${OY}:w=16:h=16:color=white:t=fill:enable='${parity}'"
   local b
   for b in 0 1 2; do
     if (( (id >> b) & 1 )); then
-      f+=",drawbox=x=$((b * 16)):y=16:w=16:h=16:color=white:t=fill"
+      f+=",drawbox=x=$((OX + b * 16)):y=$((OY + 16)):w=16:h=16:color=white:t=fill"
     fi
   done
   f+=",format=yuv420p"
@@ -84,6 +89,11 @@ if [[ "${1:-}" == "--sample" ]]; then
   exit 0
 fi
 
+# Regenerate everything when the fixtures were written with another counter layout.
+if [[ "$(cat "$SAVED/.layout" 2>/dev/null)" != "$LAYOUT_VERSION" ]]; then
+  rm -rf "$SAVED/2026-10-20_12-01-30" "$SAVED/2026-10-20_13-00-50"
+fi
+
 pids=()
 run() { "$@" & pids+=($!); }
 
@@ -115,4 +125,5 @@ JSON
 cat > "$GAPS/event.json" <<'JSON'
 {"timestamp":"2026-10-20T13:00:50","city":"Shibuya","street":"","est_lat":"35.6595","est_lon":"139.7005","reason":"user_interaction_honk","camera":"0"}
 JSON
+echo "$LAYOUT_VERSION" > "$SAVED/.layout"
 echo "done: $SAVED"
