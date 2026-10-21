@@ -20,8 +20,12 @@
     --hit: var(--size-hit-target-touch);
   }
 
-  .pill {
+  /* The pills of the top row; the placeholder pill grows with its two lines and keeps its padding. */
+  .pill:not(.placeholder-pill) {
     height: 50px;
+  }
+
+  .actions-pill {
     padding: 0 3px;
   }
 
