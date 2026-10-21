@@ -1,0 +1,38 @@
+[package]
+name = "teslacam-mac-spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+description = "Throwaway spike: GPUI Kit + AVFoundation for the TeslaCam Mac app"
+
+# Standalone crate: keep it out of any parent workspace.
+[workspace]
+
+[dependencies]
+# GPUI Kit 0.8.0 pins gpui-pre =0.3.9 and turns on gpui-pre-platform/runtime_shaders,
+# so no Metal Toolchain (`xcrun metal`) is needed at build time.
+gpui-kit = "=0.8.0"
+
+objc2 = "0.6.5"
+block2 = "0.6.2"
+dispatch2 = "0.3"
+futures = "0.3.31"
+libc = "0.2"
+objc2-foundation = { version = "0.3.2", features = ["std", "NSString", "NSURL", "NSArray", "NSDictionary", "NSValue", "NSError", "NSObject", "NSDate", "NSRunLoop", "NSThread", "block2"] }
+objc2-core-foundation = { version = "0.3.2", features = ["std", "CFCGTypes", "CFRunLoop", "CFDate", "CFString", "CFDictionary", "CFNumber", "CFArray"] }
+objc2-core-media = { version = "0.3.2", features = ["std", "CMTime", "CMSync", "CMTimeRange", "CMBase", "CMSampleBuffer", "CMFormatDescription", "objc2-core-video"] }
+objc2-core-video = { version = "0.3.2", features = ["std", "CVBase", "CVBuffer", "CVImageBuffer", "CVPixelBuffer", "CVReturn", "CVPixelBufferIOSurface", "CVPixelBufferPool", "objc2-core-graphics", "objc2-io-surface"] }
+objc2-core-graphics = { version = "0.3.2", features = ["std", "CGImage", "CGColor", "CGColorSpace", "CGContext", "CGDataProvider", "CGWindow", "CGBitmapContext", "objc2"] }
+objc2-quartz-core = { version = "0.3.2", features = ["std", "CALayer", "CATextLayer", "CAMediaTiming", "CATransaction", "objc2-core-foundation", "objc2-core-graphics", "CABase"] }
+objc2-av-foundation = { version = "0.3.2", features = ["block2", "dispatch2", "objc2-core-foundation", "objc2-core-graphics", "objc2-core-media", "objc2-core-video", "objc2-quartz-core", "objc2-core-image"] }
+objc2-io-surface = { version = "0.3.2", features = ["std", "IOSurfaceRef", "objc2-core-foundation"] }
+objc2-app-kit = { version = "0.3.2", default-features = false, features = ["std", "NSImage", "objc2-core-foundation", "objc2-core-graphics"] }
+objc2-core-image = { version = "0.3.2", features = ["std", "CIImage", "CIContext", "CIFilter", "objc2-core-video", "objc2-core-graphics", "objc2-metal"] }
+
+[dev-dependencies]
+gpui-kit = { version = "=0.8.0", features = ["test-support"] }
+gpui-testing-library = "0.1.0"
+
+[[test]]
+name = "media_main_thread"
+harness = false
