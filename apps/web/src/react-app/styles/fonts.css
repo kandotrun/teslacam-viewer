@@ -1,0 +1,16 @@
+/* Barlow (SIL OFL 1.1) is bundled from packages/assets/fonts; nothing is fetched from another origin. */
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("../../../../../packages/assets/fonts/Barlow-Medium.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "Barlow";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("../../../../../packages/assets/fonts/Barlow-SemiBold.ttf") format("truetype");
+}

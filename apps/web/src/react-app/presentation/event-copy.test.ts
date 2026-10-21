@@ -92,8 +92,8 @@ describe('event copy', () => {
   })
 
   it('titles a day with its date and weekday', () => {
-    expect(dayTitle('2026-08-20')).toEqual({ date: '8月20日', weekday: '木曜日' })
-    expect(dayTitle('2026-08-24')).toEqual({ date: '8月24日', weekday: '月曜日' })
+    expect(dayTitle('2026-08-20')).toEqual({ month: 8, day: 20, date: '8月20日', weekday: '木曜日' })
+    expect(dayTitle('2026-08-24')).toEqual({ month: 8, day: 24, date: '8月24日', weekday: '月曜日' })
     expect(dayTitle('2026-02-30')).toBeNull()
   })
 

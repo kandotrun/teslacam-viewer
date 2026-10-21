@@ -32,3 +32,13 @@ export function railPillsFit(itemWidths: readonly number[], trackWidth: number):
   const total = itemWidths.reduce((sum, width) => sum + width, 0) + Math.max(0, itemWidths.length - 1) * itemGap
   return total <= trackWidth
 }
+
+/** `20:35` from `20:35:30`. */
+export function shortTime(timeLabel: string): string {
+  return timeLabel.slice(0, 5)
+}
+
+/** `20:35–20:45` (en dash). */
+export function clusterRange(cluster: { readonly startTimeLabel: string; readonly endTimeLabel: string }): string {
+  return `${shortTime(cluster.startTimeLabel)}–${shortTime(cluster.endTimeLabel)}`
+}

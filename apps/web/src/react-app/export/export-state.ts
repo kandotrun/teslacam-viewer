@@ -69,9 +69,14 @@ export function exportFileName(timestamp: string, extension: 'mp4' | 'webm'): st
   return `TeslaCam-${timestamp}-vehicle.${extension}`
 }
 
+/** `42%` */
+export function exportProgressPercent(progress: number): string {
+  return `${Math.floor(Math.min(1, Math.max(0, progress)) * 100)}%`
+}
+
 /** `書き出し中 42%` */
 export function exportProgressLabel(progress: number): string {
-  return `書き出し中 ${Math.floor(Math.min(1, Math.max(0, progress)) * 100)}%`
+  return `書き出し中 ${exportProgressPercent(progress)}`
 }
 
 /** `00:30 / 01:00` over the nominal event duration. */

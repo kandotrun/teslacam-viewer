@@ -102,12 +102,19 @@ export function coordinatesText(metadata: EventMetadata | undefined): string | n
 const weekdays = ['月曜日', '火曜日', '水曜日', '木曜日', '金曜日', '土曜日', '日曜日'] as const
 
 /** `8月20日` and `木曜日` for a `YYYY-MM-DD` key (calendar arithmetic only, no time zones). */
-export function dayTitle(dateKey: string): { readonly date: string; readonly weekday: string } | null {
+export type DayTitle = {
+  readonly month: number
+  readonly day: number
+  readonly date: string
+  readonly weekday: string
+}
+
+export function dayTitle(dateKey: string): DayTitle | null {
   const parsed = parseFilenameLocalTimestamp(`${dateKey}_00-00-00`)
   if (parsed === null) return null
   // 0001-01-01 (ordinal day 0) is a Monday in the proleptic Gregorian calendar.
   const weekday = weekdays[Math.floor(parsed.ordinalSeconds / 86_400) % 7] ?? ''
-  return { date: `${parsed.month}月${parsed.day}日`, weekday }
+  return { month: parsed.month, day: parsed.day, date: `${parsed.month}月${parsed.day}日`, weekday }
 }
 
 /** `M:SS` with unpadded minutes (`1:05`). */

@@ -1,10 +1,40 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, vi } from 'vitest'
 
 import { App } from './App'
 
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => {
+  vi.restoreAllMocks()
+  Reflect.deleteProperty(window, 'showDirectoryPicker')
+})
+
+function clipHandle(name: string) {
+  return { kind: 'file', name, getFile: async () => new File(['clip'], name, { type: 'video/mp4' }) }
+}
+
+function privateDrive() {
+  return {
+    kind: 'directory',
+    name: 'Private Drive',
+    async *values() {
+      yield {
+        kind: 'directory',
+        name: 'RecentClips',
+        async *values() {
+          yield clipHandle('2026-08-20_20-45-00-front.mp4')
+        },
+      }
+      yield {
+        kind: 'directory',
+        name: 'EncryptedClips',
+        async *values() {
+          yield clipHandle('hidden.mp4')
+        },
+      }
+    },
+  }
+}
 
 describe('directory picker', () => {
   it('activates the directory-input fallback when the native picker is unsupported', async () => {
@@ -13,7 +43,7 @@ describe('directory picker', () => {
     Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: undefined })
     render(<App />)
     expect(screen.getByRole('status', { name: 'ブラウザ互換性' })).toHaveTextContent('互換モード')
-    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+    await user.click(screen.getByRole('button', { name: 'フォルダを選ぶ' }))
     expect(click).toHaveBeenCalled()
   })
 
@@ -25,7 +55,7 @@ describe('directory picker', () => {
       value: async () => Promise.reject(new DOMException('', 'NotAllowedError')),
     })
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+    await user.click(screen.getByRole('button', { name: 'フォルダを選ぶ' }))
     await waitFor(() => expect(screen.getByText('フォルダへのアクセスが許可されませんでした。')).toBeVisible())
     Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: undefined })
     await user.click(screen.getByRole('button', { name: 'もう一度選ぶ' }))
@@ -39,7 +69,7 @@ describe('directory picker', () => {
       value: async () => Promise.reject('picker unavailable'),
     })
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+    await user.click(screen.getByRole('button', { name: 'フォルダを選ぶ' }))
     expect(await screen.findByText('フォルダの読み取りを完了できませんでした。')).toBeVisible()
   })
 
@@ -51,7 +81,7 @@ describe('directory picker', () => {
     const fallbackInput = screen.getByLabelText('TeslaCamフォルダを選ぶ（互換モード）')
     const clip = new File(['clip'], '2026-08-20_20-45-00-front.mp4', { type: 'video/mp4' })
     Object.defineProperty(clip, 'webkitRelativePath', { value: 'RecentClips/2026-08-20_20-45-00-front.mp4' })
-    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
+    await user.click(screen.getByRole('button', { name: 'フォルダを選ぶ' }))
     fireEvent.change(fallbackInput, { target: { files: [clip] } })
     await waitFor(() => expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible())
     const fallbackClickCount = click.mock.calls.length
@@ -67,54 +97,39 @@ describe('directory picker', () => {
     expect(fallbackInput).toHaveValue('')
   })
 
-  it('collapses encrypted-file notice after a local library scan and can recover from invalid input', async () => {
+  it('lists scan warnings as sentences and can recover from an invalid folder', async () => {
     const user = userEvent.setup()
-    Object.defineProperty(window, 'showDirectoryPicker', {
-      configurable: true,
-      value: async () => ({
-        name: 'Private Drive',
-        values: async function* () {
-          yield {
-            kind: 'directory',
-            name: 'RecentClips',
-            values: async function* () {
-              yield {
-                kind: 'file',
-                name: '2026-08-20_20-45-00-front.mp4',
-                getFile: async () => new File(['clip'], '2026-08-20_20-45-00-front.mp4', { type: 'video/mp4' }),
-              }
-            },
-          }
-          yield {
-            kind: 'directory',
-            name: 'EncryptedClips',
-            values: async function* () {
-              yield { kind: 'file', name: 'hidden.mp4', getFile: async () => new File(['clip'], 'hidden.mp4', { type: 'video/mp4' }) }
-            },
-          }
-        },
-      }),
-    })
+    Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => privateDrive() })
     render(<App />)
-    await user.click(screen.getByRole('button', { name: 'TeslaCamフォルダを選ぶ' }))
-    await waitFor(() => expect(screen.getByLabelText('読み込み元')).toHaveTextContent('Private Drive'))
-    const warningSummary = screen.getByText('読み込みの注意')
-    const warnings = warningSummary.closest('details')
-    if (warnings === null) {
-      throw new Error('読み込みの注意がdetails要素ではありません')
-    }
-    expect(warnings).not.toHaveAttribute('open')
-    expect(screen.getByText(/暗号化されたファイル 1 件/)).not.toBeVisible()
-    await user.click(warningSummary)
-    expect(warnings).toHaveAttribute('open')
-    expect(screen.getByText(/暗号化されたファイル 1 件/)).toBeVisible()
-    expect(screen.getByRole('button', { name: 'すべて1' })).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'フォルダを選ぶ' }))
+    await waitFor(() => expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toHaveTextContent('Private Drive'))
+
+    expect(screen.getByText('暗号化されたファイル 1 件は読み込みませんでした。')).toBeVisible()
+    expect(screen.getByRole('radio', { name: 'すべて 1件' })).toBeChecked()
     const fallbackInput = screen.getByLabelText('TeslaCamフォルダを選ぶ（互換モード）')
     const invalidFile = new File(['clip'], 'clip.mp4')
     Object.defineProperty(invalidFile, 'webkitRelativePath', { value: '' })
     fireEvent.change(fallbackInput, { target: { files: [invalidFile] } })
     await waitFor(() => expect(screen.getByText('TeslaCamフォルダを確認できませんでした。')).toBeVisible())
     await user.click(screen.getByRole('button', { name: 'もう一度選ぶ' }))
-    expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
+    await waitFor(() => expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible())
+  })
+
+  it('keeps the loaded library when choosing another folder is cancelled', async () => {
+    const user = userEvent.setup()
+    Object.defineProperty(window, 'showDirectoryPicker', { configurable: true, value: async () => privateDrive() })
+    render(<App />)
+    await user.click(screen.getByRole('button', { name: 'フォルダを選ぶ' }))
+    const rescan = await screen.findByRole('button', { name: '別のフォルダを選ぶ' })
+
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => Promise.reject(new DOMException('', 'AbortError')),
+    })
+    await user.click(rescan)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '別のフォルダを選ぶ' })).toHaveTextContent('Private Drive'))
+    expect(within(screen.getByRole('group', { name: 'イベント一覧' })).getByRole('button', { name: '2026-08-20 20:45:00' })).toBeVisible()
+    expect(screen.queryByRole('heading', { name: 'TeslaCamの記録を見る' })).not.toBeInTheDocument()
   })
 })

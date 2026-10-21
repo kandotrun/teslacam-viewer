@@ -1,0 +1,402 @@
+/* The stage: camera windows around the car (DESIGN.md §5, §6 Stage) */
+.stage {
+  display: grid;
+  gap: var(--stage-gap-row) var(--stage-gap-column);
+  padding: 4px 24px;
+}
+
+.stage[data-mode="spatial"],
+.stage[data-mode="empty"] {
+  grid-template-columns: var(--stage-columns);
+  grid-template-rows: var(--stage-rows);
+  grid-template-areas:
+    "left_pillar front right_pillar"
+    "left_pillar vehicle right_pillar"
+    "left_repeater back right_repeater";
+}
+
+.stage[data-mode="grid"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "front back left_pillar"
+    "right_pillar left_repeater right_repeater";
+  align-content: center;
+}
+
+.stage[data-mode="expanded"] {
+  grid-template-columns: auto repeat(5, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) clamp(72px, 15vh, 128px);
+  grid-template-areas:
+    "main main main main main main"
+    "switcher s1 s2 s3 s4 s5";
+  gap: 14px;
+}
+
+.stage[data-mode="representative"] {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) clamp(72px, 15vh, 128px);
+  grid-template-areas:
+    "main main main main main main"
+    "s1 s2 s3 s4 s5 s6";
+  gap: 14px;
+}
+
+.stage[data-mode="single"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: min(calc((100vw - 16px) * 0.75), 46dvh) minmax(0, 1fr);
+  grid-template-areas:
+    "main"
+    "switcher";
+  gap: 12px;
+  padding: 0;
+}
+
+.stage__wedges {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.stage[data-mode="empty"] .stage__wedges {
+  opacity: 0.5;
+}
+
+/* Each window sits in a size container and stays 4:3 (contain) inside its grid cell. */
+.camera-slot {
+  container: slot / size;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.camera-slot[data-area="hidden"] {
+  display: none;
+}
+
+.camera-window {
+  position: relative;
+  width: min(100cqw, 100cqh * 4 / 3);
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-camera);
+  overflow: hidden;
+  background: var(--video);
+  color: var(--video-text);
+  text-align: left;
+  transition: box-shadow var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.stage[data-mode="spatial"] .camera-slot[data-area="back"] .camera-window,
+.stage[data-mode="empty"] .camera-slot[data-area="back"] .camera-window {
+  width: min(calc(100cqw * 0.86), 100cqh * 4 / 3);
+}
+
+button.camera-window:hover {
+  box-shadow: 0 0 0 2px var(--floor-light), 0 0 0 4px var(--ink);
+}
+
+button.camera-window[data-active="true"] {
+  box-shadow: 0 0 0 2px var(--floor-light), 0 0 0 4px var(--drive);
+}
+
+.stage[data-mode="single"] button.camera-window[data-active="true"],
+.camera-slot[data-area="main"] button.camera-window[data-active="true"] {
+  box-shadow: none;
+}
+
+.camera-window video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: var(--video);
+}
+
+.camera-window__label {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  display: inline-flex;
+  align-items: center;
+  max-width: calc(100% - 20px);
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-pill);
+  background: var(--video-label-scrim);
+  backdrop-filter: blur(8px);
+  color: var(--video-text);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.camera-window__state {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 12px 40px;
+  color: var(--video-muted);
+  font: var(--type-small);
+  text-align: center;
+}
+
+.camera-window[data-status="missing"] .camera-window__state,
+.camera-window[data-status="unavailable"] .camera-window__state,
+.camera-window[data-status="corrupt"] .camera-window__state,
+.camera-window[data-status="unsupported"] .camera-window__state {
+  background: repeating-linear-gradient(135deg, var(--video-missing-a) 0 10px, var(--video-missing-b) 10px 20px);
+}
+
+@container slot (max-height: 120px) {
+  .camera-window__state {
+    padding-bottom: 28px;
+  }
+
+  .camera-window__state-text {
+    display: none;
+  }
+
+  .camera-window__label {
+    left: 6px;
+    bottom: 6px;
+    height: 20px;
+    padding: 0 8px;
+    font-size: 11px;
+  }
+}
+
+.camera-window--empty {
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+.camera-window--empty .camera-window__label {
+  left: 50%;
+  top: 50%;
+  bottom: auto;
+  transform: translate(-50%, -50%);
+  background: none;
+  backdrop-filter: none;
+  color: var(--ink-2);
+}
+
+/* The car */
+.stage__car-slot {
+  container: car / size;
+  grid-area: vehicle;
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+.stage__car {
+  position: relative;
+  height: min(100cqh, 100cqw * 2);
+  aspect-ratio: 1 / 2;
+}
+
+.stage__car::before {
+  content: "";
+  position: absolute;
+  inset: 6% -18% 2%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--ink) 22%, transparent), transparent);
+  filter: blur(6px);
+}
+
+.stage__car img {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.stage__mount {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 50%;
+  background: var(--drive);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--surface) 90%, transparent);
+  opacity: 0;
+  transition: opacity var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.stage__mount[data-on="true"] {
+  opacity: 1;
+}
+
+/* Representative video (event.mp4) */
+.representative {
+  grid-area: main;
+  position: relative;
+  display: grid;
+  min-height: 0;
+  border-radius: var(--radius-camera);
+  overflow: hidden;
+  background: var(--video);
+}
+
+.representative video {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: contain;
+}
+
+.representative__label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: grid;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: var(--video-label-scrim);
+  color: var(--video-text);
+  font-size: 12px;
+}
+
+.representative__label span {
+  color: var(--video-muted);
+}
+
+.representative__status {
+  place-self: center;
+  color: var(--video-muted);
+  font: var(--type-ui);
+}
+
+/* Mini car: switches the camera on phones and in the expanded strip */
+.camera-switcher {
+  grid-area: switcher;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "left_pillar front right_pillar"
+    "left_pillar car right_pillar"
+    "left_repeater back right_repeater";
+  align-items: center;
+  justify-items: center;
+  gap: 2px 6px;
+  min-height: 0;
+}
+
+.camera-switcher__car {
+  grid-area: car;
+  width: auto;
+  height: 100%;
+  max-height: 140px;
+  min-height: 0;
+  object-fit: contain;
+}
+
+.camera-switcher__camera {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: var(--size-hit-target-touch);
+  min-height: var(--size-hit-target-touch);
+  padding: 4px 8px;
+  border-radius: 14px;
+  color: var(--ink-2);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.camera-switcher__camera[data-camera="front"] { grid-area: front; }
+.camera-switcher__camera[data-camera="back"] { grid-area: back; }
+.camera-switcher__camera[data-camera="left_pillar"] { grid-area: left_pillar; }
+.camera-switcher__camera[data-camera="right_pillar"] { grid-area: right_pillar; }
+.camera-switcher__camera[data-camera="left_repeater"] { grid-area: left_repeater; }
+.camera-switcher__camera[data-camera="right_repeater"] { grid-area: right_repeater; }
+
+.camera-switcher__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--recent-marker);
+  box-shadow: 0 0 0 3px var(--surface);
+}
+
+.camera-switcher__camera[aria-pressed="true"] {
+  color: var(--ink);
+  font-weight: 600;
+  background: var(--drive-soft);
+}
+
+.camera-switcher__camera[aria-pressed="true"] .camera-switcher__dot {
+  background: var(--drive);
+}
+
+.camera-switcher[data-variant="compact"] {
+  grid-template-columns: 36px 30px 36px;
+  grid-template-rows: 36px minmax(0, 1fr) 36px;
+  gap: 0 2px;
+  height: 100%;
+  padding: 0 4px;
+}
+
+.camera-switcher[data-variant="compact"] .camera-switcher__camera {
+  min-width: var(--hit);
+  min-height: var(--hit);
+  padding: 0;
+  border-radius: 50%;
+}
+
+.camera-switcher[data-variant="compact"] .camera-switcher__camera[data-camera="left_pillar"],
+.camera-switcher[data-variant="compact"] .camera-switcher__camera[data-camera="right_pillar"] {
+  align-self: start;
+}
+
+.camera-switcher[data-variant="compact"] .camera-switcher__label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.camera-switcher[data-variant="compact"] .camera-switcher__car {
+  max-height: 100%;
+}
+
+/* One orchestrated moment: the windows fill with video in mount order after a folder loads. */
+.stage[data-reveal="true"] .camera-window video {
+  animation: window-reveal var(--motion-sheet-duration) var(--motion-sheet-easing) both;
+}
+
+.stage[data-reveal="true"] .camera-window[data-reveal-index="1"] video { animation-delay: calc(var(--motion-reveal-stagger) * 1); }
+.stage[data-reveal="true"] .camera-window[data-reveal-index="2"] video { animation-delay: calc(var(--motion-reveal-stagger) * 2); }
+.stage[data-reveal="true"] .camera-window[data-reveal-index="3"] video { animation-delay: calc(var(--motion-reveal-stagger) * 3); }
+.stage[data-reveal="true"] .camera-window[data-reveal-index="4"] video { animation-delay: calc(var(--motion-reveal-stagger) * 4); }
+.stage[data-reveal="true"] .camera-window[data-reveal-index="5"] video { animation-delay: calc(var(--motion-reveal-stagger) * 5); }
+
+@keyframes window-reveal {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}

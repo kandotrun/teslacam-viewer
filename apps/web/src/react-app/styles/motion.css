@@ -1,0 +1,26 @@
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .segmented > button[aria-checked="true"],
+  .event-row[aria-pressed="true"],
+  .camera-window[data-active="true"],
+  .camera-switcher__camera[aria-pressed="true"],
+  .rail__cluster[data-current="true"] {
+    outline: 3px solid Highlight;
+  }
+
+  .rail__mark,
+  .stage__mount,
+  .scrubber__fill {
+    forced-color-adjust: none;
+  }
+}
