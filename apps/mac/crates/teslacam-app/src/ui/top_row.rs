@@ -3,19 +3,25 @@
 
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnchoredPositionMode, AnyElement, ClickEvent, Context, Entity, FontWeight,
+    AnchoredPositionMode, AnyElement, ClickEvent, Context, Entity, FontWeight, Image, ImageFormat,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, Role,
     StatefulInteractiveElement as _, Styled as _, Subscription, Toggled, Window, anchored,
-    deferred, div, point, px, relative,
+    deferred, div, img, point, px, relative,
 };
+use std::sync::Arc;
 use teslacam_core::copy;
 use teslacam_core::event_copy::{EventDetails, event_details, event_pill};
-use teslacam_core::export_state::ExportAction;
+
+use teslacam_core::export_state::{ExportAction, ExportState};
 use teslacam_core::playback::{PlaybackInput, ViewMode};
 
-use super::components::{ChipSize, category_chip, glass, popover_surface, ring, segment_selected};
+use super::components::{
+    ChipSize, category_chip, glass, icon_button, popover_surface, primary_button, ring,
+    segment_selected, text_button,
+};
 use super::style::{AppTheme, Palette, TypeExt as _, icon, numeral_text};
 use crate::assets::Icon;
+use crate::presentation::floor_art::progress_ring_svg;
 use crate::presentation::floor_layout::floor_layout;
 use crate::store::{AppStore, StoreEvent};
 use crate::ui::floor_phase;
@@ -26,6 +32,8 @@ pub struct TopRow {
     details_open: bool,
     technical_open: bool,
     export_reason_open: bool,
+    /// The running export's popover (clock, bar, `中止`).
+    export_progress_open: bool,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -40,6 +48,7 @@ impl TopRow {
                         this.details_open = false;
                         this.technical_open = false;
                         this.export_reason_open = false;
+                        this.export_progress_open = false;
                         cx.notify();
                     }
                 }),
@@ -48,14 +57,16 @@ impl TopRow {
             details_open: false,
             technical_open: false,
             export_reason_open: false,
+            export_progress_open: false,
         }
     }
 
     /// Closes the details popover; whether one was open.
     pub fn close_popovers(&mut self, cx: &mut Context<Self>) -> bool {
-        let open = self.details_open || self.export_reason_open;
+        let open = self.details_open || self.export_reason_open || self.export_progress_open;
         self.details_open = false;
         self.export_reason_open = false;
+        self.export_progress_open = false;
         cx.notify();
         open
     }
@@ -210,6 +221,230 @@ impl TopRow {
             .into_any_element()
     }
 
+    /// The export action and what replaces it while exporting, after completion or after a
+    /// failure (`DESIGN.md` §6 Actions pill, Mac form).
+    fn export_control(
+        &mut self,
+        state: ExportState,
+        reason: Option<&'static str>,
+        duration: f64,
+        cx: &mut Context<Self>,
+    ) -> AnyElement {
+        let theme = AppTheme::get(cx);
+        let (palette, tokens) = (theme.palette, theme.tokens);
+        let hit = tokens.sizes.hit_target_desktop;
+        let fill = palette.fill;
+        if !matches!(state, ExportState::Running { .. }) {
+            self.export_progress_open = false;
+        }
+        // A popover right-aligned under the actions pill.
+        let popover = |content: gpui_kit::Div, role: Role| {
+            deferred(
+                div().absolute().right(px(-6.0)).top(px(hit + 13.0)).child(
+                    popover_surface(14.0, cx)
+                        .id("export-popover")
+                        .role(role)
+                        .px(px(14.0))
+                        .py(px(10.0))
+                        .max_w(px(300.0))
+                        .ui_text(12.0, 400.0)
+                        .child(content),
+                ),
+            )
+            .with_priority(1)
+        };
+        let action = |id: &'static str, glyph: Icon, label: &'static str, color| {
+            div()
+                .id(id)
+                .role(Role::Button)
+                .aria_label(label)
+                .flex()
+                .items_center()
+                .gap(px(6.0))
+                .h(px(hit))
+                .px(px(14.0))
+                .rounded_full()
+                .ui_text(13.0, 600.0)
+                .text_color(color)
+                .whitespace_nowrap()
+                .cursor_pointer()
+                .hover(move |style| style.bg(fill))
+                .child(icon(glyph, 18.0, color))
+        };
+        let control = div().relative().flex().items_center().gap(px(4.0));
+        match state {
+            ExportState::Running { progress } => {
+                let ring = Arc::new(Image::from_bytes(
+                    ImageFormat::Svg,
+                    progress_ring_svg(progress as f32, tokens.colors.line, tokens.colors.drive)
+                        .into_bytes(),
+                ));
+                let button = div()
+                    .id("export-progress")
+                    .role(Role::Button)
+                    .aria_label(copy::export_running_text(progress))
+                    .aria_expanded(self.export_progress_open)
+                    .flex()
+                    .items_center()
+                    .gap(px(6.0))
+                    .h(px(hit))
+                    .px(px(14.0))
+                    .rounded_full()
+                    .ui_text(13.0, 600.0)
+                    .text_color(palette.drive)
+                    .whitespace_nowrap()
+                    .cursor_pointer()
+                    .hover(move |style| style.bg(fill))
+                    .child(img(ring).size(px(20.0)).flex_none())
+                    .child(numeral_text(
+                        &copy::export_running_text(progress),
+                        14.0,
+                        600.0,
+                        None,
+                    ))
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.export_progress_open = !this.export_progress_open;
+                        cx.notify();
+                    }));
+                let details = self.export_progress_open.then(|| {
+                    popover(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(8.0))
+                            .child(
+                                div()
+                                    .numeral()
+                                    .text_size(px(13.0))
+                                    .font_weight(FontWeight::MEDIUM)
+                                    .text_color(palette.ink)
+                                    .child(copy::export_progress_clock(progress, duration)),
+                            )
+                            .child(
+                                div()
+                                    .id("export-progress-bar")
+                                    .role(Role::ProgressIndicator)
+                                    .aria_label(copy::EXPORT_PROGRESS_LABEL)
+                                    .aria_numeric_value(progress)
+                                    .w(px(220.0))
+                                    .h(px(6.0))
+                                    .rounded_full()
+                                    .bg(palette.fill)
+                                    .child(
+                                        div()
+                                            .h_full()
+                                            .w(relative(progress as f32))
+                                            .rounded_full()
+                                            .bg(palette.drive),
+                                    ),
+                            )
+                            .child(div().ml(px(-14.0)).child(
+                                text_button("export-abort", copy::EXPORT_ABORT, cx).on_click(
+                                    cx.listener(|this, _, _, cx| {
+                                        this.store.update(cx, |store, cx| {
+                                            store.export(ExportAction::Abort, cx)
+                                        });
+                                    }),
+                                ),
+                            )),
+                        Role::Status,
+                    )
+                });
+                control.child(button).children(details).into_any_element()
+            }
+            ExportState::Done { .. } => control
+                .child(
+                    div()
+                        .flex()
+                        .items_center()
+                        .gap(px(6.0))
+                        .pl(px(10.0))
+                        .pr(px(6.0))
+                        .ui_text(13.0, 600.0)
+                        .text_color(palette.saved_ink)
+                        .whitespace_nowrap()
+                        .child(icon(Icon::CircleCheck, 18.0, palette.saved_ink))
+                        .child(copy::EXPORT_DONE),
+                )
+                .child(
+                    primary_button(
+                        "export-reveal",
+                        Icon::FolderOpen,
+                        copy::EXPORT_REVEAL,
+                        {
+                            let store = self.store.clone();
+                            move |_, _, cx| {
+                                store
+                                    .update(cx, |store, cx| store.export(ExportAction::Reveal, cx));
+                            }
+                        },
+                        cx,
+                    )
+                    .h(px(hit))
+                    .px(px(14.0))
+                    .ui_text(13.0, 600.0),
+                )
+                .child(
+                    icon_button("export-close", Icon::X, copy::EXPORT_CLOSE, true, cx).on_click(
+                        cx.listener(|this, _, _, cx| {
+                            this.store
+                                .update(cx, |store, cx| store.export(ExportAction::Close, cx));
+                        }),
+                    ),
+                )
+                .into_any_element(),
+            ExportState::Failed { message } => control
+                .child(
+                    action(
+                        "export-retry",
+                        Icon::CircleAlert,
+                        copy::EXPORT_RETRY,
+                        palette.ink,
+                    )
+                    .child(copy::EXPORT_RETRY)
+                    .on_click(cx.listener(|this, _, _, cx| {
+                        this.store
+                            .update(cx, |store, cx| store.export(ExportAction::Open, cx));
+                    })),
+                )
+                .child(popover(
+                    div().text_color(palette.warning).child(message),
+                    Role::Alert,
+                ))
+                .into_any_element(),
+            state => {
+                let unavailable = reason.is_some();
+                let color = if unavailable {
+                    palette.ink_3
+                } else {
+                    palette.ink
+                };
+                let button = action("export", Icon::Download, copy::EXPORT_DIALOG_TITLE, color)
+                    .child(copy::EXPORT)
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        if unavailable {
+                            this.export_reason_open = !this.export_reason_open;
+                            cx.notify();
+                        } else {
+                            this.store
+                                .update(cx, |store, cx| store.export(ExportAction::Open, cx));
+                        }
+                    }));
+                let note = match (&state, reason) {
+                    (_, Some(reason)) if self.export_reason_open => Some((reason, Role::Tooltip)),
+                    (ExportState::Cancelled, _) => Some((copy::EXPORT_ABORTED, Role::Status)),
+                    _ => None,
+                };
+                control
+                    .child(button)
+                    .children(note.map(|(text, role)| {
+                        popover(div().text_color(palette.ink_2).child(text), role)
+                    }))
+                    .into_any_element()
+            }
+        }
+    }
+
     fn view_option(&self, mode: ViewMode, current: ViewMode, cx: &mut Context<Self>) -> AnyElement {
         let palette = AppTheme::get(cx).palette;
         let (glyph, label, id) = match mode {
@@ -287,14 +522,25 @@ impl Render for TopRow {
                         event.representative.is_some(),
                         session.export.unavailable_reason(),
                         compact,
+                        session.export.state().clone(),
+                        session.timeline.duration(),
                     )
                 })
         };
-        let Some((pill, details, view_mode, has_representative, export_reason, compact)) = snapshot
+        let Some((
+            pill,
+            details,
+            view_mode,
+            has_representative,
+            export_reason,
+            compact,
+            export_state,
+            duration,
+        )) = snapshot
         else {
             return self.placeholder(cx);
         };
-        let (ink, fill) = (palette.ink, palette.fill);
+        let ink = palette.ink;
         let float = AppTheme::get(cx).float_shadow.clone();
         let hover_shadow = {
             let mut shadows = ring(palette.glass, 0.0, ink, 2.0);
@@ -429,64 +675,6 @@ impl Render for TopRow {
         } else {
             view_mode
         };
-        let unavailable = export_reason.is_some();
-        let export = div()
-            .id("export")
-            .role(Role::Button)
-            .aria_label(copy::EXPORT_DIALOG_TITLE)
-            .flex()
-            .items_center()
-            .gap(px(6.0))
-            .h(px(tokens.sizes.hit_target_desktop))
-            .px(px(14.0))
-            .rounded_full()
-            .ui_text(13.0, 600.0)
-            .text_color(if unavailable {
-                palette.ink_3
-            } else {
-                palette.ink
-            })
-            .whitespace_nowrap()
-            .cursor_pointer()
-            .hover(move |style| style.bg(fill))
-            .child(icon(
-                Icon::Download,
-                18.0,
-                if unavailable {
-                    palette.ink_3
-                } else {
-                    palette.ink
-                },
-            ))
-            .child(copy::EXPORT)
-            .on_click(cx.listener(move |this, _, _, cx| {
-                if unavailable {
-                    this.export_reason_open = !this.export_reason_open;
-                    cx.notify();
-                } else {
-                    this.store
-                        .update(cx, |store, cx| store.export(ExportAction::Open, cx));
-                }
-            }));
-        let reason_popover = export_reason
-            .filter(|_| self.export_reason_open)
-            .map(|reason| {
-                deferred(
-                    anchored()
-                        .position_mode(AnchoredPositionMode::Local)
-                        .position(point(px(0.0), px(tokens.sizes.topbar_height + 8.0)))
-                        .snap_to_window_with_margin(px(16.0))
-                        .child(
-                            popover_surface(14.0, cx)
-                                .px(px(14.0))
-                                .py(px(10.0))
-                                .max_w(px(300.0))
-                                .ui_text(12.0, 400.0)
-                                .text_color(palette.ink_2)
-                                .child(reason),
-                        ),
-                )
-            });
         let actions = glass(999.0, cx)
             .flex()
             .flex_none()
@@ -510,7 +698,7 @@ impl Render for TopRow {
                             .map(|mode| self.view_option(mode, current, cx)),
                     ),
             )
-            .child(div().relative().child(export).children(reason_popover));
+            .child(self.export_control(export_state, export_reason, duration, cx));
         div()
             .size_full()
             .flex()
