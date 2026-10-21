@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { cameraIds, type CameraId, type TeslaCamEvent } from '../../../teslacam/types'
+import { categoryLabel, eventTime } from '../../event-filters'
 import { cameraLabels } from '../../event-summary'
 import { ObjectUrlRegistry } from '../../playback/object-url-registry'
 import { useSynchronizedPlayback } from '../../playback/use-synchronized-playback'
@@ -131,6 +132,8 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
 
   return (
     <>
+      {/* The screen's one heading names the event on the stage; the pill shows it visually. */}
+      <h1 className="visually-hidden">{categoryLabel(event.category)} {eventTime(event.timestamp)}</h1>
       <header className="topbar">
         <EventPill event={event} libraryToggle={libraryToggle} onBack={onBack} />
         <ActionsPill

@@ -237,6 +237,7 @@ describe('event pill and details', () => {
     const pill = within(screen.getByRole('region', { name: '再生中のイベント' })).getByRole('button', { expanded: false })
 
     expect(pill).toHaveTextContent('セントリー12:00 開始Sample city Sample street物体の接近を12:00:30に検知')
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('セントリー 2026-08-21 12:00:00')
     await user.click(pill)
     const details = screen.getByRole('dialog', { name: 'イベント詳細' })
     const text = details.textContent ?? ''
