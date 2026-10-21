@@ -1,7 +1,17 @@
 #!/usr/bin/env bash
 # Generate TeslaCam-like fixtures for the Mac app tests (idempotent; existing files are kept).
 #
-# Layout (mirrors a real TeslaCam USB drive), written to apps/mac/.fixtures/TeslaCam/SavedClips/:
+# Two parts, both under apps/mac/.fixtures/TeslaCam/:
+#
+# 1. The media test events (exact frame counters; used by teslacam-media's main-thread tests), in
+#    SavedClips/ — described below.
+# 2. A realistic library for looking at the app (`--library` is implied; skip it with
+#    `--media-only`): RecentClips sessions over four days, SavedClips and SentryClips events with
+#    event.json and thumb.png, a Sentry event without its left repeater, a cluster of three events
+#    within ten minutes, EncryptedClips entries and one unknown file. Clips are 480x360 at 12 fps so
+#    the whole set encodes in about a minute.
+#
+# Media test layout (mirrors a real TeslaCam USB drive), written to apps/mac/.fixtures/TeslaCam/SavedClips/:
 #
 #   2026-10-20_12-01-30/   "full": 2 segments x 6 cameras x 60 s
 #     2026-10-20_12-00-00-<camera>.mp4   (offset 0 s)
@@ -127,3 +137,112 @@ cat > "$GAPS/event.json" <<'JSON'
 JSON
 echo "$LAYOUT_VERSION" > "$SAVED/.layout"
 echo "done: $SAVED"
+
+[[ "${1:-}" == "--media-only" ]] && exit 0
+
+# ---------------------------------------------------------------------------------------------
+# 2. The library fixtures
+# ---------------------------------------------------------------------------------------------
+
+TESLACAM="$ROOT/.fixtures/TeslaCam"
+LIBRARY_VERSION=1 # bump when the library set changes
+if [[ "$(cat "$TESLACAM/.library" 2>/dev/null)" != "$LIBRARY_VERSION" ]]; then
+  rm -rf "$TESLACAM/RecentClips" "$TESLACAM/SentryClips" "$TESLACAM/EncryptedClips" \
+    "$TESLACAM/SavedClips/2026-10-19_19-31-05" "$TESLACAM/SavedClips/2026-10-20_20-41-10"
+fi
+
+# library_clip <file> <camera index> <duration s> <caption>
+library_clip() {
+  local file=$1 index=$2 duration=$3 caption=$4
+  if [[ -s "$file" ]]; then return 0; fi
+  local name=${CAMERAS[$index]}
+  ffmpeg -hide_banner -loglevel error -y \
+    -f lavfi -i "testsrc2=size=480x360:rate=12:duration=${duration}" \
+    -vf "hue=h=$((index * 60)):s=0.5,eq=brightness=-0.28,drawtext=fontfile=${FONT}:text='${name}':fontsize=34:fontcolor=white:borderw=3:x=(w-tw)/2:y=(h-th)/2-24,drawtext=fontfile=${FONT}:text='${caption}':fontsize=20:fontcolor=white@0.85:borderw=2:x=(w-tw)/2:y=h/2+24,format=yuv420p" \
+    -c:v libx264 -preset ultrafast -crf 30 -g 24 -movflags +faststart -an "$file.tmp.mp4"
+  mv "$file.tmp.mp4" "$file"
+}
+
+# segment <dir> <timestamp> <duration s> [missing camera index...]
+segment() {
+  local dir=$1 timestamp=$2 duration=$3
+  shift 3
+  local c
+  for c in 0 1 2 3 4 5; do
+    if [[ " $* " == *" $c "* ]]; then continue; fi
+    run library_clip "$dir/${timestamp}-${CAMERAS[$c]}.mp4" "$c" "$duration" "$timestamp"
+  done
+}
+
+# thumbnail <event dir> <segment timestamp>: thumb.png from the front clip, like the car writes it.
+thumbnail() {
+  local dir=$1 timestamp=$2
+  [[ -s "$dir/thumb.png" ]] && return 0
+  ffmpeg -hide_banner -loglevel error -y -ss 2 -i "$dir/${timestamp}-front.mp4" -frames:v 1 \
+    -vf scale=192:144 "$dir/thumb.png"
+}
+
+# event_json <event dir> <detection timestamp> <reason> [city] [street]
+event_json() {
+  printf '{"timestamp":"%s","city":"%s","street":"%s","est_lat":"35.6581","est_lon":"139.7017","reason":"%s","camera":"0"}\n' \
+    "$2" "${4:-}" "${5:-}" "$3" > "$1/event.json"
+}
+
+pids=()
+RECENT="$TESLACAM/RecentClips"
+mkdir -p "$RECENT"
+# 2026-10-18: a morning drive and an evening drive.
+segment "$RECENT" 2026-10-18_09-10-04 60
+segment "$RECENT" 2026-10-18_09-11-04 42
+segment "$RECENT" 2026-10-18_17-20-31 60
+# 2026-10-19: a three-minute commute.
+segment "$RECENT" 2026-10-19_08-12-00 60
+segment "$RECENT" 2026-10-19_08-13-00 60
+segment "$RECENT" 2026-10-19_08-14-00 25
+# 2026-10-20: a morning drive and the evening drive next to the Sentry and Saved events.
+segment "$RECENT" 2026-10-20_07-55-12 60
+segment "$RECENT" 2026-10-20_07-56-12 60
+segment "$RECENT" 2026-10-20_20-45-02 60
+segment "$RECENT" 2026-10-20_20-46-02 31
+# 2026-10-21: one short drive.
+segment "$RECENT" 2026-10-21_07-58-40 60
+
+SENTRY="$TESLACAM/SentryClips"
+OBJECT="$SENTRY/2026-10-20_20-36-01"
+mkdir -p "$OBJECT"
+segment "$OBJECT" 2026-10-20_20-35-00 60
+NIGHT="$SENTRY/2026-10-19_02-16-30"
+mkdir -p "$NIGHT"
+segment "$NIGHT" 2026-10-19_02-15-02 60 3 # no left repeater
+segment "$NIGHT" 2026-10-19_02-16-02 60 3
+SHAKE="$SENTRY/2026-10-18_22-05-44"
+mkdir -p "$SHAKE"
+segment "$SHAKE" 2026-10-18_22-04-10 60
+
+SAVED_DINNER="$SAVED/2026-10-19_19-31-05"
+mkdir -p "$SAVED_DINNER"
+segment "$SAVED_DINNER" 2026-10-19_19-30-05 60
+SAVED_EVENING="$SAVED/2026-10-20_20-41-10"
+mkdir -p "$SAVED_EVENING"
+segment "$SAVED_EVENING" 2026-10-20_20-40-08 60
+
+for p in "${pids[@]}"; do wait "$p"; done
+
+thumbnail "$OBJECT" 2026-10-20_20-35-00
+thumbnail "$NIGHT" 2026-10-19_02-15-02
+thumbnail "$SAVED_DINNER" 2026-10-19_19-30-05
+thumbnail "$SAVED_EVENING" 2026-10-20_20-40-08
+event_json "$OBJECT" 2026-10-20T20:35:30 sentry_aware_object_detection 渋谷区 神南一丁目
+event_json "$NIGHT" 2026-10-19T02:15:40.250 sentry_aware_object_detection 渋谷区 宇田川町
+event_json "$SHAKE" 2026-10-18T22:04:55 sentry_aware_accel_0.31 目黒区
+event_json "$SAVED_DINNER" 2026-10-19T19:31:05 user_interaction_honk 港区 南青山五丁目
+event_json "$SAVED_EVENING" 2026-10-20T20:41:10 user_interaction_dashcam_icon_tapped 渋谷区 神南一丁目
+
+ENCRYPTED="$TESLACAM/EncryptedClips"
+mkdir -p "$ENCRYPTED"
+printf 'encrypted' > "$ENCRYPTED/2026-10-17_10-00-00-front.mp4"
+printf 'encrypted' > "$ENCRYPTED/2026-10-17_10-00-00-back.mp4"
+printf 'notes' > "$TESLACAM/notes.txt"
+
+echo "$LIBRARY_VERSION" > "$TESLACAM/.library"
+echo "done: $TESLACAM"
