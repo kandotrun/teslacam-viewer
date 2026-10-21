@@ -556,3 +556,36 @@ fn tab_reaches_the_library_first_and_cycles_inside_the_export_dialog(cx: &mut Te
         assert!(in_dialog(cx), "Tab press {press} left the export dialog");
     }
 }
+
+#[gpui_kit::test]
+fn the_scan_warnings_stay_at_the_panel_bottom_when_nothing_matches(cx: &mut TestAppContext) {
+    let files = [
+        "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4",
+        "TeslaCam/RecentClips/notes.txt",
+    ]
+    .iter()
+    .map(|path| FileEntry::new(path.rsplit('/').next().expect("name"), *path, 10))
+    .collect();
+    let library = Arc::new(build_library(files, |_| {}, |_, _| Ok(None)).expect("library"));
+    let floor = open_floor_with(cx, library);
+    let gap = |cx: &mut TestAppContext| {
+        cx.update_window(floor.window, |_, window, cx| {
+            window.render_frame(cx);
+            let panel = window.find("library").bounds();
+            let footer = window.find("scan-warnings").bounds();
+            (panel.bottom() - footer.bottom()).as_f32()
+        })
+        .expect("measure")
+    };
+    let with_rows = gap(cx);
+    cx.update_window(floor.window, |_, window, cx| {
+        let library = floor.root.read(cx).library().clone();
+        library.update(cx, |library, cx| library.open_search("zzz", window, cx));
+    })
+    .expect("search");
+    let without_rows = gap(cx);
+    assert!(
+        (with_rows - without_rows).abs() < 0.5,
+        "the footer moved from {with_rows} to {without_rows} pt above the panel bottom"
+    );
+}

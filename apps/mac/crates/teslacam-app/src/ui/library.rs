@@ -908,7 +908,10 @@ impl LibraryPanel {
         });
 
         let list = if self.rows.is_empty() {
+            // Fills the list's place so the warnings footer stays at the panel bottom.
             div()
+                .flex_1()
+                .min_h_0()
                 .pt(px(18.0))
                 .px(px(20.0))
                 .type_role(&tokens.type_scale.ui)
@@ -943,6 +946,7 @@ impl LibraryPanel {
         let footer =
             (!warnings.is_empty()).then(|| {
                 div()
+                    .id("scan-warnings")
                     .flex()
                     .flex_col()
                     .gap(px(2.0))
@@ -957,6 +961,7 @@ impl LibraryPanel {
                     .children(warnings.iter().map(|warning| {
                         div().child(copy::warning_text(warning.kind, warning.count))
                     }))
+                    .test_support()
             });
 
         div()
@@ -1114,5 +1119,6 @@ impl Render for LibraryPanel {
             .overflow_hidden()
             .child(header)
             .child(body)
+            .test_support()
     }
 }
