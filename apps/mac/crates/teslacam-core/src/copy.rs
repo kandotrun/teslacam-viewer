@@ -80,13 +80,22 @@ pub const WELCOME_NOTES: [(&str, &str); 2] = [
 ];
 /// Accessible name of the floating library panel (prototype).
 pub const LIBRARY_REGION: &str = "ライブラリ";
+
+/// The application menu's items and the File menu (menu bar; Japanese like the rest of the UI).
+pub const MENU_FILE: &str = "ファイル";
+/// File ▸ open a folder (⌘O).
+pub const MENU_OPEN_FOLDER: &str = "フォルダを開く…";
+/// Application menu ▸ hide (⌘H).
+pub const MENU_HIDE: &str = "TeslaCam Viewerを隠す";
+/// Application menu ▸ quit (⌘Q).
+pub const MENU_QUIT: &str = "TeslaCam Viewerを終了";
 /// The folder chip's accessible name; it starts a new folder selection.
 pub const CHANGE_FOLDER: &str = "別のフォルダを選ぶ";
 
 /// Title of the scanning progress block.
 pub const SCAN_TITLE: &str = "読み込み中";
-/// Cancels a running scan.
-pub const SCAN_CANCEL: &str = "キャンセル";
+/// Cancels a running scan (the web's scanning block uses the same word).
+pub const SCAN_CANCEL: &str = "中止";
 
 /// Shown before the first progress report.
 pub const SCAN_STARTING: &str = "フォルダを読み込んでいます。";
@@ -166,6 +175,21 @@ pub const ERROR_RETRY: &str = "もう一度選ぶ";
 
 /// Search button / field label.
 pub const SEARCH_LABEL: &str = "検索";
+
+/// Accessible name of the search button in the library header.
+pub const fn search_toggle_label(open: bool) -> &'static str {
+    if open {
+        "検索を閉じる"
+    } else {
+        "検索を開く"
+    }
+}
+
+/// Accessible name of a category segmented item, e.g. `最近の走行 2件` (`None` = all).
+pub fn category_option_label(category: Option<ClipCategory>, count: usize) -> String {
+    let name = category.map_or(CATEGORY_ALL, category_label);
+    format!("{name} {}", count_text(count))
+}
 /// Search field placeholder.
 pub const SEARCH_PLACEHOLDER: &str = "日時またはカテゴリ";
 /// Date picker label (prototype).
@@ -186,6 +210,38 @@ pub const DAY_RAIL_REGION: &str = "日内イベントタイムライン";
 pub const DAY_MARKERS: &str = "この日の記録";
 /// Shown instead of a day title when no day can be shown.
 pub const DAY_NONE: &str = "日付を選択してください";
+
+/// Accessible name of the day title, which opens the date picker, e.g. `日付を選ぶ（8月20日 木曜日）`.
+pub fn date_picker_label(title: Option<&DayTitle>) -> String {
+    match title {
+        Some(title) => format!("日付を選ぶ（{} {}）", title.date, title.weekday),
+        None => "日付を選ぶ".to_owned(),
+    }
+}
+
+/// The date picker's month title, e.g. `2026年10月`.
+pub fn month_title(year: u32, month: u32) -> String {
+    format!("{year}年{month}月")
+}
+
+/// Column heads of the date picker, Sunday first.
+pub const WEEKDAY_INITIALS: [&str; 7] = ["日", "月", "火", "水", "木", "金", "土"];
+/// The date picker's previous month button.
+pub const PREVIOUS_MONTH: &str = "前の月";
+/// The date picker's next month button.
+pub const NEXT_MONTH: &str = "次の月";
+
+/// Clears the open cluster's filter on the event list.
+pub const CLUSTER_CLEAR: &str = "絞り込みを解除";
+
+/// The open cluster above the event list, e.g. `20:35–20:45・3件`.
+pub fn cluster_filter_text(start_time_label: &str, end_time_label: &str, count: usize) -> String {
+    format!(
+        "{}\u{30FB}{}",
+        cluster_range(start_time_label, end_time_label),
+        count_text(count)
+    )
+}
 
 /// The weekday name, e.g. `木曜日`.
 pub const fn weekday_label(weekday: Weekday) -> &'static str {
@@ -303,6 +359,29 @@ pub fn detection_summary(reason: Option<&str>, time_label: &str) -> String {
     match reason.and_then(reason_words) {
         Some(words) => format!("{words}を{}", detection_time_text(time_label)),
         None => detection_time_text(time_label),
+    }
+}
+
+/// The detection in the event pill in three runs: the reason in words with `を` (empty when the
+/// reason has no words), the time (set in Barlow and `sentry-ink`) and `に検知`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DetectionParts {
+    /// e.g. `物体の接近を`, or empty.
+    pub lead: String,
+    /// e.g. `20:35:30`.
+    pub time: String,
+    /// `に検知`.
+    pub tail: &'static str,
+}
+
+/// The pill's detection runs; joined they read like [`detection_summary`].
+pub fn detection_parts(reason: Option<&str>, time_label: &str) -> DetectionParts {
+    DetectionParts {
+        lead: reason
+            .and_then(reason_words)
+            .map_or_else(String::new, |words| format!("{words}を")),
+        time: time_label.to_owned(),
+        tail: "に検知",
     }
 }
 
@@ -978,6 +1057,61 @@ mod tests {
             folder_error_text(FolderError::Failed).1,
             "SSDの接続を確認してから、もう一度選んでください。"
         );
+    }
+
+    #[test]
+    fn library_controls_name_what_they_do() {
+        assert_eq!(SCAN_CANCEL, "中止");
+        assert_eq!(search_toggle_label(false), "検索を開く");
+        assert_eq!(search_toggle_label(true), "検索を閉じる");
+        assert_eq!(CLUSTER_CLEAR, "絞り込みを解除");
+        assert_eq!(category_option_label(None, 6), "すべて 6件");
+        assert_eq!(
+            category_option_label(Some(ClipCategory::Recent), 2),
+            "最近の走行 2件"
+        );
+        let date = parse_filename_local_timestamp("2026-08-20_00-00-00").expect("date");
+        assert_eq!(
+            date_picker_label(Some(&day_title_parts(&date))),
+            "日付を選ぶ（8月20日 木曜日）"
+        );
+        assert_eq!(date_picker_label(None), "日付を選ぶ");
+        assert_eq!(
+            cluster_filter_text("20:35:00", "20:45:10", 3),
+            "20:35\u{2013}20:45\u{30FB}3件"
+        );
+    }
+
+    #[test]
+    fn the_date_picker_reads_like_a_japanese_calendar() {
+        assert_eq!(month_title(2026, 10), "2026年10月");
+        assert_eq!(WEEKDAY_INITIALS, ["日", "月", "火", "水", "木", "金", "土"]);
+        assert_eq!((PREVIOUS_MONTH, NEXT_MONTH), ("前の月", "次の月"));
+    }
+
+    #[test]
+    fn menus_are_japanese() {
+        assert_eq!(MENU_FILE, "ファイル");
+        assert_eq!(MENU_OPEN_FOLDER, "フォルダを開く…");
+        assert_eq!(MENU_QUIT, "TeslaCam Viewerを終了");
+        assert_eq!(MENU_HIDE, "TeslaCam Viewerを隠す");
+    }
+
+    #[test]
+    fn detection_parts_split_words_and_time() {
+        assert_eq!(
+            detection_parts(Some("sentry_aware_object_detection"), "20:35:30"),
+            DetectionParts {
+                lead: "物体の接近を".to_owned(),
+                time: "20:35:30".to_owned(),
+                tail: "に検知"
+            }
+        );
+        assert_eq!(
+            detection_parts(Some("user_interaction_honk"), "20:35:30").lead,
+            ""
+        );
+        assert_eq!(detection_parts(None, "20:35:30").tail, "に検知");
     }
 
     #[test]

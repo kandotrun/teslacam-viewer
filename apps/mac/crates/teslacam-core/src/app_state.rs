@@ -20,9 +20,11 @@
 
 use std::sync::Arc;
 
-use crate::copy::FolderError;
+use crate::camera::ClipCategory;
+use crate::copy::{self, FolderError};
 use crate::day_timeline::{
-    TimelineDay, adjacent_timeline_days, build_timeline_days, select_timeline_date,
+    TimelineDay, adjacent_timeline_days, build_day_timeline_markers, build_timeline_days,
+    select_timeline_date,
 };
 use crate::filters::{
     CategoryFilter, EventFilters, event_date, event_matches_filters, ordered_matching_events,
@@ -43,6 +45,31 @@ pub struct Workspace {
     pub selected_event_id: Option<String>,
     /// The stage layout, kept across events.
     pub layout: StageLayout,
+}
+
+/// Number of events per category, for the segmented control.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct CategoryCounts {
+    /// Every event.
+    pub all: usize,
+    /// Recent sessions.
+    pub recent: usize,
+    /// Saved events.
+    pub saved: usize,
+    /// Sentry events.
+    pub sentry: usize,
+}
+
+impl CategoryCounts {
+    /// The count shown for a segmented control item.
+    pub fn get(&self, filter: CategoryFilter) -> usize {
+        match filter {
+            CategoryFilter::All => self.all,
+            CategoryFilter::Only(ClipCategory::Recent) => self.recent,
+            CategoryFilter::Only(ClipCategory::Saved) => self.saved,
+            CategoryFilter::Only(ClipCategory::Sentry) => self.sentry,
+        }
+    }
 }
 
 /// Previous or next.
@@ -67,6 +94,42 @@ impl Workspace {
             ..self.filters.clone()
         };
         ordered_matching_events(&self.library.events, &filters)
+    }
+
+    /// The rows of the day on screen ([`Self::timeline_date`]): category and query apply, newest
+    /// first. Empty when no day can be shown.
+    pub fn day_events(&self) -> Vec<&Event> {
+        let Some(date_key) = self.timeline_date() else {
+            return Vec::new();
+        };
+        let filters = EventFilters {
+            date_key: Some(date_key),
+            ..self.filters.clone()
+        };
+        ordered_matching_events(&self.library.events, &filters)
+    }
+
+    /// Events per category of the whole library (filters do not apply).
+    pub fn category_counts(&self) -> CategoryCounts {
+        CategoryCounts {
+            all: self.library.events.len(),
+            recent: self.library.category_count(ClipCategory::Recent),
+            saved: self.library.category_count(ClipCategory::Saved),
+            sentry: self.library.category_count(ClipCategory::Sentry),
+        }
+    }
+
+    /// What the list says when [`Self::day_events`] is empty: the chosen day has no recordings, or
+    /// nothing matches the filters.
+    pub fn empty_rows_text(&self) -> &'static str {
+        let day_has_markers =
+            !build_day_timeline_markers(&self.timeline_events(), self.timeline_date().as_deref())
+                .is_empty();
+        if !day_has_markers && self.filters.date_key.is_some() {
+            copy::DAY_EMPTY
+        } else {
+            copy::EVENT_LIST_EMPTY
+        }
     }
 
     /// The selected event.
@@ -488,7 +551,6 @@ fn choose_day(workspace: &mut Workspace, date_key: String) -> Vec<AppEffect> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::camera::ClipCategory;
     use crate::library::{FileEntry, build_library};
 
     fn library(paths: &[&str]) -> Arc<Library> {
@@ -536,6 +598,57 @@ mod tests {
 
     fn selected(model: &AppModel) -> Option<&str> {
         workspace(model).selected_event_id.as_deref()
+    }
+
+    #[test]
+    fn the_library_lists_the_day_on_screen() {
+        let mut model = ready(history());
+        let ids = |model: &AppModel| {
+            workspace(model)
+                .day_events()
+                .iter()
+                .map(|event| event.id.clone())
+                .collect::<Vec<_>>()
+        };
+        // The newest event is selected, so its day is on screen.
+        assert_eq!(ids(&model), [RECENT, SAVED, SENTRY]);
+        model.dispatch(AppAction::EventSelected(MORNING.into()));
+        assert_eq!(ids(&model), [PREVIOUS, MORNING]);
+        // Category and query apply to the day's rows.
+        model.dispatch(AppAction::QueryFiltered("19:30".into()));
+        assert_eq!(ids(&model), [PREVIOUS]);
+        assert_eq!(
+            workspace(&model).empty_rows_text(),
+            crate::copy::EVENT_LIST_EMPTY
+        );
+    }
+
+    #[test]
+    fn category_counts_ignore_the_filters() {
+        let mut model = ready(history());
+        model.dispatch(AppAction::CategoryFiltered(CategoryFilter::Only(
+            ClipCategory::Sentry,
+        )));
+        let counts = workspace(&model).category_counts();
+        assert_eq!(
+            [
+                counts.get(CategoryFilter::All),
+                counts.get(CategoryFilter::Only(ClipCategory::Recent)),
+                counts.get(CategoryFilter::Only(ClipCategory::Saved)),
+                counts.get(CategoryFilter::Only(ClipCategory::Sentry)),
+            ],
+            [5, 1, 3, 1]
+        );
+    }
+
+    #[test]
+    fn an_empty_chosen_day_says_so() {
+        let mut model = ready(history());
+        model.dispatch(AppAction::DayChosen("2026-08-10".into()));
+        let workspace = workspace(&model);
+        assert!(workspace.day_events().is_empty());
+        assert_eq!(workspace.timeline_date().as_deref(), Some("2026-08-10"));
+        assert_eq!(workspace.empty_rows_text(), crate::copy::DAY_EMPTY);
     }
 
     #[test]
