@@ -14,14 +14,10 @@ fn saved_clips() -> PathBuf {
     mac_root().join(".fixtures/TeslaCam/SavedClips")
 }
 
-/// Generates the fixtures when they are missing (needs ffmpeg).
+/// Generates the fixtures when they are missing or have an older layout (needs ffmpeg).
 pub fn ensure() {
-    let marker = gaps_dir().join("event.mp4");
-    if marker.exists()
-        && full_dir()
-            .join("2026-10-20_12-01-00-right_repeater.mp4")
-            .exists()
-    {
+    let layout = std::fs::read_to_string(saved_clips().join(".layout")).unwrap_or_default();
+    if layout.trim() == "2" {
         return;
     }
     let status = std::process::Command::new(mac_root().join("scripts/gen-fixtures.sh"))

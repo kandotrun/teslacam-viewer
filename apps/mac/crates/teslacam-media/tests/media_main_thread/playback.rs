@@ -4,8 +4,8 @@ use std::time::{Duration, Instant};
 
 use objc2::MainThreadMarker;
 use teslacam_media::{
-    CameraId, CameraMap, CameraStatus, EventInput, EventPlayback, PlaybackEvent,
-    RepresentativePlayer, SegmentInput, host_now, run_loop::pump_until,
+    CameraId, CameraMap, CameraStatus, EventInput, EventPlayback, FileFault, PlaybackEvent,
+    ProbeJob, RepresentativePlayer, SegmentInput, host_now, run_loop::pump_until,
 };
 
 use crate::{
@@ -50,6 +50,10 @@ pub const TESTS: &[crate::Test] = &[
     (
         "representative_player_plays_event_mp4",
         representative_player_plays_event_mp4,
+    ),
+    (
+        "probe_job_reports_durations_sizes_and_faults",
+        probe_job_reports_durations_sizes_and_faults,
     ),
 ];
 
@@ -496,4 +500,24 @@ fn representative_player_plays_event_mp4(mtm: MainThreadMarker) {
         missing.status(host_now()) != CameraStatus::Loading
     }));
     assert_eq!(missing.status(host_now()), CameraStatus::Unavailable);
+}
+
+fn probe_job_reports_durations_sizes_and_faults(_mtm: MainThreadMarker) {
+    let mut event = fixtures::gaps_event();
+    event.segments[0].files[CameraId::RightRepeater] =
+        Some(fixtures::scratch().join("not-there.mp4"));
+    let mut job = ProbeJob::start(&event);
+    assert!(pump_until(LOAD_TIMEOUT, || job.try_result().is_some()));
+    let segments = job.try_result().unwrap();
+    assert_eq!(segments.len(), 3);
+    assert_eq!(segments[1].start_seconds, 20.0);
+    let front = segments[1].cameras[CameraId::Front].unwrap().unwrap();
+    assert!((front.duration - 8.0).abs() < 1e-3, "{front:?}");
+    assert_eq!((front.display_width, front.display_height), (1280.0, 960.0));
+    assert!((front.frame_duration - 1.0 / 36.0).abs() < 1e-6);
+    assert_eq!(segments[1].cameras[CameraId::Back], None);
+    assert_eq!(
+        segments[0].cameras[CameraId::RightRepeater],
+        Some(Err(FileFault::Unavailable))
+    );
 }

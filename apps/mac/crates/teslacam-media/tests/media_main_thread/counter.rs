@@ -1,6 +1,6 @@
 //! Decoder for the frame counter burned into the fixtures (see `apps/mac/scripts/gen-fixtures.sh`).
 //!
-//! 16 × 16 blocks in the top-left corner: row 0 holds 16 counter bits (LSB first) and a parity
+//! 16 × 16 blocks starting at [`ORIGIN`]: row 0 holds 16 counter bits (LSB first) and a parity
 //! block, row 1 holds `camera index + 1` in 3 bits.
 
 use objc2_core_video::{
@@ -10,6 +10,8 @@ use objc2_core_video::{
 };
 
 pub const BLOCK: f64 = 16.0;
+/// Top-left corner of the counter in a source frame.
+pub const ORIGIN: (f64, f64) = (32.0, 32.0);
 const COUNTER_BITS: usize = 16;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,7 +75,7 @@ pub fn decode_buffer(buffer: &CVPixelBuffer) -> Option<Stamp> {
     let base = CVPixelBufferGetBaseAddressOfPlane(buffer, 0) as *const u8;
     let stride = CVPixelBufferGetBytesPerRowOfPlane(buffer, 0);
     let width = CVPixelBufferGetWidthOfPlane(buffer, 0);
-    let height = CVPixelBufferGetHeightOfPlane(buffer, 0).min(64);
+    let height = CVPixelBufferGetHeightOfPlane(buffer, 0).min(96);
     let stamp = (!base.is_null()).then(|| {
         let data = unsafe { std::slice::from_raw_parts(base, stride * height) };
         decode_at(
@@ -83,8 +85,8 @@ pub fn decode_buffer(buffer: &CVPixelBuffer) -> Option<Stamp> {
                 width,
                 height,
             },
-            0.0,
-            0.0,
+            ORIGIN.0,
+            ORIGIN.1,
             1.0,
         )
     });

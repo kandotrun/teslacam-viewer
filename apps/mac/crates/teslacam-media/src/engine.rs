@@ -183,13 +183,20 @@ enum Completion {
     Preroll(u64),
 }
 
+/// How long the engine waits for slow players before starting with the ready ones. A player that
+/// becomes ready later joins with a re-sync of every player.
+const LOAD_GRACE_SECONDS: f64 = 5.0;
+
 /// Runs a [`SyncMachine`] against real players. Main thread only.
 pub(crate) struct Engine {
     tiles: Vec<Tile>,
+    /// Which tiles were ready when the players were last brought in sync.
+    joined: Vec<bool>,
     machine: SyncMachine,
     inbox: Inbox<Completion>,
     clock: CFRetained<CMClock>,
     duration: f64,
+    attached_at: Option<f64>,
     loaded: bool,
 }
 
@@ -197,10 +204,12 @@ impl Engine {
     pub fn new(machine: SyncMachine) -> Engine {
         Engine {
             tiles: Vec::new(),
+            joined: Vec::new(),
             machine,
             inbox: Arc::new(Mutex::new(Vec::new())),
             clock: unsafe { CMClock::host_time_clock() },
             duration: 0.0,
+            attached_at: None,
             loaded: false,
         }
     }
@@ -212,6 +221,7 @@ impl Engine {
 
     /// Installs the players once the media is composed; `duration` is the event duration.
     pub fn attach(&mut self, tiles: Vec<Tile>, duration: f64) {
+        self.joined = vec![false; tiles.len()];
         self.tiles = tiles;
         self.duration = duration;
     }
@@ -240,13 +250,33 @@ impl Engine {
             };
             self.execute(&actions);
         }
-        if !self.loaded && !self.tiles.is_empty() {
+        if !self.tiles.is_empty() {
+            let attached_at = *self.attached_at.get_or_insert(now);
             let states: Vec<TileState> = self.tiles.iter_mut().map(Tile::state).collect();
-            let settled = states.iter().all(|state| *state != TileState::Loading);
-            if settled && states.contains(&TileState::Ready) {
-                self.loaded = true;
-                let actions = self.machine.players_ready(self.duration, now);
-                self.execute(&actions);
+            let any_ready = states.contains(&TileState::Ready);
+            let late = states
+                .iter()
+                .zip(&self.joined)
+                .any(|(state, joined)| *state == TileState::Ready && !joined);
+            if !self.loaded {
+                let settled = states.iter().all(|state| *state != TileState::Loading);
+                if any_ready && (settled || now - attached_at >= LOAD_GRACE_SECONDS) {
+                    self.loaded = true;
+                    self.joined = states
+                        .iter()
+                        .map(|state| *state == TileState::Ready)
+                        .collect();
+                    let actions = self.machine.players_ready(self.duration, now);
+                    self.execute(&actions);
+                }
+            } else if late {
+                // A slow player became ready: bring everyone to the current position again.
+                self.joined = states
+                    .iter()
+                    .map(|state| *state == TileState::Ready)
+                    .collect();
+                let position = self.machine.position(now);
+                self.command(Command::Seek(position), now);
             }
         }
         let frames_ready = self.machine.awaiting_frames().is_some_and(|target| {
