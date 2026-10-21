@@ -13,6 +13,10 @@
 //!   (`DESIGN.md` §7); the web starts without a selection.
 //! - Choosing a day (date picker or `前の記録日` / `次の記録日`) filters to that day and selects its
 //!   newest event. Unknown event ids are ignored.
+//!
+//! Shared with the web's garage floor (`presentation/library-view.ts`): `過去の記録` / `新しい記録`
+//! step through the rail's events (category and query apply, the day does not), and selecting an
+//! event on another day moves an active date filter to that day.
 
 use std::sync::Arc;
 
@@ -21,7 +25,7 @@ use crate::day_timeline::{
     TimelineDay, adjacent_timeline_days, build_timeline_days, select_timeline_date,
 };
 use crate::filters::{
-    CategoryFilter, EventFilters, event_matches_filters, ordered_matching_events,
+    CategoryFilter, EventFilters, event_date, event_matches_filters, ordered_matching_events,
 };
 use crate::library::{Event, Library, ScanProgress};
 use crate::playback::StageLayout;
@@ -96,17 +100,17 @@ impl Workspace {
         .cloned()
     }
 
-    /// The event `step` away from the selection in the event list.
+    /// The event `step` away from the selection among [`Self::timeline_events`].
     pub fn adjacent_event(&self, step: Step) -> Option<&Event> {
-        let matching = self.matching_events();
-        let index = matching
+        let events = self.timeline_events();
+        let index = events
             .iter()
             .position(|event| Some(&event.id) == self.selected_event_id.as_ref())?;
         let target = match step {
             Step::Previous => index.checked_add(1)?,
             Step::Next => index.checked_sub(1)?,
         };
-        matching.get(target).copied()
+        events.get(target).copied()
     }
 }
 
@@ -443,10 +447,17 @@ fn set_filters(workspace: &mut Workspace, filters: EventFilters) -> Vec<AppEffec
 }
 
 fn select(workspace: &mut Workspace, event_id: String) -> Vec<AppEffect> {
-    if workspace.selected_event_id.as_ref() == Some(&event_id)
-        || workspace.library.event(&event_id).is_none()
-    {
+    if workspace.selected_event_id.as_ref() == Some(&event_id) {
         return Vec::new();
+    }
+    let Some(event) = workspace.library.event(&event_id) else {
+        return Vec::new();
+    };
+    let event_date = event_date(&event.timestamp);
+    if let Some(date_key) = &mut workspace.filters.date_key
+        && *date_key != event_date
+    {
+        *date_key = event_date;
     }
     workspace.selected_event_id = Some(event_id.clone());
     vec![AppEffect::StartSession { event_id }]
@@ -817,6 +828,31 @@ mod tests {
                 .map(|event| event.id.as_str()),
             Some(SAVED)
         );
+    }
+
+    #[test]
+    fn stepping_across_days_moves_the_date_filter() {
+        let mut model = ready(history());
+        model.dispatch(AppAction::DayStepped(Step::Previous));
+        assert_eq!(selected(&model), Some(PREVIOUS));
+        assert_eq!(
+            model.dispatch(AppAction::EventStepped(Step::Next)),
+            vec![AppEffect::StartSession {
+                event_id: SENTRY.into()
+            }]
+        );
+        assert_eq!(
+            workspace(&model).filters.date_key.as_deref(),
+            Some("2026-08-20")
+        );
+        model.dispatch(AppAction::EventSelected(MORNING.into()));
+        assert_eq!(
+            workspace(&model).filters.date_key.as_deref(),
+            Some("2026-08-19")
+        );
+        model.dispatch(AppAction::DateFiltered(None));
+        model.dispatch(AppAction::EventSelected(RECENT.into()));
+        assert_eq!(workspace(&model).filters.date_key, None);
     }
 
     #[test]

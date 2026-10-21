@@ -88,11 +88,12 @@ Rust adapters are typed instead):
 | `event-detection.json` | `detectionSeconds`, `sentryInitialElapsedSeconds`, `sentryPlaybackStartLabel` | `react-app/event-detection.ts` |
 | `playback-timeline.json` | `eventDuration`, `locatePlaybackTime` | `react-app/playback/timeline.ts` |
 | `day-timeline.json` | `selectTimelineDate`, `buildDayTimelineMarkers`, `buildTimelineDays`, `adjacentTimelineDays`, `buildDayTimelineClusters` | `react-app/day-timeline.ts` |
-| `copy-format.json` | `cameraLabel`, `categoryLabel`, `formatDuration`, `cameraAvailabilityLabel`, `missingCameraLabel`, `segmentCountLabel`, `eventTime` | `react-app/event-summary.ts`, `react-app/event-filters.ts` |
+| `copy-format.json` | `cameraLabel`, `categoryLabel`, `formatDuration`, `cameraAvailabilityLabel`, `missingCameraLabel`, `segmentCountLabel`, `eventTime`, and the garage-floor copy: `shortCategoryLabel`, `startClock`, `cameraCountText`, `missingCamerasText`, `detectionFact`, `detectionSentence`, `playbackStartText`, `locationText`, `coordinatesText`, `dayTitle`, `transportTimeLabel`, `scrubberValueText`, `scanProgressCopy`, `warningText` | `react-app/event-summary.ts`, `react-app/event-filters.ts`, `react-app/presentation/event-copy.ts` |
 
 Not covered by fixtures, because they are UI state machines or have no pure web function yet: app state,
-playback machine, export state, theater shortcuts, export layout and plan, timeline label builders. The Mac
-tests those natively in `teslacam-core`.
+playback machine, export state, theater shortcuts, export layout and plan, rail layout. The Mac tests those
+natively in `teslacam-core`. `playbackStartText` cases use a regular 60 s cadence, where the web's nominal
+axis and the Mac's wall-clock axis agree.
 
 ### Mac-only rules pinned by fixtures
 
