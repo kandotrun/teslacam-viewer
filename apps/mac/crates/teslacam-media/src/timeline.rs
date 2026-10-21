@@ -4,12 +4,16 @@
 //! segment's start; missing files, files that cannot be shown and the rest of a short clip's window are
 //! gaps. Very short tails (below [`HOLD_TOLERANCE_SECONDS`]) hold the clip's last frame instead, so a
 //! 59.97 s clip followed by a segment at 60 s never flashes a missing tile.
+//!
+//! This is the probed counterpart of `teslacam_core::event_timeline::EventTimeline`: both apply the
+//! same placement, truncation and hold rules (a test below checks that they agree).
 
 use crate::input::{CameraId, CameraMap};
 use crate::status::FileFault;
 
-/// Tails shorter than this hold the clip's last frame instead of becoming a gap.
-pub const HOLD_TOLERANCE_SECONDS: f64 = 1.0;
+/// Tails shorter than this hold the clip's last frame instead of becoming a gap (shared with
+/// `teslacam-core`).
+pub use teslacam_core::event_timeline::HOLD_TOLERANCE_SECONDS;
 
 /// What probing one clip file found out.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -475,6 +479,93 @@ mod tests {
         assert_eq!(front.coverage_at(60.0), Some(Coverage::Video { clip: 1 }));
         assert_eq!(front.coverage_at(120.0), Some(Coverage::Video { clip: 1 }));
         assert_eq!(front.coverage_at(500.0), Some(Coverage::Video { clip: 1 }));
+    }
+
+    /// Builds the same event for both crates: segment offsets in whole seconds and clip lengths per
+    /// camera (`None` = no file).
+    fn agree(segments: &[(i64, [Option<f64>; 6])]) {
+        use teslacam_core::event_timeline::{EventTimeline as CoreTimeline, SegmentMedia};
+        use teslacam_core::timestamp::parse_filename_local_timestamp;
+
+        let origin = parse_filename_local_timestamp("2026-08-21_12-00-00").expect("timestamp");
+        let core = CoreTimeline::new(
+            &segments
+                .iter()
+                .map(|(offset, lengths)| SegmentMedia {
+                    timestamp: origin.plus_seconds(*offset).expect("timestamp"),
+                    durations: CameraMap::from_fn(|camera| lengths[camera.index()]),
+                })
+                .collect::<Vec<_>>(),
+        )
+        .expect("core timeline");
+        let media = plan_event_timeline(
+            &segments
+                .iter()
+                .map(|(offset, lengths)| {
+                    segment(*offset as f64, |camera| {
+                        lengths[camera.index()].map(|length| Ok(info(length)))
+                    })
+                })
+                .collect::<Vec<_>>(),
+        );
+        assert!((core.duration() - media.duration).abs() < 1e-9, "duration");
+        for camera in CameraId::ALL {
+            let core_clips: Vec<_> = core
+                .placements(camera)
+                .iter()
+                .map(|p| (p.segment_index, p.start, p.duration, p.hold))
+                .collect();
+            let media_clips: Vec<_> = media.cameras[camera]
+                .clips
+                .iter()
+                .map(|c| (c.segment, c.start, c.duration, c.hold))
+                .collect();
+            assert_eq!(core_clips.len(), media_clips.len(), "{camera:?}");
+            for (core_clip, media_clip) in core_clips.iter().zip(&media_clips) {
+                assert_eq!((core_clip.0, core_clip.1), (media_clip.0, media_clip.1));
+                assert!(
+                    (core_clip.2 - media_clip.2).abs() < 1e-9,
+                    "{camera:?} duration"
+                );
+                assert!((core_clip.3 - media_clip.3).abs() < 1e-9, "{camera:?} hold");
+            }
+        }
+    }
+
+    #[test]
+    fn the_core_timeline_places_clips_the_same_way() {
+        let full = [Some(60.0); 6];
+        agree(&[(0, full), (60, full)]);
+        // Tiny tails hold, longer ones are gaps, missing files are gaps.
+        agree(&[
+            (
+                0,
+                [
+                    Some(59.97),
+                    Some(60.0),
+                    Some(59.0),
+                    None,
+                    Some(61.5),
+                    Some(60.0),
+                ],
+            ),
+            (
+                60,
+                [
+                    Some(60.0),
+                    Some(59.5),
+                    Some(30.0),
+                    Some(60.0),
+                    None,
+                    Some(58.0),
+                ],
+            ),
+        ]);
+        // Real gaps between segments and a short last segment.
+        agree(&[
+            (0, full),
+            (85, [Some(20.0), Some(19.6), None, None, None, Some(5.0)]),
+        ]);
     }
 
     #[test]

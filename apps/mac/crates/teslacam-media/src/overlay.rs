@@ -460,7 +460,7 @@ mod tests {
     use super::*;
 
     fn holes(layout: &ExportLayout) -> CameraMap<Rect> {
-        layout.slots.clone()
+        layout.slots
     }
 
     fn rgb(pixel: [u8; 4]) -> [u8; 3] {

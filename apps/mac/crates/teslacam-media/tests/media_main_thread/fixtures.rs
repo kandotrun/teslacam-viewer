@@ -41,7 +41,7 @@ fn event(dir: &Path, segments: &[(&str, f64)]) -> EventInput {
             .map(|(timestamp, start)| SegmentInput {
                 start_seconds: *start,
                 files: CameraMap::from_fn(|camera| {
-                    let path = dir.join(format!("{timestamp}-{}.mp4", camera.as_str()));
+                    let path = dir.join(format!("{timestamp}-{}.mp4", camera.id()));
                     path.exists().then_some(path)
                 }),
             })
@@ -74,7 +74,7 @@ pub fn representative() -> PathBuf {
 }
 
 pub fn clip(dir: &Path, timestamp: &str, camera: CameraId) -> PathBuf {
-    dir.join(format!("{timestamp}-{}.mp4", camera.as_str()))
+    dir.join(format!("{timestamp}-{}.mp4", camera.id()))
 }
 
 /// Scratch directory for files the tests create (corrupt clips, exports).

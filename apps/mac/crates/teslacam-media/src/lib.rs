@@ -29,8 +29,9 @@
 //!
 //! # Inputs
 //!
-//! [`input`] holds minimal local mirrors of the `teslacam-core` types this layer needs (camera ids
-//! and the segments of an event with their wall-clock offsets). The app maps the core types onto them.
+//! Camera ids and per-camera maps are `teslacam-core`'s ([`CameraId`], [`CameraMap`]). An event is
+//! handed over as an [`EventInput`]: its segments with their wall-clock offsets and file paths, built
+//! from a core event and its `EventTimeline` by [`EventInput::from_event`].
 #![warn(missing_docs)]
 
 mod av;

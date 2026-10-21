@@ -1,117 +1,15 @@
 //! Plain input data for this crate.
 //!
-//! These types mirror the parts of `teslacam-core` the media layer needs (camera ids and the event's
-//! segments on the wall-clock timeline). They are kept local and minimal so the app can map the core
-//! types onto them with a few lines; once the core types are stable this module can re-export them.
+//! Camera ids and per-camera maps are `teslacam-core`'s ([`CameraId`], [`CameraMap`]), so the canonical
+//! order, the contract ids and the Japanese names are defined once. An [`EventInput`] is an event's
+//! segments placed on the wall-clock timeline; [`EventInput::from_event`] builds it from a core
+//! [`Event`] and its [`EventTimeline`].
 
 use std::path::PathBuf;
 
-/// One of the six TeslaCam cameras, in canonical order (spec §1.1).
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
-pub enum CameraId {
-    /// `front`
-    Front,
-    /// `back`
-    Back,
-    /// `left_pillar`
-    LeftPillar,
-    /// `left_repeater`
-    LeftRepeater,
-    /// `right_pillar`
-    RightPillar,
-    /// `right_repeater`
-    RightRepeater,
-}
-
-impl CameraId {
-    /// All cameras in canonical order.
-    pub const ALL: [CameraId; 6] = [
-        CameraId::Front,
-        CameraId::Back,
-        CameraId::LeftPillar,
-        CameraId::LeftRepeater,
-        CameraId::RightPillar,
-        CameraId::RightRepeater,
-    ];
-
-    /// Position in canonical order (0 = front).
-    pub const fn index(self) -> usize {
-        self as usize
-    }
-
-    /// The id used in TeslaCam file names and the shared contract (`front`, `left_pillar`, ...).
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            CameraId::Front => "front",
-            CameraId::Back => "back",
-            CameraId::LeftPillar => "left_pillar",
-            CameraId::LeftRepeater => "left_repeater",
-            CameraId::RightPillar => "right_pillar",
-            CameraId::RightRepeater => "right_repeater",
-        }
-    }
-
-    /// Parses a contract id such as `left_pillar`.
-    pub fn parse(id: &str) -> Option<CameraId> {
-        CameraId::ALL
-            .into_iter()
-            .find(|camera| camera.as_str() == id)
-    }
-}
-
-/// A value per camera, indexed by [`CameraId`].
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct CameraMap<T>([T; 6]);
-
-impl<T> CameraMap<T> {
-    /// Builds the map by calling `f` for every camera in canonical order.
-    pub fn from_fn(mut f: impl FnMut(CameraId) -> T) -> Self {
-        CameraMap(CameraId::ALL.map(&mut f))
-    }
-
-    /// The value for `camera`.
-    pub fn get(&self, camera: CameraId) -> &T {
-        &self.0[camera.index()]
-    }
-
-    /// The value for `camera`, mutably.
-    pub fn get_mut(&mut self, camera: CameraId) -> &mut T {
-        &mut self.0[camera.index()]
-    }
-
-    /// `(camera, value)` pairs in canonical order.
-    pub fn iter(&self) -> impl Iterator<Item = (CameraId, &T)> {
-        CameraId::ALL.into_iter().zip(self.0.iter())
-    }
-
-    /// Maps every value, keeping the camera association.
-    pub fn map<U>(&self, mut f: impl FnMut(CameraId, &T) -> U) -> CameraMap<U> {
-        CameraMap::from_fn(|camera| f(camera, self.get(camera)))
-    }
-}
-
-impl<T> IntoIterator for CameraMap<T> {
-    type Item = (CameraId, T);
-    type IntoIter = std::iter::Zip<std::array::IntoIter<CameraId, 6>, std::array::IntoIter<T, 6>>;
-
-    /// `(camera, value)` pairs in canonical order.
-    fn into_iter(self) -> Self::IntoIter {
-        CameraId::ALL.into_iter().zip(self.0)
-    }
-}
-
-impl<T> std::ops::Index<CameraId> for CameraMap<T> {
-    type Output = T;
-    fn index(&self, camera: CameraId) -> &T {
-        self.get(camera)
-    }
-}
-
-impl<T> std::ops::IndexMut<CameraId> for CameraMap<T> {
-    fn index_mut(&mut self, camera: CameraId) -> &mut T {
-        self.get_mut(camera)
-    }
-}
+pub use teslacam_core::camera::{CameraId, CameraMap};
+use teslacam_core::event_timeline::EventTimeline;
+use teslacam_core::library::{Event, Library};
 
 /// One segment of an event: the clips that share one file-name timestamp.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -130,39 +28,106 @@ pub struct EventInput {
     pub segments: Vec<SegmentInput>,
 }
 
+impl EventInput {
+    /// The media input of `event` (a member of `library`): every segment starts where `timeline`
+    /// places it, and each camera file is resolved to its path on disk.
+    ///
+    /// `timeline` must be the event's own timeline (for example
+    /// [`EventTimeline::assuming_full_windows`]); segments beyond the shorter of the two are
+    /// dropped.
+    pub fn from_event(event: &Event, library: &Library, timeline: &EventTimeline) -> EventInput {
+        EventInput {
+            segments: event
+                .segments
+                .iter()
+                .zip(timeline.segments())
+                .map(|(segment, placed)| SegmentInput {
+                    start_seconds: placed.start,
+                    files: segment
+                        .cameras
+                        .map(|_, file| file.map(|id| library.file(id).path.clone())),
+                })
+                .collect(),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use teslacam_core::camera::ClipCategory;
+    use teslacam_core::library::{FileEntry, FileId, Segment};
+
     use super::*;
 
-    #[test]
-    fn camera_ids_follow_canonical_order_and_contract_names() {
-        let names: Vec<_> = CameraId::ALL.iter().map(|c| c.as_str()).collect();
-        assert_eq!(
-            names,
-            [
-                "front",
-                "back",
-                "left_pillar",
-                "left_repeater",
-                "right_pillar",
-                "right_repeater"
-            ]
-        );
-        for (index, camera) in CameraId::ALL.into_iter().enumerate() {
-            assert_eq!(camera.index(), index);
-            assert_eq!(CameraId::parse(camera.as_str()), Some(camera));
+    fn library() -> Library {
+        let files = ["a-front", "a-back", "b-front"]
+            .iter()
+            .map(|name| FileEntry {
+                path: PathBuf::from(format!("/clips/{name}.mp4")),
+                ..FileEntry::new(format!("{name}.mp4"), format!("TeslaCam/{name}.mp4"), 1)
+            })
+            .collect();
+        let mut first = CameraMap::default();
+        first[CameraId::Front] = Some(FileId(0));
+        first[CameraId::Back] = Some(FileId(1));
+        let mut second = CameraMap::default();
+        second[CameraId::Front] = Some(FileId(2));
+        Library {
+            files,
+            events: vec![Event {
+                id: "saved-2026-08-21_12-00-00-1".to_owned(),
+                category: ClipCategory::Saved,
+                timestamp: "2026-08-21_12-00-00".to_owned(),
+                segments: vec![
+                    Segment {
+                        timestamp: "2026-08-21_12-00-00".to_owned(),
+                        cameras: first,
+                    },
+                    Segment {
+                        timestamp: "2026-08-21_12-01-30".to_owned(),
+                        cameras: second,
+                    },
+                ],
+                representative: None,
+                thumbnail: None,
+                metadata: None,
+            }],
+            warnings: Vec::new(),
         }
-        assert_eq!(CameraId::parse("rear"), None);
     }
 
     #[test]
-    fn camera_map_indexes_by_camera() {
-        let mut map = CameraMap::from_fn(|camera| camera.index() * 10);
-        assert_eq!(map[CameraId::LeftRepeater], 30);
-        map[CameraId::Back] = 7;
-        assert_eq!(*map.get(CameraId::Back), 7);
-        let doubled = map.map(|_, value| value * 2);
-        assert_eq!(doubled[CameraId::RightRepeater], 100);
-        assert_eq!(map.iter().count(), 6);
+    fn events_take_their_segment_starts_from_the_core_timeline() {
+        let library = library();
+        let event = &library.events[0];
+        let timeline = EventTimeline::assuming_full_windows(event).expect("timeline");
+        let input = EventInput::from_event(event, &library, &timeline);
+        assert_eq!(
+            input
+                .segments
+                .iter()
+                .map(|segment| segment.start_seconds)
+                .collect::<Vec<_>>(),
+            [0.0, 90.0]
+        );
+        assert_eq!(
+            input.segments[0].files[CameraId::Back].as_deref(),
+            Some(std::path::Path::new("/clips/a-back.mp4"))
+        );
+        assert_eq!(input.segments[1].files[CameraId::Back], None);
+        assert_eq!(
+            input.segments[1].files[CameraId::Front].as_deref(),
+            Some(std::path::Path::new("/clips/b-front.mp4"))
+        );
+    }
+
+    #[test]
+    fn camera_ids_are_the_core_ids() {
+        assert_eq!(CameraId::from_id("left_pillar"), Some(CameraId::LeftPillar));
+        assert_eq!(CameraId::Back.label(), "リア");
+        assert_eq!(
+            CameraMap::from_fn(CameraId::index)[CameraId::RightRepeater],
+            5
+        );
     }
 }

@@ -6342,6 +6342,7 @@ dependencies = [
  "objc2-quartz-core 0.3.2",
  "serde",
  "serde_json",
+ "teslacam-core",
 ]
 
 [[package]]

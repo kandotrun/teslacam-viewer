@@ -306,9 +306,9 @@ impl ExportLayout {
         let per_camera = |what: &str, lookup: &dyn Fn(&str) -> Option<()>| {
             CameraId::ALL
                 .iter()
-                .find(|camera| lookup(camera.as_str()).is_none())
+                .find(|camera| lookup(camera.id()).is_none())
                 .map_or(Ok(()), |camera| {
-                    Err(format!("{what} has no entry for `{}`", camera.as_str()))
+                    Err(format!("{what} has no entry for `{}`", camera.id()))
                 })
         };
         per_camera("slots", &|id| layout.slots.get(id).map(|_| ()))?;
@@ -318,7 +318,7 @@ impl ExportLayout {
             width: layout.width,
             height: layout.height,
             fps: layout.fps,
-            slots: CameraMap::from_fn(|camera| layout.slots[camera.as_str()]),
+            slots: CameraMap::from_fn(|camera| layout.slots[camera.id()]),
             vehicle: layout.vehicle,
             video_corner_radius: layout.video_corner_radius,
             label: LabelStyle {
@@ -336,8 +336,8 @@ impl ExportLayout {
                 message: layout.missing.message,
             },
             wedge: color(&layout.wedges.color)?,
-            mounts: CameraMap::from_fn(|camera| tokens.stage.mounts[camera.as_str()]),
-            labels: CameraMap::from_fn(|camera| layout.labels[camera.as_str()].clone()),
+            mounts: CameraMap::from_fn(|camera| tokens.stage.mounts[camera.id()]),
+            labels: CameraMap::from_fn(|camera| layout.labels[camera.id()].clone()),
             floor: color(&layout.background)?,
             floor_light: color("floor-light")?,
         })
@@ -482,6 +482,9 @@ mod tests {
                 "右リピーター"
             ]
         );
+        for camera in CameraId::ALL {
+            assert_eq!(layout.labels[camera], camera.label(), "{camera:?}");
+        }
     }
 
     #[test]
