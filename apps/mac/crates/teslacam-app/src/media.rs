@@ -17,7 +17,7 @@ use teslacam_media::{
     PlaybackEvent, RepresentativePlayer, VideoFrame,
 };
 
-use crate::bridge::{MediaCall, media_calls, tile_status};
+use crate::bridge::{LoopState, MediaCall, frame_loop_needed, media_calls, tile_status};
 
 /// What changed in the media since the previous [`SessionMedia::tick`].
 #[derive(Debug, Clone)]
@@ -57,6 +57,8 @@ pub struct SessionMedia {
     playback: EventPlayback,
     representative: Option<Representative>,
     export: Option<ExportJob>,
+    /// Whether some camera was loading or ready at the last tick.
+    live_cameras: bool,
     mtm: MainThreadMarker,
 }
 
@@ -79,6 +81,7 @@ impl SessionMedia {
             playback,
             representative: representative.map(|path| Representative { path, player: None }),
             export: None,
+            live_cameras: true,
             mtm,
         }
     }
@@ -99,9 +102,11 @@ impl SessionMedia {
         if let Some(player) = self.representative_player() {
             player.tick(now);
         }
+        let statuses = CameraMap::from_fn(|camera| tile_status(self.playback.status(camera, now)));
+        self.live_cameras = statuses.iter().any(|(_, status)| !status.is_terminal());
         MediaReport {
             loaded,
-            statuses: CameraMap::from_fn(|camera| tile_status(self.playback.status(camera, now))),
+            statuses,
             ended,
             running: self.playback.is_running(),
             export: self.poll_export(),
@@ -146,18 +151,23 @@ impl SessionMedia {
         self.playback.current_time(now)
     }
 
-    /// Whether the frame loop must keep running: playing, loading, settling a seek, exporting, or
-    /// the representative video playing or settling.
+    /// Whether the frame loop must keep running (see [`frame_loop_needed`]).
     pub fn needs_ticks(&self) -> bool {
-        let representative = self
+        let representative_busy = self
             .representative
             .as_ref()
             .and_then(|representative| representative.player.as_ref())
-            .is_some_and(|player| player.is_playing() || !player.is_settled());
-        self.playback.is_playing()
-            || !self.playback.is_settled()
-            || self.export.is_some()
-            || representative
+            .is_some_and(|player| {
+                player.is_playing() || (!player.is_settled() && player.duration() != Some(0.0))
+            });
+        frame_loop_needed(LoopState {
+            probing: self.playback.duration().is_none(),
+            running: self.playback.is_running(),
+            settled: self.playback.is_settled(),
+            live_cameras: self.live_cameras,
+            exporting: self.export.is_some(),
+            representative_busy,
+        })
     }
 
     /// The frame `camera` shows at host time `now` (`None` in a gap, before loading, on a fault).

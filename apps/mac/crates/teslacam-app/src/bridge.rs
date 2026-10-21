@@ -68,6 +68,33 @@ pub fn media_calls(command: MediaCommand, position: f64, rate: f32) -> Vec<Media
     }
 }
 
+/// What the media is doing, for deciding whether the frame loop must run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LoopState {
+    /// The clips are still being probed and composed.
+    pub probing: bool,
+    /// The group runs on the shared clock.
+    pub running: bool,
+    /// No seek or start is in flight.
+    pub settled: bool,
+    /// Some camera is loading or ready (not every one is missing or broken).
+    pub live_cameras: bool,
+    /// A composite export runs.
+    pub exporting: bool,
+    /// The representative video plays or settles a seek.
+    pub representative_busy: bool,
+}
+
+/// Whether the frame loop must tick: something can still change on screen. A group that cannot
+/// settle because no camera can show video (every file broken) does not keep the loop alive.
+pub fn frame_loop_needed(state: LoopState) -> bool {
+    state.probing
+        || state.running
+        || state.exporting
+        || state.representative_busy
+        || (!state.settled && state.live_cameras)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,5 +158,48 @@ mod tests {
             media_calls(MediaCommand::Pause, 3.0, 1.0),
             vec![MediaCall::Pause]
         );
+    }
+
+    #[test]
+    fn the_frame_loop_runs_only_while_something_can_change() {
+        let idle = LoopState {
+            probing: false,
+            running: false,
+            settled: true,
+            live_cameras: true,
+            exporting: false,
+            representative_busy: false,
+        };
+        assert!(!frame_loop_needed(idle));
+        // Probing, running (also through a gap where every camera is missing), exporting, or the
+        // representative video playing keep it going.
+        assert!(frame_loop_needed(LoopState {
+            probing: true,
+            ..idle
+        }));
+        assert!(frame_loop_needed(LoopState {
+            running: true,
+            live_cameras: false,
+            ..idle
+        }));
+        assert!(frame_loop_needed(LoopState {
+            exporting: true,
+            ..idle
+        }));
+        assert!(frame_loop_needed(LoopState {
+            representative_busy: true,
+            ..idle
+        }));
+        // A seek or start settles while some camera can still show video ...
+        assert!(frame_loop_needed(LoopState {
+            settled: false,
+            ..idle
+        }));
+        // ... but never settles when no camera can (every file is broken).
+        assert!(!frame_loop_needed(LoopState {
+            settled: false,
+            live_cameras: false,
+            ..idle
+        }));
     }
 }
