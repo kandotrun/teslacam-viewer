@@ -29,8 +29,8 @@ use teslacam_core::rail_layout::day_rail as build_day_rail;
 use teslacam_core::timestamp::parse_filename_local_timestamp;
 
 use super::components::{
-    ChipSize, category_chip, category_icon, glass, icon_button, primary_button, segment_selected,
-    text_button,
+    ChipSize, KeyboardFocus as _, category_chip, category_icon, glass, icon_button, primary_button,
+    segment_selected, text_button,
 };
 use super::date_picker::{PickerAction, date_picker};
 use super::rail::{RailClick, day_rail};
@@ -68,6 +68,8 @@ pub struct LibraryPanel {
     picker_month: Option<YearMonth>,
     cluster: Option<OpenCluster>,
     rail_width: Rc<Cell<f32>>,
+    /// One tab-stop handle per day rail item (grown as needed).
+    rail_focus: Vec<FocusHandle>,
     list: UniformListScrollHandle,
     thumbnails: Entity<ThumbnailCache>,
     rows: Rc<Vec<Row>>,
@@ -109,11 +111,20 @@ impl LibraryPanel {
             cluster: None,
             // The track of a 372 pt panel until the first measurement.
             rail_width: Rc::new(Cell::new(330.0)),
+            rail_focus: Vec::new(),
             list: UniformListScrollHandle::new(),
             thumbnails: cx.new(ThumbnailCache::new),
             rows: Rc::new(Vec::new()),
             _subscriptions: subscriptions,
         }
+    }
+
+    #[cfg(test)]
+    /// The day rail item that has keyboard focus.
+    pub fn focused_rail_item(&self, window: &Window) -> Option<usize> {
+        self.rail_focus
+            .iter()
+            .position(|handle| handle.is_focused(window))
     }
 
     /// The search field's focus handle (shortcuts are ignored while it has focus).
@@ -284,6 +295,7 @@ impl LibraryPanel {
                             .ui_text(12.0, 400.0)
                             .cursor_pointer()
                             .hover(move |style| style.bg(fill_hover))
+                            .keyboard_focus(palette.surface, cx)
                             .child(icon(Icon::Folder, 16.0, palette.ink_2))
                             .child(
                                 div()
@@ -583,6 +595,9 @@ impl LibraryPanel {
             day_key.as_deref(),
             f64::from(self.rail_width.get()),
         );
+        while self.rail_focus.len() < rail.items.len() {
+            self.rail_focus.push(cx.focus_handle().tab_stop(true));
+        }
         let previous_day = workspace.adjacent_day(Step::Previous);
         let next_day = workspace.adjacent_day(Step::Next);
         let title = day_key
@@ -670,6 +685,7 @@ impl LibraryPanel {
                     .ui_text(12.0, 400.0)
                     .text_color(palette.ink_2)
                     .cursor_pointer()
+                    .keyboard_focus(palette.fill, cx)
                     .child(short)
                     .child(
                         div()
@@ -760,6 +776,7 @@ impl LibraryPanel {
             .rounded(px(10.0))
             .whitespace_nowrap()
             .cursor_pointer()
+            .keyboard_focus(palette.surface, cx)
             .hover({
                 let fill = palette.fill;
                 move |style| style.bg(fill)
@@ -836,6 +853,7 @@ impl LibraryPanel {
                     selected.as_deref(),
                     expanded.as_deref(),
                     self.rail_width.clone(),
+                    &self.rail_focus,
                     move |click, _, cx| {
                         entity
                             .update(cx, |this, cx| match click {
@@ -1033,6 +1051,7 @@ impl LibraryPanel {
                     .p(px(8.0))
                     .rounded(px(tokens.radii.row))
                     .cursor_pointer()
+                    .keyboard_focus(palette.surface, cx)
                     .map(|row_element| {
                         if row.selected {
                             row_element.bg(palette.drive_soft)

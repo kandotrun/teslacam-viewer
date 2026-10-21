@@ -9,7 +9,7 @@ use gpui_kit::{
 use teslacam_core::calendar::MonthGrid;
 use teslacam_core::copy;
 
-use super::components::{icon_button, popover_surface};
+use super::components::{KeyboardFocus as _, icon_button, popover_surface};
 use super::style::{AppTheme, TypeExt as _};
 use crate::assets::Icon;
 
@@ -110,6 +110,7 @@ pub fn date_picker(
                         .justify_center()
                         .rounded_full()
                         .cursor_pointer()
+                        .keyboard_focus(palette.surface, cx)
                         .when(day.selected, |cell| cell.bg(palette.drive))
                         .when(!day.selected, |cell| {
                             cell.hover(move |style| style.bg(fill))

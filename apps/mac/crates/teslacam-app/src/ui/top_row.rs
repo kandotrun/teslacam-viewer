@@ -16,8 +16,8 @@ use teslacam_core::export_state::{ExportAction, ExportState};
 use teslacam_core::playback::{PlaybackInput, ViewMode};
 
 use super::components::{
-    ChipSize, category_chip, glass, icon_button, popover_surface, primary_button, ring,
-    segment_selected, text_button,
+    ChipSize, KeyboardFocus as _, category_chip, glass, icon_button, popover_surface,
+    primary_button, ring, segment_selected, text_button,
 };
 use super::style::{AppTheme, Palette, TypeExt as _, icon, numeral_text};
 use crate::assets::Icon;
@@ -180,7 +180,9 @@ fn details_popover(
                             .items_center()
                             .gap(px(6.0))
                             .min_h(px(28.0))
+                            .rounded(px(6.0))
                             .cursor_pointer()
+                            .keyboard_focus(palette.surface, cx)
                             .child(div().text_size(px(9.0)).child(if technical_open {
                                 "\u{25BC}"
                             } else {
@@ -319,6 +321,7 @@ impl TopRow {
                 .whitespace_nowrap()
                 .cursor_pointer()
                 .hover(move |style| style.bg(fill))
+                .keyboard_focus(palette.surface, cx)
                 .child(icon(glyph, 18.0, color))
         };
         let control = div().relative().flex().items_center().gap(px(4.0));
@@ -340,6 +343,7 @@ impl TopRow {
                     .whitespace_nowrap()
                     .cursor_pointer()
                     .hover(move |style| style.bg(fill))
+                    .keyboard_focus(palette.surface, cx)
                     .children(ring.map(|ring| img(ring).size(px(20.0)).flex_none()))
                     .child(numeral_text(
                         &copy::export_running_text(progress),
@@ -523,6 +527,7 @@ impl TopRow {
             .text_color(palette.ink_2)
             .whitespace_nowrap()
             .cursor_pointer()
+            .keyboard_focus(palette.fill, cx)
             .child(icon(
                 glyph,
                 18.0,
@@ -610,6 +615,7 @@ impl Render for TopRow {
             .overflow_hidden()
             .cursor_pointer()
             .hover(move |style| style.shadow(hover_shadow.clone()))
+            .keyboard_focus(palette.floor, cx)
             .child(category_chip(pill.category, ChipSize::Large, cx))
             .child(
                 div()

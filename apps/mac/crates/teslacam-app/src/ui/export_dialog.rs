@@ -8,11 +8,13 @@
 
 use std::sync::Arc;
 
+use gpui_kit::base::FocusTrapElement as _;
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AppContext as _, Context, Entity, Image, ImageFormat, InteractiveElement as _, IntoElement,
-    ObjectFit, ParentElement as _, Render, Role, StatefulInteractiveElement as _, Styled as _,
-    StyledImage as _, Subscription, Task, TestSupportExt as _, Window, div, img, px, relative,
+    AppContext as _, Context, Entity, FocusHandle, Image, ImageFormat, InteractiveElement as _,
+    IntoElement, ObjectFit, ParentElement as _, Render, Role, StatefulInteractiveElement as _,
+    Styled as _, StyledImage as _, Subscription, Task, TestSupportExt as _, Window, div, img, px,
+    relative,
 };
 use teslacam_core::camera::CameraMap;
 use teslacam_core::copy;
@@ -37,6 +39,8 @@ pub struct ExportDialog {
     store: Entity<AppStore>,
     thumbnail: Option<Arc<Image>>,
     drawing: Option<Task<()>>,
+    /// The dialog's focus trap: Tab cycles inside it while it is open.
+    focus: FocusHandle,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -57,7 +61,19 @@ impl ExportDialog {
             store,
             thumbnail: None,
             drawing: None,
+            focus: cx.focus_handle(),
         }
+    }
+
+    /// The dialog's focus-trap handle.
+    pub fn focus_handle(&self) -> FocusHandle {
+        self.focus.clone()
+    }
+
+    #[cfg(test)]
+    /// Whether keyboard focus is inside the dialog.
+    pub fn contains_focus(&self, window: &Window, cx: &gpui_kit::App) -> bool {
+        self.focus.contains_focused(window, cx)
     }
 
     /// Draws the thumbnail on a background thread, with the probed video sizes when known.
@@ -297,7 +313,8 @@ impl Render for ExportDialog {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .child(dialog.test_support()),
+                    .child(dialog.test_support())
+                    .focus_trap("export-dialog-trap", &self.focus),
             )
             .into_any_element()
     }

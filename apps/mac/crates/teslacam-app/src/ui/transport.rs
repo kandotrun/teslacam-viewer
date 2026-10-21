@@ -11,9 +11,9 @@ use std::rc::Rc;
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     AnyElement, Bounds, Context, DispatchPhase, Entity, FontWeight, InteractiveElement as _,
-    IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement as _,
-    Pixels, Render, Role, StatefulInteractiveElement as _, Styled as _, Subscription,
-    TestSupportExt as _, Window, canvas, deferred, div, point, px, relative,
+    IntoElement, KeyDownEvent, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
+    ParentElement as _, Pixels, Render, Role, StatefulInteractiveElement as _, Styled as _,
+    Subscription, TestSupportExt as _, Window, canvas, deferred, div, point, px, relative,
 };
 use teslacam_core::app_state::Step;
 use teslacam_core::copy;
@@ -25,7 +25,7 @@ use super::components::{KeyboardFocus as _, icon_button, popover_surface};
 use super::style::{AppTheme, Palette, TypeExt as _, icon};
 use crate::assets::Icon;
 use crate::presentation::transport::{
-    RAIL_INSET, ScrubberMarks, fraction, scrubber_marks, seconds_at,
+    RAIL_INSET, ScrubberMarks, fraction, scrubber_marks, seconds_at, slider_key_target,
 };
 use crate::store::{AppStore, StoreEvent};
 
@@ -275,7 +275,23 @@ impl TransportView {
             .flex_1()
             .min_w_0()
             .h(px(SCRUBBER_HEIGHT))
+            .rounded(px(SCRUBBER_HEIGHT / 2.0))
             .cursor_pointer()
+            .keyboard_focus(palette.surface, cx)
+            .on_key_down(cx.listener(|this, event: &KeyDownEvent, _, cx| {
+                if event.keystroke.modifiers.modified() {
+                    return;
+                }
+                let Some(snapshot) = this.snapshot(cx) else {
+                    return;
+                };
+                if let Some(target) =
+                    slider_key_target(&event.keystroke.key, snapshot.position, snapshot.duration)
+                {
+                    this.input(PlaybackInput::Seek(target), cx);
+                    cx.stop_propagation();
+                }
+            }))
             .child(
                 canvas(
                     move |element_bounds, _, _| bounds.set(Some(element_bounds)),

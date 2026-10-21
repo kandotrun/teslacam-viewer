@@ -11,7 +11,7 @@ use gpui_kit::{
     img, px,
 };
 use teslacam_core::app_state::{AppAction, Step};
-use teslacam_core::export_state::ExportAction;
+use teslacam_core::export_state::{ExportAction, ExportState};
 use teslacam_core::playback::PlaybackInput;
 use teslacam_core::shortcuts::{
     FocusTarget, Modifiers, ShortcutAction, ShortcutContext, theater_shortcut,
@@ -29,6 +29,14 @@ use crate::presentation::floor_layout::floor_layout;
 use crate::presentation::stage_layout::Rect;
 use crate::store::AppStore;
 
+/// Tab order of the floating layers (`DESIGN.md` §9: everything keyboard reachable). Tab and
+/// Shift-Tab are GPUI Kit's root bindings; the export dialog traps them while it is open.
+const TAB_LIBRARY: isize = 1;
+const TAB_TOP_ROW: isize = 2;
+const TAB_STAGE: isize = 3;
+const TAB_TRANSPORT: isize = 4;
+const TAB_DIALOG: isize = 5;
+
 /// The root view of the main window.
 pub struct RootView {
     store: Entity<AppStore>,
@@ -38,6 +46,10 @@ pub struct RootView {
     transport: Entity<TransportView>,
     export_dialog: Entity<ExportDialog>,
     focus: FocusHandle,
+    /// Whether the export dialog was open in the last frame, and the control that had focus before
+    /// it opened (focus returns there when the dialog is dismissed).
+    dialog_was_open: bool,
+    return_focus: Option<FocusHandle>,
     floor: Arc<Image>,
     _observe: Subscription,
 }
@@ -61,6 +73,8 @@ impl RootView {
             _observe: cx.observe(&store, |_, _, cx| cx.notify()),
             store,
             focus,
+            dialog_was_open: false,
+            return_focus: None,
             floor,
         }
     }
@@ -78,6 +92,38 @@ impl RootView {
     /// The transport (development hooks open the rate menu).
     pub fn transport(&self) -> &Entity<TransportView> {
         &self.transport
+    }
+
+    /// Moves focus into the export dialog when it opens (its focus trap then keeps Tab inside), and
+    /// back to the control that opened it when it is dismissed.
+    fn follow_dialog_focus(
+        &mut self,
+        dialog_open: bool,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if dialog_open && !self.dialog_was_open {
+            self.return_focus = window.focused(cx);
+            let dialog = self.export_dialog.read(cx).focus_handle();
+            window.focus(&dialog, cx);
+        } else if !dialog_open && self.dialog_was_open {
+            let dismissed = self
+                .store
+                .read(cx)
+                .session()
+                .is_some_and(|session| session.export.state() == &ExportState::Idle);
+            match self.return_focus.take() {
+                Some(trigger) if dismissed => window.focus(&trigger, cx),
+                _ => window.focus(&self.focus, cx),
+            }
+        }
+        self.dialog_was_open = dialog_open;
+    }
+
+    #[cfg(test)]
+    /// Whether keyboard focus is inside the export dialog.
+    pub fn export_dialog_has_focus(&self, window: &Window, cx: &gpui_kit::App) -> bool {
+        self.export_dialog.read(cx).contains_focus(window, cx)
     }
 
     /// Whether a popover or menu is open (it keeps the theater keys, like a focused popup).
@@ -112,15 +158,6 @@ impl RootView {
             alt: keystroke.modifiers.alt,
             shift: keystroke.modifiers.shift,
         };
-        if keystroke.key == "tab" && !modifiers.command && !modifiers.control && !modifiers.alt {
-            if modifiers.shift {
-                window.focus_prev(cx);
-            } else {
-                window.focus_next(cx);
-            }
-            cx.stop_propagation();
-            return;
-        }
         let focus = self.focus_target(window, cx);
         // Esc cancels the export dialog, then closes an open popover, then collapses a camera.
         let dialog_open = self
@@ -196,12 +233,13 @@ fn place(rect: Rect) -> gpui_kit::Div {
 
 impl Render for RootView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = AppTheme::get(cx);
         let dialog_open = self
             .store
             .read(cx)
             .session()
             .is_some_and(|session| session.export.dialog_open());
+        self.follow_dialog_focus(dialog_open, window, cx);
+        let theme = AppTheme::get(cx);
         let viewport = window.viewport_size();
         let floor = floor_layout(
             viewport.width.as_f32(),
@@ -224,13 +262,23 @@ impl Render for RootView {
                     .size_full()
                     .object_fit(ObjectFit::Fill),
             )
-            .child(place(floor.stage).child(self.stage.clone()))
+            .child(
+                place(floor.stage)
+                    .tab_group()
+                    .tab_index(TAB_STAGE)
+                    .child(self.stage.clone()),
+            )
             .when_some(floor.transport, |root, rect| {
-                root.child(place(rect).child(self.transport.clone()))
+                root.child(
+                    place(rect)
+                        .tab_group()
+                        .tab_index(TAB_TRANSPORT)
+                        .child(self.transport.clone()),
+                )
             })
             .when_some(floor.top_row, |root, rect| {
                 root.child(
-                    place(rect).child(
+                    place(rect).tab_group().tab_index(TAB_TOP_ROW).child(
                         self.top_row
                             .clone()
                             .cached(StyleRefinement::default().size_full()),
@@ -238,13 +286,25 @@ impl Render for RootView {
                 )
             })
             .child(
-                place(floor.library).child(
-                    self.library
-                        .clone()
-                        .cached(StyleRefinement::default().size_full()),
-                ),
+                place(floor.library)
+                    .tab_group()
+                    .tab_index(TAB_LIBRARY)
+                    .child(
+                        self.library
+                            .clone()
+                            .cached(StyleRefinement::default().size_full()),
+                    ),
             )
-            .when(dialog_open, |root| root.child(self.export_dialog.clone()))
+            .when(dialog_open, |root| {
+                root.child(
+                    div()
+                        .absolute()
+                        .size_full()
+                        .tab_group()
+                        .tab_index(TAB_DIALOG)
+                        .child(self.export_dialog.clone()),
+                )
+            })
             .test_support()
     }
 }

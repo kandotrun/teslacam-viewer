@@ -7,15 +7,15 @@ use std::rc::Rc;
 
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnyElement, App, BoxShadow, ClickEvent, InteractiveElement as _, IntoElement,
-    ParentElement as _, Role, StatefulInteractiveElement as _, Styled as _, Window, canvas, div,
-    point, px,
+    AnyElement, App, BoxShadow, ClickEvent, FocusHandle, InteractiveElement as _, IntoElement,
+    KeyDownEvent, ParentElement as _, Role, StatefulInteractiveElement as _, Styled as _,
+    TestSupportExt as _, Window, canvas, div, point, px,
 };
 use teslacam_core::copy;
 use teslacam_core::day_timeline::DayTimelineCluster;
 use teslacam_core::rail_layout::DayRail;
 
-use super::components::category_marker;
+use super::components::{KeyboardFocus as _, category_marker};
 use super::style::{AppTheme, Palette, TypeExt as _};
 
 /// Height of the rail's hit row.
@@ -41,13 +41,28 @@ fn white_ring(palette: &Palette, control: &[BoxShadow]) -> Vec<BoxShadow> {
     shadows
 }
 
+/// Where `key` moves keyboard focus from item `current` of `count` rail items (`←`/`→` to the
+/// neighbour, `Home`/`End` to the first/last; spec §2.10.9 Keyboard).
+pub fn rail_focus_target(key: &str, current: usize, count: usize) -> Option<usize> {
+    let last = count.checked_sub(1)?;
+    match key {
+        "left" => Some(current.saturating_sub(1)),
+        "right" => Some((current + 1).min(last)),
+        "home" => Some(0),
+        "end" => Some(last),
+        _ => None,
+    }
+}
+
 /// The rail of one day. `width` is the measured track width (written by the track's canvas; a
-/// change refreshes the window so the clusters follow it).
+/// change refreshes the window so the clusters follow it). `focus` holds one tab-stop handle per
+/// item (at least `rail.items.len()`); the arrow keys move focus between them.
 pub fn day_rail(
     rail: &DayRail,
     selected: Option<&str>,
     expanded_cluster: Option<&str>,
     width: Rc<Cell<f32>>,
+    focus: &[FocusHandle],
     on_click: impl Fn(RailClick, &mut Window, &mut App) + Clone + 'static,
     cx: &App,
 ) -> AnyElement {
@@ -95,7 +110,8 @@ pub fn day_rail(
             .w(px(item.width as f32))
             .h(px(TRACK_HEIGHT))
             .rounded(px(12.0))
-            .cursor_pointer();
+            .cursor_pointer()
+            .keyboard_focus_handle(&focus[index], palette.surface, cx);
         let on_click = on_click.clone();
         if item.is_marker() {
             let marker = &cluster.markers[0];
@@ -110,6 +126,7 @@ pub fn day_rail(
                 .on_click(move |_: &ClickEvent, window, cx| {
                     on_click(RailClick::Event(event_id.clone()), window, cx)
                 })
+                .test_support()
                 .into_any_element();
         }
         let expanded = expanded_cluster == Some(cluster.id());
@@ -201,13 +218,27 @@ pub fn day_rail(
             .on_click(move |_: &ClickEvent, window, cx| {
                 on_click(RailClick::Cluster(cluster.clone()), window, cx)
             })
+            .test_support()
             .into_any_element()
     });
+    let handles = focus[..rail.items.len()].to_vec();
     div()
         .id("day-rail")
         .role(Role::Group)
         .aria_label(copy::DAY_MARKERS)
         .mt(px(6.0))
+        .on_key_down(move |event: &KeyDownEvent, window, cx| {
+            if event.keystroke.modifiers.modified() {
+                return;
+            }
+            let Some(current) = handles.iter().position(|handle| handle.is_focused(window)) else {
+                return;
+            };
+            if let Some(target) = rail_focus_target(&event.keystroke.key, current, handles.len()) {
+                window.focus(&handles[target], cx);
+                cx.stop_propagation();
+            }
+        })
         .child(
             div()
                 .relative()
@@ -238,4 +269,21 @@ pub fn day_rail(
                 .children(["0", "6", "12", "18", "24"].map(|hour| div().child(hour))),
         )
         .into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::rail_focus_target;
+
+    #[test]
+    fn arrows_home_and_end_move_between_items() {
+        assert_eq!(rail_focus_target("right", 0, 3), Some(1));
+        assert_eq!(rail_focus_target("right", 2, 3), Some(2));
+        assert_eq!(rail_focus_target("left", 0, 3), Some(0));
+        assert_eq!(rail_focus_target("left", 2, 3), Some(1));
+        assert_eq!(rail_focus_target("home", 2, 3), Some(0));
+        assert_eq!(rail_focus_target("end", 0, 3), Some(2));
+        assert_eq!(rail_focus_target("space", 0, 3), None);
+        assert_eq!(rail_focus_target("right", 0, 0), None);
+    }
 }

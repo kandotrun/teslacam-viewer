@@ -41,6 +41,10 @@ struct Floor {
 }
 
 fn open_floor(cx: &mut TestAppContext) -> Floor {
+    open_floor_with(cx, library())
+}
+
+fn open_floor_with(cx: &mut TestAppContext, library: Arc<Library>) -> Floor {
     cx.update(|cx| {
         gpui_kit::init(cx);
         AppTheme::install(cx);
@@ -69,7 +73,7 @@ fn open_floor(cx: &mut TestAppContext) -> Floor {
                 AppAction::LibraryReady {
                     generation: 1,
                     folder_name: "TeslaCam".into(),
-                    library: library(),
+                    library,
                 },
                 cx,
             );
@@ -349,6 +353,25 @@ fn the_export_dialog_opens_cancels_and_starts(cx: &mut TestAppContext) {
     assert!(rendered(&floor, "export-progress", cx));
 }
 
+/// A key press with its release (buttons activate on key-up).
+fn press_and_release(floor: &Floor, key: &str, cx: &mut TestAppContext) {
+    use gpui_kit::{InputEvent as _, KeyDownEvent, KeyUpEvent, Keystroke};
+    let keystroke = Keystroke::parse(key).expect("keystroke");
+    cx.update_window(floor.window, |_, window, cx| {
+        window.render_frame(cx);
+        let down = KeyDownEvent {
+            keystroke: keystroke.clone(),
+            is_held: false,
+            prefer_character_input: false,
+        };
+        window.dispatch_event(down.to_platform_input(), cx);
+        window.dispatch_event(KeyUpEvent { keystroke }.to_platform_input(), cx);
+        window.render_frame(cx);
+    })
+    .expect("press");
+    cx.run_until_parked();
+}
+
 fn intends_to_play(floor: &Floor, cx: &mut TestAppContext) -> bool {
     playback(floor, cx, |playback| playback.intends_to_play())
 }
@@ -416,4 +439,120 @@ fn an_open_rate_menu_keeps_space(cx: &mut TestAppContext) {
     );
     cx.simulate_keystrokes(floor.window, "escape");
     assert!(!rendered(&floor, "rate-menu", cx));
+}
+
+/// One day with three events far apart: three separate rail markers.
+fn spread_library() -> Arc<Library> {
+    let files = [
+        "TeslaCam/RecentClips/2026-08-20_06-00-00-front.mp4",
+        "TeslaCam/SavedClips/noon/2026-08-20_12-00-00-front.mp4",
+        "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4",
+    ]
+    .iter()
+    .map(|path| FileEntry::new(path.rsplit('/').next().expect("name"), *path, 10))
+    .collect();
+    Arc::new(build_library(files, |_| {}, |_, _| Ok(None)).expect("library"))
+}
+
+fn focused_rail_item(floor: &Floor, cx: &mut TestAppContext) -> Option<usize> {
+    cx.update_window(floor.window, |_, window, cx| {
+        window.render_frame(cx);
+        floor
+            .root
+            .read(cx)
+            .library()
+            .read(cx)
+            .focused_rail_item(window)
+    })
+    .expect("read focus")
+}
+
+#[gpui_kit::test]
+fn arrow_keys_move_focus_along_the_day_rail_without_selecting(cx: &mut TestAppContext) {
+    // AT-TL-05: ←/→ move between markers in order, Home/End to the first/last.
+    let floor = open_floor_with(cx, spread_library());
+    let newest = selected(&floor, cx);
+    click(&floor, ("rail-item", 1usize), cx);
+    let noon = selected(&floor, cx);
+    assert_ne!(noon, newest, "clicking a marker selects its event");
+    assert_eq!(focused_rail_item(&floor, cx), Some(1));
+    cx.simulate_keystrokes(floor.window, "right");
+    assert_eq!(focused_rail_item(&floor, cx), Some(2));
+    cx.simulate_keystrokes(floor.window, "right");
+    assert_eq!(
+        focused_rail_item(&floor, cx),
+        Some(2),
+        "stays on the last marker"
+    );
+    cx.simulate_keystrokes(floor.window, "home");
+    assert_eq!(focused_rail_item(&floor, cx), Some(0));
+    cx.simulate_keystrokes(floor.window, "end");
+    assert_eq!(focused_rail_item(&floor, cx), Some(2));
+    cx.simulate_keystrokes(floor.window, "left");
+    assert_eq!(focused_rail_item(&floor, cx), Some(1));
+    assert_eq!(selected(&floor, cx), noon, "focus moves only");
+    assert_eq!(position(&floor, cx), 0.0, "the arrows did not skip");
+}
+
+#[gpui_kit::test]
+fn a_focused_scrubber_moves_with_the_arrow_home_and_end_keys(cx: &mut TestAppContext) {
+    let floor = open_floor(cx);
+    cx.update_window(floor.window, |_, window, cx| {
+        window.render_frame(cx);
+        let width = window.find("scrubber").bounds().size.width;
+        window.click_at("scrubber", Point::new(width / 2.0, px(23.0)), cx);
+    })
+    .expect("scrub");
+    let start = position(&floor, cx);
+    assert!((start - 30.0).abs() < 0.5, "{start}");
+    cx.simulate_keystrokes(floor.window, "right");
+    assert!((position(&floor, cx) - (start + 10.0)).abs() < 1e-9);
+    cx.simulate_keystrokes(floor.window, "end");
+    assert_eq!(position(&floor, cx), 60.0);
+    cx.simulate_keystrokes(floor.window, "home");
+    assert_eq!(position(&floor, cx), 0.0);
+    let playing = intends_to_play(&floor, cx);
+    cx.simulate_keystrokes(floor.window, "space");
+    assert_eq!(
+        intends_to_play(&floor, cx),
+        playing,
+        "space is not play/pause on the slider"
+    );
+}
+
+#[gpui_kit::test]
+fn tab_reaches_the_library_first_and_cycles_inside_the_export_dialog(cx: &mut TestAppContext) {
+    let floor = open_floor(cx);
+    // The first tab stop is the library's search button: Space opens the search field.
+    let search_focused = |cx: &mut TestAppContext| {
+        cx.update_window(floor.window, |_, window, cx| {
+            window.render_frame(cx);
+            let library = floor.root.read(cx).library().clone();
+            library.read(cx).search_focus(cx).is_focused(window)
+        })
+        .expect("read focus")
+    };
+    cx.simulate_keystrokes(floor.window, "tab");
+    assert!(!search_focused(cx));
+    press_and_release(&floor, "space", cx);
+    assert!(search_focused(cx), "Tab did not start in the library");
+    assert!(intends_to_play(&floor, cx), "space went to the theater");
+    cx.simulate_keystrokes(floor.window, "escape");
+
+    click(&floor, "export", cx);
+    assert!(rendered(&floor, "export-dialog", cx));
+    let in_dialog = |cx: &mut TestAppContext| {
+        cx.update_window(floor.window, |_, window, cx| {
+            window.render_frame(cx);
+            floor.root.read(cx).export_dialog_has_focus(window, cx)
+        })
+        .expect("read focus")
+    };
+    for press in 0..7 {
+        cx.simulate_keystrokes(
+            floor.window,
+            if press % 3 == 2 { "shift-tab" } else { "tab" },
+        );
+        assert!(in_dialog(cx), "Tab press {press} left the export dialog");
+    }
 }

@@ -29,6 +29,27 @@ pub fn seconds_at(x: f32, left: f32, width: f32, duration: f64) -> f64 {
     f64::from(fraction) * duration
 }
 
+/// Seconds a focused scrubber moves for `←` / `→` (the same step as the theater shortcuts).
+pub const SLIDER_STEP_SECONDS: f64 = 10.0;
+
+/// Where `key` moves a focused scrubber at `position` of `duration`: `←`/`→` by
+/// [`SLIDER_STEP_SECONDS`], `Home`/`End` to the ends. `None` for other keys.
+pub fn slider_key_target(key: &str, position: f64, duration: f64) -> Option<f64> {
+    let duration = if duration.is_finite() {
+        duration.max(0.0)
+    } else {
+        0.0
+    };
+    let target = match key {
+        "left" => position - SLIDER_STEP_SECONDS,
+        "right" => position + SLIDER_STEP_SECONDS,
+        "home" => 0.0,
+        "end" => duration,
+        _ => return None,
+    };
+    Some(target.clamp(0.0, duration))
+}
+
 /// The marks drawn on the scrubber.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScrubberMarks {
@@ -65,6 +86,19 @@ pub fn scrubber_marks(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn slider_keys_step_by_ten_seconds_and_jump_to_the_ends() {
+        use super::slider_key_target as key;
+        assert_eq!(key("right", 30.0, 60.0), Some(40.0));
+        assert_eq!(key("left", 30.0, 60.0), Some(20.0));
+        assert_eq!(key("left", 4.0, 60.0), Some(0.0));
+        assert_eq!(key("right", 55.0, 60.0), Some(60.0));
+        assert_eq!(key("home", 30.0, 60.0), Some(0.0));
+        assert_eq!(key("end", 30.0, 60.0), Some(60.0));
+        assert_eq!(key("space", 30.0, 60.0), None);
+        assert_eq!(key("end", 0.0, f64::NAN), Some(0.0));
+    }
+
     use teslacam_core::timestamp::parse_metadata_local_timestamp;
 
     use super::*;
