@@ -84,4 +84,18 @@ describe('EventRows', () => {
     expect(document.querySelector('img.event-thumbnail')).not.toBeInTheDocument()
     expect(document.querySelectorAll('.event-row__thumb svg')).toHaveLength(2)
   })
+
+  it('scrolls the newly selected row into view when another day selects the same position', () => {
+    const day = (date: string): TeslaCamEvent[] => Array.from({ length: 20 }, (_, index) => event(`${date}-${index}`, 'saved', `${date}_20-${String(59 - index).padStart(2, '0')}-00`))
+    const first = day('2026-08-20')
+    const second = day('2026-08-19')
+    const view = render(<EventRows events={first} selectedEventId={first[0]?.id ?? null} onSelectEvent={() => undefined} />)
+    const scroller = document.querySelector<HTMLElement>('.rows')
+    if (scroller === null) throw new Error('rows scroller missing')
+    scroller.scrollTop = 1088
+
+    view.rerender(<EventRows events={second} selectedEventId={second[0]?.id ?? null} onSelectEvent={() => undefined} />)
+
+    expect(scroller.scrollTop).toBe(0)
+  })
 })

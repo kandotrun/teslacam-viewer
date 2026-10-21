@@ -97,9 +97,10 @@ export function EventRows({ events, selectedEventId, onSelectEvent }: EventRowsP
   const selectedIndex = events.findIndex((event) => event.id === selectedEventId)
   const { scrollToIndex } = rows
 
+  // Keyed on the id too: another day's newest event sits at the same index as the previous selection.
   useEffect(() => {
     scrollToIndex(selectedIndex)
-  }, [scrollToIndex, selectedIndex])
+  }, [scrollToIndex, selectedEventId, selectedIndex])
 
   return (
     <div aria-label="イベント一覧" className="rows" ref={scrollerRef} role="group">
