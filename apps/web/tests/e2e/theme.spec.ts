@@ -1,6 +1,9 @@
+import { readFile } from 'node:fs/promises'
+import { fileURLToPath } from 'node:url'
+
 import { expect, test } from '@playwright/test'
 
-import { contrastRatio, relativeLuminance } from './support/viewer-fixtures'
+import { contrastRatio, eventRow, fixturePath, installPicker, relativeLuminance, selectFolder } from './support/viewer-fixtures'
 
 test('defaults browser, PWA and workspace surfaces to light', async ({ page }) => {
   await page.goto('/')
@@ -57,5 +60,31 @@ test('loads Barlow from this origin and requests nothing from another origin', a
   expect(fontRequests.length).toBeGreaterThan(0)
   const pageOrigin = new URL(page.url()).origin
   expect(requests.every((url) => url.startsWith(pageOrigin))).toBe(true)
+})
+
+test('runs under the deployed Content-Security-Policy without a violation', async ({ context, page }) => {
+  const headers = await readFile(fileURLToPath(new URL('../../public/_headers', import.meta.url)), 'utf8')
+  const policy = /Content-Security-Policy:\s*(.+)/u.exec(headers)?.[1]?.trim()
+  if (policy === undefined) throw new Error('public/_headers has no Content-Security-Policy')
+  await context.route('**/*', async (route) => {
+    const response = await route.fetch()
+    await route.fulfill({ response, headers: { ...response.headers(), 'content-security-policy': policy } })
+  })
+  await installPicker(context, [...await readFile(fixturePath)], 'full')
+  await page.addInitScript(() => {
+    document.addEventListener('securitypolicyviolation', (violation) => {
+      document.documentElement.dataset['cspViolations'] = `${document.documentElement.dataset['cspViolations'] ?? ''} ${violation.violatedDirective}:${violation.blockedURI}`
+    })
+  })
+  await page.goto('/')
+  await selectFolder(page)
+  await eventRow(page, '2026-08-20 20:35:00').click()
+  await expect(page.locator('.camera-window[data-status="ready"]')).toHaveCount(6)
+  await page.locator('.event-pill').click()
+  await page.getByRole('button', { name: '合成動画を書き出す' }).click()
+  await expect(page.getByRole('dialog', { name: '合成動画を書き出す' })).toBeVisible()
+  await page.evaluate(() => document.fonts.ready)
+
+  expect(await page.evaluate(() => document.documentElement.dataset['cspViolations'] ?? '')).toBe('')
 })
 

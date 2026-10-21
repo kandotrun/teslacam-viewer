@@ -2,7 +2,7 @@
  * Typed, validated view of the shared design contract (`packages/contract`). Both JSON files are parsed
  * once at start-up; a malformed file fails loudly instead of rendering with silently wrong values.
  */
-import { z } from 'zod'
+import { z } from '../../teslacam/zod'
 
 import compositeLayoutJson from '../../../../../packages/contract/composite-layout.json'
 import designTokensJson from '../../../../../packages/contract/design-tokens.json'
