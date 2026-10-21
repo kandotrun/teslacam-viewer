@@ -101,8 +101,7 @@ Rules: never introduce a colour outside this table; add it here and to the JSON 
 
 - UI family: `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif`
   (Mac app: the system font, which resolves to Hiragino Sans for Japanese).
-- Num family: **Barlow** 500/600, bundled with both apps (OFL; `apps/web/public/fonts/`,
-  `apps/mac/assets/fonts/`), tabular figures. Use it for digits and for the Latin wordmark only.
+- Num family: **Barlow** 500/600, bundled with both apps from `packages/assets/fonts/` (OFL), tabular figures. Use it for digits and for the Latin wordmark only.
 - No all-caps, no letter-spaced eyebrows, no monospace.
 
 ## 4. Shape, depth and spacing
@@ -293,7 +292,7 @@ The saved video looks like the app. Rects are in `packages/contract/composite-la
 |---|---|---|
 | Tokens | CSS custom properties `--<token>` in `styles/tokens.css`, verified against `design-tokens.json` | `Theme` struct built from `design-tokens.json` (`include_str!`), verified by a unit test |
 | Floating glass | `background: glass; backdrop-filter` | `glass` colour; no blur (GPUI) |
-| Barlow | `@font-face` from `/fonts/` | Registered at startup from `assets/fonts/` |
-| Car image | `/vehicle-top.png` | `assets/vehicle-top.png` (same file) |
+| Barlow | `@font-face` importing `packages/assets/fonts/` (bundled by Vite) | Registered at startup from `packages/assets/fonts/` (`include_bytes!`) |
+| Car image | `/vehicle-top.png` | `apps/web/public/vehicle-top.png` via `include_bytes!` (same file) |
 | Wedges | SVG polygons with linear gradients, recomputed on resize | `canvas()` paint paths with gradient fills |
 | Video | `<video>` per camera | `surface()` per camera from AVPlayerItemVideoOutput |

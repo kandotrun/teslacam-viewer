@@ -55,7 +55,7 @@ web-deploy-dry-run: web-build
 # Mac (apps/mac)
 # ---------------------------------------------------------------------------
 
-# Run the Mac domain, media and app tests
+# Run the Mac domain, media and app tests (media tests need ffmpeg and ffprobe)
 [group('mac')]
 [working-directory('apps/mac')]
 mac-test:
@@ -83,6 +83,12 @@ mac-fixtures:
 # ---------------------------------------------------------------------------
 # Shared contract (packages/contract)
 # ---------------------------------------------------------------------------
+
+# Check that the golden fixtures match the web implementation
+[group('contract')]
+[working-directory('apps/web')]
+contract-check:
+    npm run contract:check
 
 # Regenerate the golden fixtures from the web implementation
 [group('contract')]
