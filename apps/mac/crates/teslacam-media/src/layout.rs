@@ -108,6 +108,52 @@ pub fn contain_rect(source_width: f64, source_height: f64, destination: Rect) ->
     )
 }
 
+/// A 2D affine transform `[a, b, c, d, tx, ty]` (CoreGraphics convention:
+/// `x' = a·x + c·y + tx`, `y' = b·x + d·y + ty`).
+pub type Affine = [f64; 6];
+
+/// Size of a video frame of `natural` size once its preferred transform is applied.
+pub fn display_size(natural: (f64, f64), preferred: Affine) -> (f64, f64) {
+    let (min_x, min_y, max_x, max_y) = transformed_bounds(natural, preferred);
+    (max_x - min_x, max_y - min_y)
+}
+
+/// The transform that draws a frame of `natural` size (with its `preferred` transform) contain-fitted
+/// into `destination`.
+pub fn fit_transform(natural: (f64, f64), preferred: Affine, destination: Rect) -> Affine {
+    let (min_x, min_y, max_x, max_y) = transformed_bounds(natural, preferred);
+    let fitted = contain_rect(max_x - min_x, max_y - min_y, destination);
+    let scale = if max_x > min_x {
+        fitted.width / (max_x - min_x)
+    } else {
+        1.0
+    };
+    let [a, b, c, d, tx, ty] = preferred;
+    [
+        scale * a,
+        scale * b,
+        scale * c,
+        scale * d,
+        scale * (tx - min_x) + fitted.x,
+        scale * (ty - min_y) + fitted.y,
+    ]
+}
+
+fn transformed_bounds(natural: (f64, f64), t: Affine) -> (f64, f64, f64, f64) {
+    let (w, h) = natural;
+    let corners = [(0.0, 0.0), (w, 0.0), (0.0, h), (w, h)]
+        .map(|(x, y)| (t[0] * x + t[2] * y + t[4], t[1] * x + t[3] * y + t[5]));
+    corners.iter().fold(
+        (
+            f64::INFINITY,
+            f64::INFINITY,
+            f64::NEG_INFINITY,
+            f64::NEG_INFINITY,
+        ),
+        |(a, b, c, d), &(x, y)| (a.min(x), b.min(y), c.max(x), d.max(y)),
+    )
+}
+
 /// Label pill style (`composite-layout.json#/label`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct LabelStyle {
@@ -487,6 +533,49 @@ mod tests {
             layout.video_rect(CameraId::Back, None),
             layout.slots[CameraId::Back]
         );
+    }
+
+    const IDENTITY: Affine = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0];
+
+    fn apply(t: Affine, (x, y): (f64, f64)) -> (f64, f64) {
+        (t[0] * x + t[2] * y + t[4], t[1] * x + t[3] * y + t[5])
+    }
+
+    #[test]
+    fn fit_transform_scales_an_upright_frame_into_its_slot() {
+        let slot = Rect::new(56.0, 112.0, 352.0, 264.0);
+        let t = fit_transform((1280.0, 960.0), IDENTITY, slot);
+        assert_eq!(t, [0.275, 0.0, 0.0, 0.275, 56.0, 112.0]);
+        assert_eq!(display_size((1280.0, 960.0), IDENTITY), (1280.0, 960.0));
+    }
+
+    #[test]
+    fn fit_transform_applies_the_preferred_rotation_first() {
+        // A portrait clip stored landscape with a 90° preferred transform.
+        let rotate = [0.0, 1.0, -1.0, 0.0, 960.0, 0.0];
+        assert_eq!(display_size((1280.0, 960.0), rotate), (960.0, 1280.0));
+        let slot = Rect::new(0.0, 0.0, 300.0, 300.0);
+        let t = fit_transform((1280.0, 960.0), rotate, slot);
+        let fitted = contain_rect(960.0, 1280.0, slot);
+        let corners = [(0.0, 0.0), (1280.0, 960.0)].map(|p| apply(t, p));
+        let (xs, ys): (Vec<f64>, Vec<f64>) = corners.iter().copied().unzip();
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+        assert!(close(
+            xs.iter().cloned().fold(f64::INFINITY, f64::min),
+            fitted.x
+        ));
+        assert!(close(
+            xs.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
+            fitted.right()
+        ));
+        assert!(close(
+            ys.iter().cloned().fold(f64::INFINITY, f64::min),
+            fitted.y
+        ));
+        assert!(close(
+            ys.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
+            fitted.bottom()
+        ));
     }
 
     #[test]

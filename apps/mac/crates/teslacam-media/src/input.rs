@@ -90,6 +90,16 @@ impl<T> CameraMap<T> {
     }
 }
 
+impl<T> IntoIterator for CameraMap<T> {
+    type Item = (CameraId, T);
+    type IntoIter = std::iter::Zip<std::array::IntoIter<CameraId, 6>, std::array::IntoIter<T, 6>>;
+
+    /// `(camera, value)` pairs in canonical order.
+    fn into_iter(self) -> Self::IntoIter {
+        CameraId::ALL.into_iter().zip(self.0)
+    }
+}
+
 impl<T> std::ops::Index<CameraId> for CameraMap<T> {
     type Output = T;
     fn index(&self, camera: CameraId) -> &T {
