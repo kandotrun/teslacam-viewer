@@ -680,7 +680,7 @@ impl Render for TopRow {
                         15.0 + 6.0
                             + measure(&detection.lead, UI_FAMILY, 13.0, 400.0, false)
                             + measure(&detection.time, NUMERAL_FAMILY, 15.0, 600.0, true)
-                            + measure(&detection.tail, UI_FAMILY, 13.0, 400.0, false)
+                            + measure(detection.tail, UI_FAMILY, 13.0, 400.0, false)
                     }),
             };
             let available = row_width - self.actions_width.get() - ROW_GAP;
