@@ -7,7 +7,8 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     AppContext as _, Context, Entity, FocusHandle, Focusable, Image, ImageFormat,
     InteractiveElement as _, IntoElement, KeyDownEvent, ObjectFit, ParentElement as _, Render,
-    StyleRefinement, Styled as _, StyledImage as _, Subscription, Window, div, img, px,
+    StyleRefinement, Styled as _, StyledImage as _, Subscription, TestSupportExt as _, Window, div,
+    img, px,
 };
 use teslacam_core::app_state::{AppAction, Step};
 use teslacam_core::export_state::ExportAction;
@@ -79,6 +80,30 @@ impl RootView {
         &self.transport
     }
 
+    /// Whether a popover or menu is open (it keeps the theater keys, like a focused popup).
+    fn popover_open(&self, cx: &gpui_kit::App) -> bool {
+        self.top_row.read(cx).has_open_popover()
+            || self.library.read(cx).has_open_popover()
+            || self.transport.read(cx).has_open_popover()
+    }
+
+    /// What holds keyboard focus for the shortcuts (spec §2.10.10 rule 2): the search field or an
+    /// open popover keeps every key; a focused control (any element but the floor itself, which a
+    /// click on bare floor focuses) keeps every key but `Esc`.
+    fn focus_target(&self, window: &Window, cx: &gpui_kit::App) -> FocusTarget {
+        let search = self.library.read(cx).search_focus(cx);
+        if search.is_focused(window) || self.popover_open(cx) {
+            FocusTarget::TextField
+        } else if window
+            .focused(cx)
+            .is_some_and(|focused| focused != self.focus)
+        {
+            FocusTarget::Button
+        } else {
+            FocusTarget::None
+        }
+    }
+
     fn on_key_down(&mut self, event: &KeyDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         let keystroke = &event.keystroke;
         let modifiers = Modifiers {
@@ -87,12 +112,16 @@ impl RootView {
             alt: keystroke.modifiers.alt,
             shift: keystroke.modifiers.shift,
         };
-        let search = self.library.read(cx).search_focus(cx);
-        let focus = if search.is_focused(window) {
-            FocusTarget::TextField
-        } else {
-            FocusTarget::None
-        };
+        if keystroke.key == "tab" && !modifiers.command && !modifiers.control && !modifiers.alt {
+            if modifiers.shift {
+                window.focus_prev(cx);
+            } else {
+                window.focus_next(cx);
+            }
+            cx.stop_propagation();
+            return;
+        }
+        let focus = self.focus_target(window, cx);
         // Esc cancels the export dialog, then closes an open popover, then collapses a camera.
         let dialog_open = self
             .store
@@ -105,7 +134,8 @@ impl RootView {
             cx.stop_propagation();
             return;
         }
-        if keystroke.key == "escape" && focus == FocusTarget::None {
+        let in_search = self.library.read(cx).search_focus(cx).is_focused(window);
+        if keystroke.key == "escape" && !in_search {
             let closed_details = self.top_row.update(cx, |top, cx| top.close_popovers(cx));
             let closed_picker = self
                 .library
@@ -215,5 +245,6 @@ impl Render for RootView {
                 ),
             )
             .when(dialog_open, |root| root.child(self.export_dialog.clone()))
+            .test_support()
     }
 }

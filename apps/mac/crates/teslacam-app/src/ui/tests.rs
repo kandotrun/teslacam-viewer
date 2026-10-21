@@ -348,3 +348,72 @@ fn the_export_dialog_opens_cancels_and_starts(cx: &mut TestAppContext) {
     assert!(!rendered(&floor, "export-dialog", cx));
     assert!(rendered(&floor, "export-progress", cx));
 }
+
+fn intends_to_play(floor: &Floor, cx: &mut TestAppContext) -> bool {
+    playback(floor, cx, |playback| playback.intends_to_play())
+}
+
+/// Clicks the bare floor (top-left corner, outside every floating layer).
+fn click_floor(floor: &Floor, cx: &mut TestAppContext) {
+    cx.update_window(floor.window, |_, window, cx| {
+        window.render_frame(cx);
+        window.click_at("floor", Point::new(px(2.0), px(2.0)), cx);
+    })
+    .expect("click the floor");
+    cx.run_until_parked();
+}
+
+#[gpui_kit::test]
+fn a_clicked_transport_button_keeps_the_theater_keys(cx: &mut TestAppContext) {
+    // AT-KEY-02 / spec §2.10.10 rule 2: a click focuses the button like on the web.
+    let floor = open_floor(cx);
+    click(&floor, "play", cx);
+    assert!(!intends_to_play(&floor, cx));
+    cx.simulate_keystrokes(floor.window, "right");
+    assert_eq!(
+        position(&floor, cx),
+        0.0,
+        "→ skipped while the play button had focus"
+    );
+    cx.simulate_keystrokes(floor.window, "6");
+    assert_eq!(
+        playback(&floor, cx, |playback| playback.expanded_camera()),
+        None
+    );
+    // Clicking the bare floor gives the keys back to the theater.
+    click_floor(&floor, cx);
+    cx.simulate_keystrokes(floor.window, "right");
+    assert_eq!(position(&floor, cx), 10.0);
+}
+
+#[gpui_kit::test]
+fn a_clicked_camera_window_ignores_arrows_and_digits_but_escape_collapses(cx: &mut TestAppContext) {
+    let floor = open_floor(cx);
+    click(&floor, ("camera", CameraId::Front.index()), cx);
+    let expanded = |cx: &mut TestAppContext| playback(&floor, cx, |p| p.expanded_camera());
+    assert_eq!(expanded(cx), Some(CameraId::Front));
+    cx.simulate_keystrokes(floor.window, "6");
+    assert_eq!(expanded(cx), Some(CameraId::Front));
+    cx.simulate_keystrokes(floor.window, "right");
+    assert_eq!(position(&floor, cx), 0.0);
+    cx.simulate_keystrokes(floor.window, "escape");
+    assert_eq!(expanded(cx), None);
+}
+
+#[gpui_kit::test]
+fn an_open_rate_menu_keeps_space(cx: &mut TestAppContext) {
+    let floor = open_floor(cx);
+    cx.update(|cx| {
+        let transport = floor.root.read(cx).transport().clone();
+        transport.update(cx, |transport, cx| transport.open_rate_menu(cx));
+    });
+    assert!(rendered(&floor, "rate-menu", cx));
+    assert!(intends_to_play(&floor, cx));
+    cx.simulate_keystrokes(floor.window, "space");
+    assert!(
+        intends_to_play(&floor, cx),
+        "space reached the theater under the menu"
+    );
+    cx.simulate_keystrokes(floor.window, "escape");
+    assert!(!rendered(&floor, "rate-menu", cx));
+}

@@ -25,7 +25,7 @@ use teslacam_core::copy;
 use teslacam_core::playback::{PlaybackInput, PlaybackPhase, TileStatus, ViewMode};
 use teslacam_media::{VideoFrame, host_now};
 
-use super::components::{hairline, ring};
+use super::components::{KeyboardFocus as _, hairline, ring};
 use super::style::{AppTheme, Palette, TypeExt as _, icon};
 use crate::assets::{Icon, vehicle_image};
 use crate::bridge::{FrameLoop, POLL_INTERVAL};
@@ -383,6 +383,7 @@ impl StageView {
             .h(px(rect.height))
             .rounded(px(radius))
             .cursor_pointer()
+            .keyboard_focus(palette.floor, cx)
             .when(reveal < 1.0, |window| {
                 window
                     .bg(palette.surface.opacity(0.55))
@@ -438,6 +439,7 @@ impl StageView {
                     .size(px(button.width))
                     .rounded_full()
                     .cursor_pointer()
+                    .keyboard_focus(palette.floor, cx)
                     .when(pressed, |button| button.bg(drive_soft))
                     .when(!pressed, |button| button.hover(move |style| style.bg(fill)))
                     .child(
@@ -513,6 +515,7 @@ impl StageView {
                     .size(px(28.0))
                     .rounded_full()
                     .cursor_pointer()
+                    .keyboard_focus(palette.video_label_scrim, cx)
                     .child(icon(
                         if playing { Icon::Pause } else { Icon::Play },
                         16.0,

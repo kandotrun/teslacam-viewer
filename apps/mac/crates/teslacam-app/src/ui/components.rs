@@ -3,9 +3,9 @@
 
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    App, BoxShadow, ClickEvent, Div, ElementId, Hsla, InteractiveElement as _, ParentElement as _,
-    Role, SharedString, Stateful, StatefulInteractiveElement as _, Styled as _, Window, div, point,
-    px,
+    App, BoxShadow, ClickEvent, Div, ElementId, FocusHandle, Hsla, InteractiveElement,
+    ParentElement as _, Role, SharedString, Stateful, StatefulInteractiveElement as _, Styled as _,
+    Window, div, point, px,
 };
 use teslacam_core::camera::ClipCategory;
 use teslacam_core::copy;
@@ -90,6 +90,34 @@ pub fn category_chip(category: ClipCategory, size: ChipSize, cx: &App) -> Div {
         .child(label)
 }
 
+/// The keyboard focus ring (`DESIGN.md` §2: a 2 pt `drive` outline 3 pt outside the control). The
+/// gap is painted in `gap`, the colour the control sits on.
+pub fn focus_ring(gap: Hsla, cx: &App) -> Vec<BoxShadow> {
+    ring(gap, 3.0, AppTheme::get(cx).palette.drive, 2.0)
+}
+
+/// Keyboard reachability for a control: a tab stop that a click also focuses (like a button on the
+/// web, so the theater shortcuts wait while it has focus), with [`focus_ring`] while focused from
+/// the keyboard.
+pub trait KeyboardFocus: InteractiveElement + Sized {
+    /// A tab stop in document order with the ring on `gap`.
+    fn keyboard_focus(self, gap: Hsla, cx: &App) -> Self {
+        let ring = focus_ring(gap, cx);
+        self.tab_index(0)
+            .focus_visible(move |style| style.shadow(ring))
+    }
+
+    /// Like [`KeyboardFocus::keyboard_focus`] with a handle owned by the view (for moving focus
+    /// with the arrow keys); the handle must be a tab stop.
+    fn keyboard_focus_handle(self, handle: &FocusHandle, gap: Hsla, cx: &App) -> Self {
+        let ring = focus_ring(gap, cx);
+        self.track_focus(handle)
+            .focus_visible(move |style| style.shadow(ring))
+    }
+}
+
+impl<E: InteractiveElement> KeyboardFocus for E {}
+
 /// A round 36 pt icon button (`ink-2`, `fill` on hover) with an accessible name.
 pub fn icon_button(
     id: impl Into<ElementId>,
@@ -116,6 +144,7 @@ pub fn icon_button(
             button
                 .cursor_pointer()
                 .hover(move |style| style.bg(fill).text_color(ink))
+                .keyboard_focus(palette.surface, cx)
         })
         .when(!enabled, |button| button.opacity(0.35))
 }
@@ -156,6 +185,7 @@ pub fn primary_button(
         .ui_text(15.0, 600.0)
         .cursor_pointer()
         .hover(move |style| style.bg(hover))
+        .keyboard_focus(palette.surface, cx)
         .child(icon(glyph, 18.0, palette.surface))
         .child(label)
         .on_click(on_click)
@@ -184,6 +214,7 @@ pub fn text_button(
         .text_color(palette.ink)
         .cursor_pointer()
         .hover(move |style| style.bg(fill))
+        .keyboard_focus(palette.surface, cx)
         .child(label)
 }
 

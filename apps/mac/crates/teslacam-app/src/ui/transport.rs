@@ -21,7 +21,7 @@ use teslacam_core::detection::sentry_detection;
 use teslacam_core::playback::{PlaybackInput, PlaybackRate, ViewMode};
 use teslacam_media::host_now;
 
-use super::components::{icon_button, popover_surface};
+use super::components::{KeyboardFocus as _, icon_button, popover_surface};
 use super::style::{AppTheme, Palette, TypeExt as _, icon};
 use crate::assets::Icon;
 use crate::presentation::transport::{
@@ -83,6 +83,11 @@ impl TransportView {
     pub fn open_rate_menu(&mut self, cx: &mut Context<Self>) {
         self.rate_open = true;
         cx.notify();
+    }
+
+    /// Whether the rate menu is open.
+    pub fn has_open_popover(&self) -> bool {
+        self.rate_open
     }
 
     /// Closes the rate menu; whether it was open.
@@ -345,6 +350,7 @@ impl TransportView {
             .text_color(palette.ink)
             .cursor_pointer()
             .hover(move |style| style.bg(fill_hover))
+            .keyboard_focus(palette.surface, cx)
             .child(rate.label())
             .on_click(cx.listener(|this, _, _, cx| {
                 this.rate_open = !this.rate_open;
@@ -422,6 +428,7 @@ fn rate_item(
         .when(selected, |item| item.bg(palette.drive_soft))
         .when(!selected, |item| item.hover(move |style| style.bg(fill)))
         .cursor_pointer()
+        .keyboard_focus(palette.surface, cx)
         .child(choice.label())
         .on_click(cx.listener(move |this, _, _, cx| {
             this.rate_open = false;
@@ -521,6 +528,7 @@ impl Render for TransportView {
             .rounded_full()
             .bg(ink)
             .cursor_pointer()
+            .keyboard_focus(palette.surface, cx)
             .hover(move |style| style.bg(ink.opacity(0.86)))
             .child(icon(
                 if snapshot.playing {

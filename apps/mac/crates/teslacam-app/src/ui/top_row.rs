@@ -64,6 +64,11 @@ impl TopRow {
         }
     }
 
+    /// Whether the details or an export popover is open.
+    pub fn has_open_popover(&self) -> bool {
+        self.details_open || self.export_reason_open || self.export_progress_open
+    }
+
     /// Closes the details popover; whether one was open.
     pub fn close_popovers(&mut self, cx: &mut Context<Self>) -> bool {
         let open = self.details_open || self.export_reason_open || self.export_progress_open;

@@ -130,6 +130,11 @@ impl LibraryPanel {
         self.dispatch(AppAction::QueryFiltered(query.to_owned()), cx);
     }
 
+    /// Whether the date picker is open.
+    pub fn has_open_popover(&self) -> bool {
+        self.picker_month.is_some()
+    }
+
     /// Closes the date picker; whether it was open.
     pub fn close_popovers(&mut self, cx: &mut Context<Self>) -> bool {
         let open = self.picker_month.take().is_some();
