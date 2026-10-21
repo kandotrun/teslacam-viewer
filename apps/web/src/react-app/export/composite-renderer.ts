@@ -1,7 +1,6 @@
 import type { CameraId } from '../../teslacam/types'
-import { buildCompositeLayout, drawCompositeFrame, type CompositeDrawable } from './composite-layout'
+import type { CompositeFrameSource } from './composite-frame'
 import { CompositeVideoExportError, exportAborted } from './composite-recorder'
-import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
 
 export type CompositeRenderClip = {
   readonly cameraId: CameraId
@@ -25,13 +24,14 @@ export type CompositeRenderRuntime = {
 
 export type CompositeRenderOptions = {
   readonly clips: readonly CompositeRenderClip[]
-  readonly context: CanvasRenderingContext2D
-  readonly vehicleImage: HTMLImageElement
+  /** Draws one output frame from the given camera frames (see `createCompositeFrameRenderer`). */
+  readonly drawFrame: (sources: readonly CompositeFrameSource[]) => void
+  /** Draws a video element into a rectangle of the output canvas. */
+  readonly drawVideo: (video: HTMLVideoElement, x: number, y: number, width: number, height: number) => void
   readonly segmentIndex: number
   readonly segmentCount: number
   readonly recorder: CompositeRenderRecorder
   readonly runtime: CompositeRenderRuntime
-  readonly visualTokens: CompositeCanvasVisualTokens
   readonly signal?: AbortSignal | undefined
   readonly onProgress?: ((progress: number) => void) | undefined
 }
@@ -52,7 +52,6 @@ export async function renderCompositeSegment(options: CompositeRenderOptions): P
   let activeClips = await playableClips(options.clips)
   if (activeClips.length === 0) throw playbackFailed()
   const duration = Math.max(...activeClips.map((clip) => clip.duration))
-  const layout = buildCompositeLayout()
 
   await new Promise<void>((resolve, reject) => {
     let frameHandle = 0
@@ -98,14 +97,17 @@ export async function renderCompositeSegment(options: CompositeRenderOptions): P
       }
       previousTimestamp = timestamp
       if (logicalMilliseconds - lastDrawMilliseconds >= frameIntervalMilliseconds) {
-        const drawables: CompositeDrawable[] = activeClips.map(({ cameraId, video }) => ({
-          cameraId,
-          source: video,
-          width: video.videoWidth,
-          height: video.videoHeight,
-          playable: video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.ended,
-        }))
-        drawCompositeFrame(options.context, layout, drawables, options.vehicleImage, options.visualTokens)
+        const sources = activeClips.flatMap(({ cameraId, video }): CompositeFrameSource[] => (
+          video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA && !video.ended
+            ? [{
+                cameraId,
+                width: video.videoWidth,
+                height: video.videoHeight,
+                draw: (rect) => options.drawVideo(video, rect.x, rect.y, rect.width, rect.height),
+              }]
+            : []
+        ))
+        options.drawFrame(sources)
         lastDrawMilliseconds = logicalMilliseconds
       }
       const finished = logicalMilliseconds >= duration * 1000

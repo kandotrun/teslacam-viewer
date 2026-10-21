@@ -1,13 +1,12 @@
+/**
+ * Geometry of the 1280 × 720 export frame (DESIGN.md "Export frame", `composite-layout.json`).
+ * Everything here is pure so that the web and Mac exporters can be checked against the same numbers.
+ */
 import type { CameraId } from '../../teslacam/types'
-import { cameraLabels } from '../event-summary'
-import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
+import { cameraMounts, compositeLayoutContract } from '../design/contract'
+import { fieldOfViewWedge, mountPointIn, type Rect, type Wedge } from '../design/wedge-geometry'
 
-export type CompositeRect = {
-  readonly x: number
-  readonly y: number
-  readonly width: number
-  readonly height: number
-}
+export type CompositeRect = Rect
 
 export type CompositeCameraSlot = {
   readonly cameraId: CameraId
@@ -18,16 +17,9 @@ export type CompositeCameraSlot = {
 export type CompositeLayout = {
   readonly width: number
   readonly height: number
+  readonly fps: number
   readonly vehicle: CompositeRect
   readonly cameras: readonly CompositeCameraSlot[]
-}
-
-export type CompositeDrawable = {
-  readonly cameraId: CameraId
-  readonly source: CanvasImageSource
-  readonly width: number
-  readonly height: number
-  readonly playable: boolean
 }
 
 type Size = {
@@ -35,24 +27,27 @@ type Size = {
   readonly height: number
 }
 
-const cameraFrames = [
-  ['front', { x: 400, y: 12, width: 480, height: 216 }],
-  ['left_pillar', { x: 12, y: 180, width: 384, height: 216 }],
-  ['right_pillar', { x: 884, y: 180, width: 384, height: 216 }],
-  ['left_repeater', { x: 12, y: 492, width: 384, height: 216 }],
-  ['back', { x: 400, y: 492, width: 480, height: 216 }],
-  ['right_repeater', { x: 884, y: 492, width: 384, height: 216 }],
-] as const satisfies readonly (readonly [CameraId, CompositeRect])[]
+/** Draw order of the slots (parity spec §1.1). */
+export const compositeSlotOrder = [
+  'front',
+  'left_pillar',
+  'right_pillar',
+  'left_repeater',
+  'back',
+  'right_repeater',
+] as const satisfies readonly CameraId[]
 
 export function buildCompositeLayout(): CompositeLayout {
+  const contract = compositeLayoutContract
   return {
-    width: 1280,
-    height: 720,
-    vehicle: { x: 496, y: 260, width: 288, height: 184 },
-    cameras: cameraFrames.map(([cameraId, frame]) => ({
+    width: contract.width,
+    height: contract.height,
+    fps: contract.fps,
+    vehicle: contract.vehicle,
+    cameras: compositeSlotOrder.map((cameraId) => ({
       cameraId,
-      label: cameraLabels[cameraId],
-      frame,
+      label: contract.labels[cameraId],
+      frame: contract.slots[cameraId],
     })),
   }
 }
@@ -70,35 +65,62 @@ export function containRect(source: Size, destination: CompositeRect): Composite
   }
 }
 
-export function drawCompositeFrame(
-  context: CanvasRenderingContext2D,
-  layout: CompositeLayout,
-  clips: readonly CompositeDrawable[],
-  vehicleImage: HTMLImageElement,
-  visualTokens: CompositeCanvasVisualTokens,
-): void {
-  context.fillStyle = visualTokens.canvas
-  context.fillRect(0, 0, layout.width, layout.height)
-  for (const slot of layout.cameras) {
-    const { x, y, width, height } = slot.frame
-    context.fillStyle = visualTokens.cameraSurface
-    context.fillRect(x, y, width, height)
-    const clip = clips.find(({ cameraId }) => cameraId === slot.cameraId)
-    const playable = clip?.playable === true
-    if (playable && clip !== undefined) {
-      const destination = containRect({ width: clip.width, height: clip.height }, slot.frame)
-      context.drawImage(clip.source, destination.x, destination.y, destination.width, destination.height)
-    }
-    const label = playable ? slot.label : `${slot.label}・記録なし`
-    context.font = visualTokens.labelFont
-    const labelX = x + visualTokens.labelInset
-    const labelY = y + visualTokens.labelInset
-    const labelWidth = Math.ceil(context.measureText(label).width) + visualTokens.labelPaddingInline * 2
-    context.fillStyle = visualTokens.labelScrim
-    context.fillRect(labelX, labelY, labelWidth, visualTokens.labelHeight)
-    context.fillStyle = visualTokens.labelText
-    context.fillText(label, labelX + visualTokens.labelPaddingInline, labelY + visualTokens.labelBaseline)
+export type CompositeLabelGeometry = {
+  readonly text: string
+  readonly pill: CompositeRect
+  readonly radius: number
+  /** Alphabetic baseline origin of the text. */
+  readonly textX: number
+  readonly textY: number
+}
+
+/** Name pill at the bottom-left of the visible video rectangle. */
+export function compositeLabelGeometry(text: string, videoRect: CompositeRect, textAdvanceWidth: number): CompositeLabelGeometry {
+  const { inset, height, paddingInline, fontSize } = compositeLayoutContract.label
+  const width = Math.ceil(textAdvanceWidth) + paddingInline * 2
+  const pill = { x: videoRect.x + inset, y: videoRect.y + videoRect.height - inset - height, width, height }
+  return {
+    text,
+    pill,
+    radius: height / 2,
+    textX: pill.x + paddingInline,
+    textY: pill.y + height / 2 + fontSize * 0.36,
   }
-  const vehicle = containRect({ width: vehicleImage.naturalWidth, height: vehicleImage.naturalHeight }, layout.vehicle)
-  context.drawImage(vehicleImage, vehicle.x, vehicle.y, vehicle.width, vehicle.height)
+}
+
+export type CompositeSlotFrame = {
+  readonly cameraId: CameraId
+  readonly label: string
+  /** The video rectangle (contain-fitted); a missing camera keeps the same shape, drawn as a tile. */
+  readonly videoRect: CompositeRect
+  readonly playable: boolean
+  readonly wedge: Wedge
+}
+
+/**
+ * Per-slot geometry for one output frame. `sources` holds the decoded size of each camera that has a
+ * frame now; `referenceSize` shapes the tiles of cameras without one (normally the size of the others).
+ */
+export function compositeSlotFrames(
+  layout: CompositeLayout,
+  sources: Readonly<Partial<Record<CameraId, Size>>>,
+  referenceSize: Size | null,
+): readonly CompositeSlotFrame[] {
+  return layout.cameras.map(({ cameraId, label, frame }) => {
+    const source = sources[cameraId]
+    const playable = source !== undefined && source.width > 0 && source.height > 0
+    const videoRect = containRect(playable ? source : (referenceSize ?? frame), frame)
+    const mount = mountPointIn(layout.vehicle, cameraMounts[cameraId])
+    return { cameraId, label, videoRect, playable, wedge: fieldOfViewWedge(mount, videoRect) }
+  })
+}
+
+/** Identifies an overlay: overlays only change when a slot's rectangle or availability changes. */
+export function compositeOverlayKey(slots: readonly CompositeSlotFrame[]): string {
+  return slots
+    .map(({ cameraId, playable, videoRect }) => {
+      const rect = [videoRect.x, videoRect.y, videoRect.width, videoRect.height].map((value) => value.toFixed(2)).join(',')
+      return `${cameraId}:${playable ? 'video' : 'missing'}:${rect}`
+    })
+    .join('|')
 }

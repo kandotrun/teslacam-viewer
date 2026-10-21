@@ -7,19 +7,7 @@ import {
   type CompositeRenderClip,
   type CompositeRenderRuntime,
 } from './composite-renderer'
-import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
-
-const visualTokens: CompositeCanvasVisualTokens = {
-  canvas: 'rgb(0, 0, 0)',
-  cameraSurface: 'rgb(0, 0, 0)',
-  labelScrim: 'rgb(0, 0, 0, 0.72)',
-  labelText: 'rgb(255, 255, 255)',
-  labelFont: '500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", sans-serif',
-  labelInset: 8,
-  labelPaddingInline: 8,
-  labelHeight: 24,
-  labelBaseline: 17,
-}
+import type { CompositeFrameSource } from './composite-frame'
 
 type AnimationDriver = {
   readonly runtime: Pick<CompositeRenderRuntime, 'requestAnimationFrame' | 'cancelAnimationFrame'>
@@ -65,21 +53,6 @@ function clip(duration: number): CompositeRenderClip {
   return { cameraId: 'front' satisfies CameraId, video, duration }
 }
 
-function context(drawImage: () => void): CanvasRenderingContext2D {
-  const canvas = document.createElement('canvas')
-  Object.defineProperty(canvas, 'getContext', {
-    value: () => ({
-      drawImage,
-      fillRect: () => undefined,
-      fillText: () => undefined,
-      measureText: () => ({ width: 80 }),
-    }),
-  })
-  const value = canvas.getContext('2d')
-  if (value === null) throw new Error('canvas context is missing')
-  return value
-}
-
 function recorder() {
   return {
     pause: vi.fn(async () => undefined),
@@ -98,12 +71,11 @@ describe('renderCompositeSegment', () => {
     let completed = false
     const rendered = renderCompositeSegment({
       clips: [source],
-      context: context(() => undefined),
-      vehicleImage: document.createElement('img'),
+      drawFrame: () => undefined,
+      drawVideo: () => undefined,
       segmentIndex: 0,
       segmentCount: 1,
       recorder: lifecycle,
-      visualTokens,
       runtime: {
         ...animation.runtime,
         now: () => 0,
@@ -139,17 +111,15 @@ describe('renderCompositeSegment', () => {
 
   it('caps rendering at 30fps and progress at four updates per second', async () => {
     const animation = animationDriver()
-    const drawImage = vi.fn()
+    const frames: (readonly CompositeFrameSource[])[] = []
     const progress = vi.fn()
-    const vehicleImage = document.createElement('img')
     const rendered = renderCompositeSegment({
       clips: [clip(1)],
-      context: context(drawImage),
-      vehicleImage,
+      drawFrame: (sources) => frames.push(sources),
+      drawVideo: () => undefined,
       segmentIndex: 0,
       segmentCount: 1,
       recorder: recorder(),
-      visualTokens,
       runtime: {
         ...animation.runtime,
         now: () => 0,
@@ -163,29 +133,26 @@ describe('renderCompositeSegment', () => {
     for (let frame = 0; frame <= 60; frame += 1) animation.step(frame * 1000 / 60)
     await rendered
 
-    const vehicleDraws = drawImage.mock.calls.filter(([source]) => source === vehicleImage)
-    expect(vehicleDraws.length).toBeGreaterThan(20)
-    expect(vehicleDraws.length).toBeLessThanOrEqual(31)
+    expect(frames.length).toBeGreaterThan(20)
+    expect(frames.length).toBeLessThanOrEqual(31)
     expect(progress.mock.calls.length).toBeLessThanOrEqual(5)
     expect(progress).toHaveBeenLastCalledWith(1)
   })
 
-  it('passes the vehicle image through to the contained center draw', async () => {
+  it('hands each playable video to the frame renderer, which draws it at the fitted rectangle', async () => {
     const animation = animationDriver()
-    const drawImage = vi.fn()
-    const vehicleImage = document.createElement('img')
-    Object.defineProperties(vehicleImage, {
-      naturalWidth: { value: 360 },
-      naturalHeight: { value: 720 },
-    })
+    const source = clip(0.2)
+    const drawVideo = vi.fn()
+    let frame: readonly CompositeFrameSource[] = []
     const rendered = renderCompositeSegment({
-      clips: [clip(0.2)],
-      context: context(drawImage),
-      vehicleImage,
+      clips: [source],
+      drawFrame: (sources) => {
+        frame = sources
+      },
+      drawVideo,
       segmentIndex: 0,
       segmentCount: 1,
       recorder: recorder(),
-      visualTokens,
       runtime: {
         ...animation.runtime,
         now: () => 0,
@@ -196,8 +163,9 @@ describe('renderCompositeSegment', () => {
     await animation.waitUntilScheduled()
 
     animation.step(0)
-
-    expect(drawImage).toHaveBeenCalledWith(vehicleImage, 594, 260, 92, 184)
+    expect(frame.map(({ cameraId, width, height }) => [cameraId, width, height])).toEqual([['front', 1920, 1080]])
+    frame[0]?.draw({ x: 464, y: 45, width: 352, height: 198 })
+    expect(drawVideo).toHaveBeenCalledWith(source.video, 464, 45, 352, 198)
     animation.step(200)
     await rendered
   })
@@ -216,12 +184,11 @@ describe('renderCompositeSegment', () => {
     }
     const rendered = renderCompositeSegment({
       clips: [clip(1)],
-      context: context(() => undefined),
-      vehicleImage: document.createElement('img'),
+      drawFrame: () => undefined,
+      drawVideo: () => undefined,
       segmentIndex: 0,
       segmentCount: 1,
       recorder: lifecycle,
-      visualTokens,
       runtime: {
         ...animation.runtime,
         now: () => 0,

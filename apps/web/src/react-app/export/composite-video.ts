@@ -1,6 +1,7 @@
 import { cameraIds, type CameraId, type LocalFileRef, type TeslaCamEvent } from '../../teslacam/types'
-import { buildCompositeLayout } from './composite-layout'
 import { loadCompositeVehicleImage } from './composite-asset'
+import { createCompositeFrameRenderer, type CompositeLayer } from './composite-frame'
+import { buildCompositeLayout } from './composite-layout'
 import {
   CompositeRecorderLifecycle,
   CompositeVideoExportError,
@@ -8,7 +9,6 @@ import {
   type CompositeRecorder,
 } from './composite-recorder'
 import { renderCompositeSegment, type CompositeRenderClip } from './composite-renderer'
-import { readCompositeCanvasVisualTokens, type CompositeCanvasVisualTokens } from './composite-visual-tokens'
 
 export { CompositeVideoExportError } from './composite-recorder'
 export type { CompositeRecorder, CompositeVideoExportErrorCode } from './composite-recorder'
@@ -35,7 +35,8 @@ export type CompositeVideoDependencies = {
   readonly now: () => number
   readonly isPageVisible: () => boolean
   readonly subscribePageVisibility: (listener: (visible: boolean) => void) => () => void
-  readonly readCompositeCanvasVisualTokens: () => CompositeCanvasVisualTokens
+  /** A canvas for the static overlay, the same size as the output. */
+  readonly createLayer: (width: number, height: number) => CompositeLayer
 }
 
 export type CompositeVideoExportOptions = { readonly event: TeslaCamEvent; readonly signal?: AbortSignal; readonly onProgress?: (progress: number) => void; readonly dependencies?: CompositeVideoDependencies }
@@ -78,7 +79,14 @@ function browserDependencies(): CompositeVideoDependencies {
       document.addEventListener('visibilitychange', handleVisibility)
       return () => document.removeEventListener('visibilitychange', handleVisibility)
     },
-    readCompositeCanvasVisualTokens: () => readCompositeCanvasVisualTokens(getComputedStyle(document.documentElement)),
+    createLayer: (width, height) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const context = canvas.getContext('2d')
+      if (context === null) throw new CompositeVideoExportError('unsupported', 'このブラウザはCanvas録画に対応していません。')
+      return { canvas, context }
+    },
   }
 }
 
@@ -198,8 +206,12 @@ export async function exportCompositeVideo(options: CompositeVideoExportOptions)
   canvas.height = layout.height
   const context = canvas.getContext('2d')
   if (context === null) throw new CompositeVideoExportError('unsupported', 'このブラウザはCanvas録画に対応していません。')
-  const visualTokens = dependencies.readCompositeCanvasVisualTokens()
   const vehicleImage = await loadCompositeVehicleImage(dependencies, options.signal)
+  const renderer = createCompositeFrameRenderer({
+    layout,
+    vehicle: { image: vehicleImage, width: vehicleImage.naturalWidth, height: vehicleImage.naturalHeight },
+    createLayer: () => dependencies.createLayer(layout.width, layout.height),
+  })
   if (options.dependencies === undefined) {
     try {
       const { tryExportCompositeWithWebCodecs } = await import('./composite-webcodecs')
@@ -207,9 +219,7 @@ export async function exportCompositeVideo(options: CompositeVideoExportOptions)
         event: options.event,
         canvas,
         context,
-        vehicleImage,
-        visualTokens,
-        createCanvas: dependencies.createCanvas,
+        renderer,
         signal: options.signal,
         onProgress: options.onProgress,
       })
@@ -244,13 +254,12 @@ export async function exportCompositeVideo(options: CompositeVideoExportOptions)
         }
         await renderCompositeSegment({
           clips: segment.clips,
-          context,
-          vehicleImage,
+          drawFrame: (sources) => renderer.drawFrame(context, sources),
+          drawVideo: (video, x, y, width, height) => context.drawImage(video, x, y, width, height),
           segmentIndex,
           segmentCount: options.event.segments.length,
           recorder: lifecycle,
           runtime: dependencies,
-          visualTokens,
           signal: options.signal,
           onProgress: options.onProgress,
         })

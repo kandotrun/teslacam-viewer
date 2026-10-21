@@ -9,18 +9,47 @@ import {
   type CompositeVideoDependencies,
   type CompositeRecorder,
 } from './composite-video'
-import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
+import type { CompositeLayer } from './composite-frame'
 
-const visualTokens: CompositeCanvasVisualTokens = {
-  canvas: 'rgb(8, 11, 16)',
-  cameraSurface: 'rgb(17, 23, 32)',
-  labelScrim: 'rgb(0, 0, 0, 0.72)',
-  labelText: 'rgb(255, 255, 255)',
-  labelFont: '600 18px Inter, sans-serif',
-  labelInset: 8,
-  labelPaddingInline: 8,
-  labelHeight: 24,
-  labelBaseline: 17,
+type LayerRecord = {
+  readonly fillStyles: string[]
+  readonly fonts: string[]
+  readonly texts: string[]
+}
+
+function recordingLayer(record: LayerRecord = { fillStyles: [], fonts: [], texts: [] }): CompositeLayer {
+  let fillStyle: string | CanvasGradient | CanvasPattern = ''
+  let font = ''
+  return {
+    canvas: document.createElement('canvas'),
+    context: {
+      get fillStyle() { return fillStyle },
+      set fillStyle(value) {
+        fillStyle = value
+        if (typeof value === 'string') record.fillStyles.push(value)
+      },
+      get font() { return font },
+      set font(value) {
+        font = value
+        record.fonts.push(value)
+      },
+      globalCompositeOperation: 'source-over',
+      textAlign: 'left',
+      beginPath: () => undefined,
+      closePath: () => undefined,
+      moveTo: () => undefined,
+      lineTo: () => undefined,
+      roundRect: () => undefined,
+      fill: () => undefined,
+      fillRect: () => undefined,
+      drawImage: () => undefined,
+      createLinearGradient: () => ({ addColorStop: () => undefined }),
+      fillText: (text) => {
+        record.texts.push(text)
+      },
+      measureText: (text) => ({ width: text.length * 8 }),
+    },
+  }
 }
 
 function fileRef(name: string): LocalFileRef {
@@ -44,7 +73,7 @@ function event(file = fileRef('front.mp4')): TeslaCamEvent {
 
 function dependencies(
   revokeObjectURL: (url: string) => void,
-  fillText: (text: string, x: number, y: number) => void = () => undefined,
+  layerRecord?: LayerRecord,
 ): CompositeVideoDependencies {
   return {
     createCanvas: () => {
@@ -53,8 +82,6 @@ function dependencies(
         value: () => ({
           drawImage: () => undefined,
           fillRect: () => undefined,
-          fillText,
-          measureText: (text: string) => ({ width: text.length * 8 }),
         }),
       })
       Object.defineProperty(canvas, 'captureStream', { value: () => ({ getTracks: () => [] }) })
@@ -77,7 +104,7 @@ function dependencies(
     now: () => 0,
     isPageVisible: () => true,
     subscribePageVisibility: () => () => undefined,
-    readCompositeCanvasVisualTokens: () => visualTokens,
+    createLayer: () => recordingLayer(layerRecord),
   }
 }
 
@@ -204,10 +231,10 @@ describe('exportCompositeVideo', () => {
   it('exports a truthful WebM blob and reports normalized progress', async () => {
     const revokeObjectURL = vi.fn()
     const progress = vi.fn()
-    const fillText = vi.fn()
+    const layer: LayerRecord = { fillStyles: [], fonts: [], texts: [] }
     const recorder = compositeRecorder()
     const successfulDependencies: CompositeVideoDependencies = {
-      ...dependencies(revokeObjectURL, fillText),
+      ...dependencies(revokeObjectURL, layer),
       createVideo: () => loadedVideo(async () => undefined),
       isTypeSupported: (mimeType) => mimeType === 'video/webm',
       createRecorder: () => recorder,
@@ -223,50 +250,30 @@ describe('exportCompositeVideo', () => {
     expect(result.blob).toMatchObject({ size: 5, type: 'video/webm' })
     expect(progress.mock.calls.flat()).toEqual([0, 1, 1])
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:front')
-    expect(fillText).toHaveBeenCalledWith('リア・記録なし', 416, 517)
+    expect(layer.texts.filter((text) => text === '記録なし')).toHaveLength(5)
+    expect(layer.texts).toEqual(expect.arrayContaining(['フロント', 'リア']))
   })
 
-  it('resolves composite Canvas visual tokens once before rendering', async () => {
+  it('renders the static overlay once and paints it with the contract colours', async () => {
     const recorder = compositeRecorder()
-    const readCanvasVisualTokens = vi.fn(() => visualTokens)
-    const fillStyles: string[] = []
-    const fonts: string[] = []
-    const visualDependencies: CompositeVideoDependencies = {
+    const layer: LayerRecord = { fillStyles: [], fonts: [], texts: [] }
+    const createLayer = vi.fn(() => recordingLayer(layer))
+    const overlayDependencies: CompositeVideoDependencies = {
       ...dependencies(() => undefined),
-      createCanvas: () => {
-        const canvas = document.createElement('canvas')
-        Object.defineProperty(canvas, 'getContext', {
-          value: () => ({
-            drawImage: () => undefined,
-            fillRect: () => undefined,
-            fillText: () => undefined,
-            measureText: (text: string) => ({ width: text.length * 8 }),
-            set fillStyle(value: string) { fillStyles.push(value) },
-            set font(value: string) { fonts.push(value) },
-          }),
-        })
-        Object.defineProperty(canvas, 'captureStream', { value: () => ({ getTracks: () => [] }) })
-        return canvas
-      },
       createVideo: () => loadedVideo(async () => undefined),
       createRecorder: () => recorder,
-      readCompositeCanvasVisualTokens: readCanvasVisualTokens,
+      createLayer,
       requestAnimationFrame: (callback) => {
         callback(20)
         return 1
       },
     }
 
-    await expect(exportCompositeVideo({ event: event(), dependencies: visualDependencies })).resolves.toMatchObject({ extension: 'webm' })
+    await expect(exportCompositeVideo({ event: event(), dependencies: overlayDependencies })).resolves.toMatchObject({ extension: 'webm' })
 
-    expect(readCanvasVisualTokens).toHaveBeenCalledTimes(1)
-    expect(fillStyles).toEqual(expect.arrayContaining([
-      visualTokens.canvas,
-      visualTokens.cameraSurface,
-      visualTokens.labelScrim,
-      visualTokens.labelText,
-    ]))
-    expect(fonts).toContain(visualTokens.labelFont)
+    expect(createLayer).toHaveBeenCalledTimes(1)
+    expect(layer.fillStyles).toEqual(expect.arrayContaining(['#E9EBEE', '#15181D', '#C2C8D0', '#0000008C', '#FFFFFF']))
+    expect(layer.fonts.every((font) => font.startsWith('500 13px "Hiragino Sans"'))).toBe(true)
   })
 
   it('loads the public vehicle asset once for a multi-segment export', async () => {

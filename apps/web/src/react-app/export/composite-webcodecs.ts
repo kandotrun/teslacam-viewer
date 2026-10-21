@@ -13,23 +13,22 @@ import {
 } from 'mediabunny'
 
 import { cameraIds, type CameraId, type LocalFileRef, type TeslaCamEvent } from '../../teslacam/types'
+import type { CompositeFrameRenderer, CompositeFrameSource } from './composite-frame'
+import { buildCompositeLayout, type CompositeLayout } from './composite-layout'
 import {
-  buildCompositeLayout,
-  drawCompositeFrame,
-  type CompositeDrawable,
-  type CompositeLayout,
-} from './composite-layout'
+  compositeFrameDuration,
+  compositeFrameRate,
+  compositeProgressAfterFrame,
+  planCompositeSegment,
+} from './composite-plan'
 import { CompositeVideoExportError, exportAborted } from './composite-recorder'
-import type { CompositeCanvasVisualTokens } from './composite-visual-tokens'
 import type { CompositeVideoExportResult } from './composite-video'
 
 export type CompositeWebCodecsOptions = {
   readonly event: TeslaCamEvent
   readonly canvas: HTMLCanvasElement
   readonly context: CanvasRenderingContext2D
-  readonly vehicleImage: HTMLImageElement
-  readonly visualTokens: CompositeCanvasVisualTokens
-  readonly createCanvas: () => HTMLCanvasElement
+  readonly renderer: CompositeFrameRenderer
   readonly signal?: AbortSignal | undefined
   readonly onProgress?: ((progress: number) => void) | undefined
 }
@@ -39,8 +38,6 @@ type DecodedCamera = {
   readonly input: Input
   readonly duration: number
   readonly sink: VideoSampleSink
-  readonly canvas: HTMLCanvasElement
-  readonly context: CanvasRenderingContext2D
 }
 
 type CameraIterator = DecodedCamera & {
@@ -48,8 +45,7 @@ type CameraIterator = DecodedCamera & {
   readonly samples: AsyncIterator<VideoSample | null>
 }
 
-const frameRate = 30
-const frameDuration = 1 / frameRate
+const frameDuration = 1 / compositeFrameRate
 
 function assertActive(signal: AbortSignal | undefined): void {
   if (signal?.aborted === true) throw exportAborted()
@@ -59,8 +55,8 @@ function recordingFailed(): CompositeVideoExportError {
   return new CompositeVideoExportError('recording-failed', '動画の録画に失敗しました。')
 }
 
-function frameTimestamps(duration: number): number[] {
-  return Array.from({ length: Math.ceil(duration * frameRate) }, (_, index) => index * frameDuration)
+function frameTimestamps(frameCount: number): number[] {
+  return Array.from({ length: frameCount }, (_, index) => index * frameDuration)
 }
 
 async function canEncodeComposite(layout: CompositeLayout): Promise<boolean> {
@@ -104,6 +100,7 @@ async function prepareCamera(
   fileRef: LocalFileRef,
   options: CompositeWebCodecsOptions,
 ): Promise<DecodedCamera | null> {
+  assertActive(options.signal)
   const file = await fileRef.getFile()
   assertActive(options.signal)
   const input = new Input({ source: new BlobSource(file), formats: [MP4] })
@@ -119,19 +116,11 @@ async function prepareCamera(
       input.dispose()
       return null
     }
-    const canvas = options.createCanvas()
-    const context = canvas.getContext('2d')
-    if (context === null) {
-      input.dispose()
-      return null
-    }
     return {
       cameraId,
       input,
       duration,
       sink: new VideoSampleSink(track, { hardwareAcceleration: 'no-preference' }),
-      canvas,
-      context,
     }
   } catch {
     input.dispose()
@@ -158,20 +147,23 @@ async function prepareSegment(
   return cameras
 }
 
-function createIterators(cameras: readonly DecodedCamera[]): readonly CameraIterator[] {
+function createIterators(
+  cameras: readonly DecodedCamera[],
+  frameCounts: Readonly<Partial<Record<CameraId, number>>>,
+): readonly CameraIterator[] {
   return cameras.map((camera) => {
-    const timestamps = frameTimestamps(camera.duration)
+    const frameCount = frameCounts[camera.cameraId] ?? 0
     return {
       ...camera,
-      frameCount: timestamps.length,
-      samples: camera.sink.samplesAtTimestamps(timestamps)[Symbol.asyncIterator](),
+      frameCount,
+      samples: camera.sink.samplesAtTimestamps(frameTimestamps(frameCount))[Symbol.asyncIterator](),
     }
   })
 }
 
+/** Decodes each camera's sample for this output frame and draws it straight into the output canvas. */
 async function drawFrame(
   options: CompositeWebCodecsOptions,
-  layout: CompositeLayout,
   cameras: readonly CameraIterator[],
   frameIndex: number,
 ): Promise<void> {
@@ -180,31 +172,18 @@ async function drawFrame(
     const result = await camera.samples.next()
     return result.done === true ? null : result.value
   }))
-  const drawables: CompositeDrawable[] = []
   try {
-    for (const [index, sample] of samples.entries()) {
-      if (sample === null) continue
+    const sources = samples.flatMap((sample, index): CompositeFrameSource[] => {
       const camera = cameras[index]
-      if (camera === undefined) continue
-      if (camera.canvas.width !== sample.displayWidth) camera.canvas.width = sample.displayWidth
-      if (camera.canvas.height !== sample.displayHeight) camera.canvas.height = sample.displayHeight
-      camera.context.clearRect(0, 0, camera.canvas.width, camera.canvas.height)
-      sample.draw(camera.context, 0, 0, camera.canvas.width, camera.canvas.height)
-      drawables.push({
+      if (sample === null || camera === undefined) return []
+      return [{
         cameraId: camera.cameraId,
-        source: camera.canvas,
-        width: camera.canvas.width,
-        height: camera.canvas.height,
-        playable: true,
-      })
-    }
-    drawCompositeFrame(
-      options.context,
-      layout,
-      drawables,
-      options.vehicleImage,
-      options.visualTokens,
-    )
+        width: sample.displayWidth,
+        height: sample.displayHeight,
+        draw: (rect) => sample.draw(options.context, rect.x, rect.y, rect.width, rect.height),
+      }]
+    })
+    options.renderer.drawFrame(options.context, sources)
   } finally {
     for (const sample of samples) sample?.close()
   }
@@ -229,7 +208,7 @@ export async function tryExportCompositeWithWebCodecs(
     latencyMode: 'quality',
     hardwareAcceleration: 'no-preference',
   })
-  output.addVideoTrack(canvasSource, { frameRate })
+  output.addVideoTrack(canvasSource, { frameRate: compositeFrameRate })
   let addedFrames = 0
   let outputTimestamp = 0
   try {
@@ -243,22 +222,24 @@ export async function tryExportCompositeWithWebCodecs(
       }
       options.signal?.addEventListener('abort', handleAbort, { once: true })
       try {
-        if (cameras.length === 0) continue
-        const duration = Math.max(...cameras.map((camera) => camera.duration))
-        const frameCount = Math.ceil(duration * frameRate)
-        const iterators = createIterators(cameras)
-        for (let frameIndex = 0; frameIndex < frameCount; frameIndex += 1) {
+        const plan = planCompositeSegment(
+          Object.fromEntries(cameras.map((camera) => [camera.cameraId, camera.duration])),
+          outputTimestamp,
+        )
+        if (plan.skipped) continue
+        const iterators = createIterators(cameras, plan.cameraFrameCounts)
+        for (let frameIndex = 0; frameIndex < plan.frameCount; frameIndex += 1) {
           assertActive(options.signal)
-          await drawFrame(options, layout, iterators, frameIndex)
-          const timestamp = outputTimestamp + frameIndex * frameDuration
-          const durationRemaining = Math.max(0, duration - frameIndex * frameDuration)
-          await canvasSource.add(timestamp, Math.min(frameDuration, durationRemaining))
+          await drawFrame(options, iterators, frameIndex)
+          await canvasSource.add(
+            plan.startSeconds + frameIndex * frameDuration,
+            compositeFrameDuration(frameIndex, plan.durationSeconds),
+          )
           addedFrames += 1
-          if (frameIndex % frameRate === 0 || frameIndex === frameCount - 1) {
-            options.onProgress?.((segmentIndex + (frameIndex + 1) / frameCount) / options.event.segments.length)
-          }
+          const progress = compositeProgressAfterFrame(segmentIndex, frameIndex, plan.frameCount, options.event.segments.length)
+          if (progress !== null) options.onProgress?.(progress)
         }
-        outputTimestamp += duration
+        outputTimestamp += plan.durationSeconds
       } finally {
         options.signal?.removeEventListener('abort', handleAbort)
         for (const { input } of cameras) input.dispose()
