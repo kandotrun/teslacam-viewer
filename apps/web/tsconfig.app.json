@@ -18,7 +18,8 @@
     "skipLibCheck": true,
     "composite": true,
     "noEmit": true,
+    "resolveJsonModule": true,
     "types": ["vite/client", "vitest/globals"]
   },
-  "include": ["src/react-app", "src/test", "src/teslacam", "src/types"]
+  "include": ["src/react-app", "src/test", "src/teslacam", "src/types", "../../packages/contract/*.json"]
 }
