@@ -1,0 +1,1521 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "event-filters",
+  "source": [
+    "apps/web/src/react-app/event-filters.ts"
+  ],
+  "cases": [
+    {
+      "name": "eventDate 2026-08-20_20-45-00",
+      "fn": "eventDate",
+      "input": {
+        "timestamp": "2026-08-20_20-45-00"
+      },
+      "expected": "2026-08-20"
+    },
+    {
+      "name": "eventClock 2026-08-20_20-45-00",
+      "fn": "eventClock",
+      "input": {
+        "timestamp": "2026-08-20_20-45-00"
+      },
+      "expected": "20:45:00"
+    },
+    {
+      "name": "eventTime 2026-08-20_20-45-00",
+      "fn": "eventTime",
+      "input": {
+        "timestamp": "2026-08-20_20-45-00"
+      },
+      "expected": "2026-08-20 20:45:00"
+    },
+    {
+      "name": "eventDate 2026-01-01_00-00-00",
+      "fn": "eventDate",
+      "input": {
+        "timestamp": "2026-01-01_00-00-00"
+      },
+      "expected": "2026-01-01"
+    },
+    {
+      "name": "eventClock 2026-01-01_00-00-00",
+      "fn": "eventClock",
+      "input": {
+        "timestamp": "2026-01-01_00-00-00"
+      },
+      "expected": "00:00:00"
+    },
+    {
+      "name": "eventTime 2026-01-01_00-00-00",
+      "fn": "eventTime",
+      "input": {
+        "timestamp": "2026-01-01_00-00-00"
+      },
+      "expected": "2026-01-01 00:00:00"
+    },
+    {
+      "name": "eventDate 2028-02-29_23-59-59",
+      "fn": "eventDate",
+      "input": {
+        "timestamp": "2028-02-29_23-59-59"
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "eventClock 2028-02-29_23-59-59",
+      "fn": "eventClock",
+      "input": {
+        "timestamp": "2028-02-29_23-59-59"
+      },
+      "expected": "23:59:59"
+    },
+    {
+      "name": "eventTime 2028-02-29_23-59-59",
+      "fn": "eventTime",
+      "input": {
+        "timestamp": "2028-02-29_23-59-59"
+      },
+      "expected": "2028-02-29 23:59:59"
+    },
+    {
+      "name": "categoryLabel recent",
+      "fn": "categoryLabel",
+      "input": {
+        "category": "recent"
+      },
+      "expected": "最近の走行"
+    },
+    {
+      "name": "categoryLabel saved",
+      "fn": "categoryLabel",
+      "input": {
+        "category": "saved"
+      },
+      "expected": "保存済み"
+    },
+    {
+      "name": "categoryLabel sentry",
+      "fn": "categoryLabel",
+      "input": {
+        "category": "sentry"
+      },
+      "expected": "セントリー"
+    },
+    {
+      "name": "matches query \"\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"   \"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "   "
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"20:45\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "20:45"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"20-45\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "20-45"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \" SENTRY \"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": " SENTRY "
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"sentry\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "sentry"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"Sentry\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "Sentry"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"セントリー\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "セントリー"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"セント\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "セント"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"2026-08-20 20\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "2026-08-20 20"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"2026-08-20 20:45:00 sentry セントリー\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "2026-08-20 20:45:00 sentry セントリー"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"saved\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "saved"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \"保存済み\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "保存済み"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \"最近\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "最近"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \"recent\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "recent"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \"　sentry　\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "　sentry　"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"﻿sentry\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "﻿sentry"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \" sentry \"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": " sentry "
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"sentry\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "sentry"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \"\\tsentry\\n\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "\tsentry\n"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query \"2026-08-20_20-45-00\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "2026-08-20_20-45-00"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query \"x\"",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "x"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches query on a saved event",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "saved-2026-08-20_20-40-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "保存"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches query on a recent event",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "recent",
+          "id": "recent-2026-08-21_08-00-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-21_08-00-00"
+            }
+          ],
+          "timestamp": "2026-08-21_08-00-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "走行"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches category all",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches category sentry",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "sentry",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches category saved rejects sentry",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "saved",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches date prefix match",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": "2026-08-20",
+          "query": ""
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches date prefix mismatch",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": "2026-08-21",
+          "query": ""
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "matches date raw prefix",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": "2026-08",
+          "query": ""
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches empty date key",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "all",
+          "dateKey": "",
+          "query": ""
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches all filters together",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "sentry",
+          "dateKey": "2026-08-20",
+          "query": "20:45"
+        }
+      },
+      "expected": true
+    },
+    {
+      "name": "matches category and query mismatch",
+      "fn": "eventMatchesFilters",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "sentry-2026-08-20_20-45-00-1",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-45-00"
+        },
+        "filters": {
+          "category": "sentry",
+          "dateKey": null,
+          "query": "saved"
+        }
+      },
+      "expected": false
+    },
+    {
+      "name": "ordered newest first",
+      "fn": "orderedMatchingEvents",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_08-00-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-21_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-21_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-20_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-45-00"
+          }
+        ],
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": [
+        "recent-2026-08-21_08-00-00-1",
+        "sentry-2026-08-20_20-45-00-1",
+        "saved-2026-08-20_20-40-00-1"
+      ]
+    },
+    {
+      "name": "ordered filtered by category",
+      "fn": "orderedMatchingEvents",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_08-00-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-21_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-21_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-20_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-45-00"
+          }
+        ],
+        "filters": {
+          "category": "saved",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": [
+        "saved-2026-08-20_20-40-00-1"
+      ]
+    },
+    {
+      "name": "ordered filtered by date",
+      "fn": "orderedMatchingEvents",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_08-00-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-21_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-21_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-20_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-45-00"
+          }
+        ],
+        "filters": {
+          "category": "all",
+          "dateKey": "2026-08-20",
+          "query": ""
+        }
+      },
+      "expected": [
+        "sentry-2026-08-20_20-45-00-1",
+        "saved-2026-08-20_20-40-00-1"
+      ]
+    },
+    {
+      "name": "ordered no match",
+      "fn": "orderedMatchingEvents",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_08-00-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-21_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-21_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-20_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-20_20-45-00"
+          }
+        ],
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": "nothing"
+        }
+      },
+      "expected": []
+    },
+    {
+      "name": "ordered stable ties keep input order",
+      "fn": "orderedMatchingEvents",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-b",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-20_10-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-a",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-20_10-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-c",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-20_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-newer",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-08-20_11-00-00"
+              }
+            ],
+            "timestamp": "2026-08-20_11-00-00"
+          }
+        ],
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": [
+        "saved-newer",
+        "saved-b",
+        "sentry-a",
+        "recent-c"
+      ]
+    },
+    {
+      "name": "ordered year boundary",
+      "fn": "orderedMatchingEvents",
+      "input": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "old",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2026-12-31_23-59-59"
+              }
+            ],
+            "timestamp": "2026-12-31_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "new",
+            "segments": [
+              {
+                "cameras": [
+                  "front",
+                  "back",
+                  "left_pillar",
+                  "left_repeater",
+                  "right_pillar",
+                  "right_repeater"
+                ],
+                "timestamp": "2027-01-01_00-00-00"
+              }
+            ],
+            "timestamp": "2027-01-01_00-00-00"
+          }
+        ],
+        "filters": {
+          "category": "all",
+          "dateKey": null,
+          "query": ""
+        }
+      },
+      "expected": [
+        "new",
+        "old"
+      ]
+    }
+  ]
+}

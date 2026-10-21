@@ -1,0 +1,36 @@
+{
+  "$comment": "Export frame shared by the web and Mac composite exporters (see DESIGN.md, Export frame).",
+  "width": 1280,
+  "height": 720,
+  "fps": 30,
+  "background": "floor",
+  "slots": {
+    "front": { "x": 464, "y": 12, "width": 352, "height": 264 },
+    "left_pillar": { "x": 56, "y": 112, "width": 352, "height": 264 },
+    "right_pillar": { "x": 872, "y": 112, "width": 352, "height": 264 },
+    "left_repeater": { "x": 56, "y": 444, "width": 352, "height": 264 },
+    "right_repeater": { "x": 872, "y": 444, "width": 352, "height": 264 },
+    "back": { "x": 480, "y": 456, "width": 320, "height": 240 }
+  },
+  "vehicle": { "x": 598, "y": 285, "width": 84, "height": 168 },
+  "videoCornerRadius": 12,
+  "label": {
+    "inset": 10,
+    "height": 24,
+    "paddingInline": 10,
+    "fontSize": 13,
+    "fontWeight": 500,
+    "scrim": "video-label-scrim",
+    "text": "video-text"
+  },
+  "missing": { "fill": "video-missing-a", "text": "video-muted", "message": "記録なし" },
+  "wedges": { "color": "wedge", "mountsFrom": "design-tokens.json#/stage/mounts" },
+  "labels": {
+    "front": "フロント",
+    "back": "リア",
+    "left_pillar": "左ピラー",
+    "right_pillar": "右ピラー",
+    "left_repeater": "左リピーター",
+    "right_repeater": "右リピーター"
+  }
+}

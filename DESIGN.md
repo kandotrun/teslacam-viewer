@@ -1,315 +1,301 @@
 # TeslaCam Viewer Design System
 
+Shared by `apps/web` (React) and `apps/mac` (GPUI). Token values live in
+`packages/contract/design-tokens.json`; both apps read them from there and their tests fail when a
+platform copy drifts. UI copy is Japanese and identical on both platforms.
+
+Reference prototype: [`docs/design/2026-10-20-garage-floor.html`](docs/design/2026-10-20-garage-floor.html)
+(open it through any static server; the camera images in it are stand-ins).
+
 ## 0. Research Log
 
-- Embedded refs: Tesla、Sentry、Runwayを候補化し、映像を主役にする静けさと精密な操作感を両立できるため、Layer Aはminimalist、Layer BはTeslaを採用した。ブランドロゴ、固有書体、公式UIは複製しない。
-- Lazyweb: `video review workspace`、`security camera playback timeline`、`cinematic media library`の3クエリを実行し、Frame.io、Vimeo、Milestone XProtect、Soraの4画面を閲覧した。左のライブラリレール、時系列イベント列、主映像を支配的に置くシアター、画面下部に固定するトランスポートというレイアウト文法だけを抽出した。
-- Imagen drafts: `exec-6d68dff4-c919-40dc-91e4-e86a587fda7c.png`、`exec-5cc54840-df75-4158-a0c4-9c38f47b1218.png`、`exec-053c7f42-d7cf-4d17-82c1-614fd8199a96.png`を比較し、1案目の`exec-6d68dff4-c919-40dc-91e4-e86a587fda7c.png`を参照契約として採用した。
-- Target composition: 明るいライブラリレールとイベント一覧、暗い6カメラ映像面、明るい永続トランスポートバー。初期画面から閲覧画面まで同じトークンと状態規則を使う。
-- 2026-08-23 redesign audit: 公開版と375px、768px、1280pxの実画面を監査し、英語の大文字eyebrow、中央カード型welcome、均一な角丸枠、再生中の証拠文脈不足をAI生成サービスらしさの主因と特定した。Tesla、Apple、Raycastを候補に再比較し、映像そのものを主役にできるTeslaのradical subtractionを継続採用する。装飾は足さず、フォルダ、イベント時刻、カテゴリ、カメラ可用性を先に読ませる。
-- 2026-08-24 light-theme audit: SSD接続中の長時間探索では、作業面を明るくして一覧と操作の境界を先に読ませる。映像そのもの、カメラ名、欠損状態だけを暗い映像面へ閉じ込め、テーマ切り替えを設けずライトを標準とする。
-- 2026-08-25 density audit: 公開画面ではフォルダ名、ローカル処理説明、イベント文脈が複数面へ重複し、TheaterContextと操作ツールバーの二段構成が映像開始位置を下げていた。プライバシー境界は実装とネットワーク検証で維持し、常設説明は置かない。製品ヘッダー、読み込み元、選択イベント、操作の各情報を一度だけ表示し、イベント文脈と表示・書き出し操作を一つの面へ統合する。
+- 2026-08-21 – 2026-08-25: the first system ("light workspace / evidence theater") separated a light work
+  surface from a black video theater, removed AI-template tells and fixed density issues. Its behavioural
+  rules (privacy, copy rules, inspector fields, autoplay, day navigation, dense history) still hold and are
+  carried over below.
+- 2026-10-20 redesign audit: the owner found the 2026-08 UI hard to read and "business-like". Causes: boxed
+  panels and dividers everywhere, a heavy black theater, a 240 px inspector listing raw fields, a row of
+  equal-weight buttons under the video. Tesla is fun to use; the viewer should feel like the car.
+- Reference: ROJI (`TSUQREA/mapbox-ai-demo`) — the map is the canvas, panels float above it with a 22 px
+  radius and one soft shadow, neutral surfaces, one colour per meaning, Barlow numerals readable at arm's
+  length, pill controls. Tesla: `#171A20` ink and `#3E6AE1` blue from tesla.com, the top-down car render as
+  the home of every camera, very little chrome.
+- Decision: **Garage floor**. The car is the map. The six camera windows sit around the car where the
+  cameras are mounted, on a light floor; the library, the event summary and the transport float above it.
 
-## 1. Atmosphere & Identity
+## 1. Identity
 
-SSDをMacへつなぎ、必要な記録を時刻から探し、映像を確認するためのローカル閲覧ツール。印象の核は、昼間の作業机のように明るい「ライト・ワークスペース」と、録画範囲だけを黒く保つ「エビデンス・シアター」の対比である。一覧、証拠文脈、再生操作を明るい面で読みやすく保ち、映像は周囲の装飾に邪魔されない。高彩度色は主操作とカテゴリ状態に限定し、Tesla由来のradical subtractionをTeslaCam確認という独自用途へ再構成する。想定利用者は、SSDをMacへつないですぐ確認したい所有者、事故やセントリー記録を時刻から探す調査者、欠損カメラを含む大量イベントを長時間確認する運用者である。
+You plug the car's USB drive into a Mac to find a moment — something approached the car during Sentry, a
+clip you saved with the horn, a drive from this morning — and watch all six cameras at once. The screen is
+a calm, light garage floor with the car in the middle. Video is the only dark thing on it. Numbers (times,
+counts, durations) are set large in Barlow, whose shapes come from California highway signs.
 
-AI生成サービスらしさを避けるため、宣伝見出し、英語の大文字eyebrow、意味のないカード、均一なpill、グラデーション、glow、glass、装飾アニメーションを使わない。日本語の短い作業語彙を使い、正常状態は肯定形、欠損や失敗は影響する方向を具体的に示す。
+Principles:
 
-## 2. Color
+1. **The car is the map.** Every camera window is placed by its mount position on the car. A soft
+   field-of-view wedge connects the mount point to its window; the active camera's wedge is blue. This is
+   the one bold element. Nothing else competes with it.
+2. **Float the controls, keep the floor still.** Only floating layers (library, top pills, transport,
+   dialogs, popovers) have a shadow. Camera windows have none.
+3. **Numbers you can read from across the room.** Clock, event times, counts: Barlow 600, tabular.
+4. **One colour per meaning.** Blue = what you are doing now (selection, playhead, primary action).
+   Red = Sentry only. Green = saved clips only. Grey = recent drives. Never colour alone: every category
+   also has its icon and word.
+5. **Say what it is.** Short plain Japanese, no meta strings joined by `·`, no English all-caps labels,
+   no raw field dumps on the main screen.
 
-### Palette
+## 2. Colour
 
-| Role | Token | Value | Usage |
-|---|---|---:|---|
-| Canvas | `--color-canvas` | `#f7f9fc` | 画面全体 |
-| Rail | `--color-rail` | `#eef2f6` | ヘッダー、ライブラリレール、再生操作 |
-| Surface | `--color-surface` | `#ffffff` | イベント列、入力、文脈面 |
-| Surface raised | `--color-surface-raised` | `#f3f6fa` | hover |
-| Surface active | `--color-surface-active` | `#e7eef8` | 選択状態 |
-| Theater | `--color-theater` | `#050608` | 映像そのものの背景 |
-| Text primary | `--color-text-primary` | `#17202a` | 見出し、本文 |
-| Text secondary | `--color-text-secondary` | `#465466` | 補助説明 |
-| Text muted | `--color-text-muted` | `#5d6b7a` | メタデータ、非活性 |
-| Text on accent | `--color-text-on-accent` | `#ffffff` | 青い主操作上の文字 |
-| Border | `--color-border` | `#aeb9c6` | 面の境界 |
-| Border strong | `--color-border-strong` | `#657384` | 操作境界 |
-| Accent | `--color-accent` | `#155eef` | 唯一の主操作、選択 |
-| Accent border | `--color-accent-border` | `#155eef` | 選択中の操作境界 |
-| Accent contrast | `--color-accent-contrast` | `#d8ebff` | 青い主操作の外周 |
-| Accent hover | `--color-accent-hover` | `#0f4cc9` | 主操作hover |
-| Accent active | `--color-accent-active` | `#0b3b9e` | 主操作active |
-| Sentry | `--color-sentry` | `#c62828` | セントリー。必ず文言・アイコンと併用 |
-| Warning | `--color-warning` | `#8a4b00` | 欠損、注意 |
-| Warning surface | `--color-warning-surface` | `#fff4e5` | 注意の背景 |
-| Focus | `--color-focus` | `#005fcc` | 外側focus ring |
-| Theater rail | `--color-theater-rail` | `#101318` | 映像上のカメラ名 |
-| Theater text primary | `--color-theater-text-primary` | `#f5f6f7` | 映像上の主テキスト |
-| Theater text secondary | `--color-theater-text-secondary` | `#c2c8d0` | 映像上の補助テキスト |
-| Theater border | `--color-theater-border` | `#303741` | 映像タイル間の境界 |
-| Theater border strong | `--color-theater-border-strong` | `#74808e` | 映像タイルの操作境界 |
-| Theater accent border | `--color-theater-accent-border` | `#8bb9ff` | 選択中の映像境界 |
-| Theater warning | `--color-theater-warning` | `#e1a74d` | 映像内の欠損、注意 |
-| Scrim | `--color-scrim` | `rgb(5 6 8 / 64%)` | 合成動画の確認ダイアログ背面 |
-| Composite canvas | `--color-composite-canvas` | `#000000` | 合成動画のCanvas背景 |
-| Composite camera surface | `--color-composite-camera-surface` | `#000000` | 合成動画の欠損カメラ面とcontain余白 |
-| Composite label scrim | `--color-composite-label-scrim` | `rgb(0 0 0 / 72%)` | 合成動画のカメラ名背景 |
-| Composite label text | `--color-composite-label-text` | `#ffffff` | 合成動画のカメラ名 |
+| Token | Value | Usage |
+|---|---|---|
+| `floor` | `#E9EBEE` | App background (with `floor-light` radial highlight behind the car) |
+| `floor-light` | `#F7F8FA` | Centre of the floor highlight |
+| `surface` | `#FFFFFF` | Solid surfaces, selected segmented item, scrubber thumb |
+| `glass` | `rgb(255 255 255 / .94)` + `blur(24px) saturate(1.4)` | Floating layers |
+| `ink` | `#171A20` | Text, play button, hover rings |
+| `ink-2` | `#5C5E62` | Secondary text |
+| `ink-3` | `#6B6E74` | Tertiary text, axis labels (5.1:1 on white, 4.6:1 on `fill`) |
+| `line` | `#E2E4E8` | The few separators that remain |
+| `fill` | `#F2F3F5` | Segmented tracks, chip and icon-button backgrounds, scrubber track |
+| `fill-hover` | `#E9EBEE` | Hover on `fill` controls |
+| `drive` | `#3E6AE1` | Primary action, selection ring, playhead, active wedge, focus ring |
+| `drive-hover` | `#3459C4` | Primary action hover |
+| `drive-soft` | `rgb(62 106 225 / .14)` | Selected event row |
+| `sentry` | `#E31937` | Sentry markers, detection marker |
+| `sentry-ink` | `#C8102E` | Sentry text on `sentry-soft` (AA for 11 px semibold) |
+| `sentry-soft` | `rgb(227 25 55 / .10)` | Sentry chip background |
+| `saved` | `#12805A` | Saved markers |
+| `saved-ink` | `#0E6B4B` | Saved text on `saved-soft` |
+| `saved-soft` | `rgb(18 128 90 / .10)` | Saved chip background |
+| `recent` | `#5C5E62` | Recent chip text (on `fill`) |
+| `recent-marker` | `#9AA0A8` | Recent markers on the day rail |
+| `warning` | `#8A5A00` | Missing camera / scan warnings text |
+| `warning-soft` | `#FFF4DC` | Warning background |
+| `video` | `#000000` | Video background and letterbox inside camera windows |
+| `video-missing-a` / `video-missing-b` | `#15181D` / `#181B21` | 135° stripes of a camera window without footage |
+| `video-label-scrim` | `rgb(0 0 0 / .55)` | Camera name pill over video |
+| `video-text` | `#FFFFFF` | Text over video |
+| `video-muted` | `#C2C8D0` | Secondary text over video |
+| `scrim` | `rgb(23 26 32 / .32)` | Behind modal dialogs |
+| `shadow-float` | `0 1px 2px rgb(23 26 32 / .06), 0 14px 40px rgb(23 26 32 / .12)` | Floating layers only |
+| `shadow-control` | `0 1px 3px rgb(23 26 32 / .12)` | Selected segmented item |
+| `wedge` | `ink` at 7 % → 0 % | Field-of-view wedge, inactive |
+| `wedge-active` | `drive` at 28 % → 0 % | Field-of-view wedge, active camera |
 
-### Rules
-
-- 明るい無彩色面の明度差で作業階層を示し、映像グリッドの内側だけを暗いトークンへ切り替える。
-- Accentは操作、Sentryは分類にだけ使う。
-- 状態を色だけで伝えず、ラベル、Lucideアイコン、形状を併用する。
-- CSSへ新しい色を直書きせず、先にこの表へ意味を追加する。
+Rules: never introduce a colour outside this table; add it here and to the JSON first. Focus is a 2 px
+`drive` outline with 3 px offset everywhere.
 
 ## 3. Typography
 
-### Scale
+| Role | Family | Weight / size / line-height | Usage |
+|---|---|---|---|
+| `display` | UI | 600 / 30 px / 1.3 | Welcome headline |
+| `title` | UI + Num | 600 / 20 px / 1.3 (digits 22 px Num) | Day title in the library |
+| `clock` | Num | 600 / 34 px / 1 | Current playback time |
+| `numeral-l` | Num | 600 / 24 px / 1.05 | Event start time in the list |
+| `numeral-m` | Num | 600 / 18 px / 1.2 | Time in the event pill, counts in the segmented control (15 px) |
+| `body` | UI | 400 / 14 px / 1.9 | Welcome paragraph, dialog text |
+| `ui` | UI | 500–600 / 13 px / 1.4 | Buttons, pill text, details rows |
+| `small` | UI | 400 / 12 px / 1.5 | Facts under an event, camera labels |
+| `micro` | UI / Num | 600 / 11 px / 1.4 | Chips, rail hours, footnotes |
 
-| Level | Token | Size | Weight | Line height | Tracking | Usage |
-|---|---|---:|---:|---:|---:|---|
-| Display | `--font-display` | `clamp(2rem, 4vw, 3rem)` | 560 | 1.08 | `-0.03em` | 作業開始画面の主見出し |
-| Display mobile | `--font-display-mobile` | `1.75rem` | 560 | 1.1 | `-0.03em` | 479px以下の作業開始見出し |
-| Heading | `--font-heading` | `1.5rem` | 560 | 1.25 | `-0.02em` | パネル見出し |
-| Body large | `--font-body-large` | `1.125rem` | 400 | 1.65 | `-0.01em` | リード文 |
-| Body | `--font-body` | `1rem` | 400 | 1.6 | `0` | 標準本文、操作 |
-| Small | `--font-small` | `0.875rem` | 450 | 1.5 | `0` | ブラウザ案内 |
-| Label | `--font-label` | `0.75rem` | 560 | 1.35 | `0.01em` | カテゴリ、メタデータ |
-| Composite label | `--font-composite-label` | `500 13px -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif` | 500 | 1.35 | `0` | 保存する合成動画のカメラ名 |
+- UI family: `"Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif`
+  (Mac app: the system font, which resolves to Hiragino Sans for Japanese).
+- Num family: **Barlow** 500/600, bundled with both apps from `packages/assets/fonts/` (OFL), tabular figures. Use it for digits and for the Latin wordmark only.
+- No all-caps, no letter-spaced eyebrows, no monospace.
 
-### Font Stack
+## 4. Shape, depth and spacing
 
-- Primary: `ui-sans-serif, -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", "Yu Gothic", sans-serif`
-- Mono `--font-mono`: `ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace`
-- Webフォント、外部フォント、ブランド固有フォントは読み込まない。
+- Radii carry hierarchy: floating panel and transport `22`, dialogs `22`, camera windows `14`, event rows
+  and segmented tracks `14–16`, thumbnails `10`, pills / chips / round buttons `999`.
+- Glass + `shadow-float` only on floating layers. The floor gets a single radial highlight centred on the
+  car. Camera windows: no border, no shadow; hover = 2 px `ink` ring with a 2 px floor gap; active = the
+  same ring in `drive`.
+- Spacing unit 4 px. Gutter around floating layers: 16 px. Minimum hit target: 36 px inside floating
+  layers on desktop, 44 px on touch layouts (web ≤ 1100 px).
 
-### Rules
+## 5. Layout
 
-- 日本語の単語と助詞が不自然に孤立しないよう、見出し幅と`line-break: strict`を併用する。
-- 本文は14px未満にしない。見出しは4行以上になる前に流動サイズで縮小する。
-- 1画面でweightを3種類までに抑え、太さだけに階層を依存しない。
+### Desktop (web ≥ 1101 px, Mac window ≥ 1100 × 700)
 
-## 4. Spacing & Layout
+```
+┌───────────────┬──────────────────────────────────────────────────────────────┐
+│ Library 372px │ (event pill: category · start · place · detection)  (view | 書き出す) │
+│ wordmark  📁  │              ┌──────── front ────────┐                        │
+│ segmented     │   ┌─ L pillar ─┐  \     |     /   ┌─ R pillar ─┐             │
+│ ‹ 8月20日 ›   │   │            │   ╲   car   ╱    │            │             │
+│ 0 ··●··●· 24  │   └────────────┘    ╲  ▮▮  ╱     └────────────┘             │
+│ event rows    │   ┌─ L repeater┐   ┌── back ──┐   ┌─ R repeater┐             │
+│ …             │   └────────────┘   └──────────┘   └────────────┘             │
+│ warnings      │        ( ‹  ▶  0:15/1:00  ━━━━●━━━━▲━━━━  ⟲10 ⟳10  1×  › )      │
+└───────────────┴──────────────────────────────────────────────────────────────┘
+```
 
-### Base Unit
+- Library: floating, top/left/bottom 16 px, width 372 px (320 px below 1280 px).
+- Top row: event pill left-aligned to the stage, actions pill right-aligned; both 46 px high.
+- Stage: CSS grid / GPUI flex with areas `"lp front rp" "lp car rp" "lr back rr"`, rows `.8fr 1.12fr
+  .86fr`, columns `1fr 1.18fr 1fr`, gaps 14 × 26 px. Windows are 4:3, `contain`-fit; the back window is
+  86 % of its column. The car (`vehicle-top.png`, 1:2) fills the middle row height with a soft elliptical
+  floor shadow.
+- Transport: floating, bottom 16 px, centred on the stage, max width 920 px.
+- Text alignment: left everywhere except numerals inside controls.
 
-基準単位は4pxとし、余白の意図は次のトークンで表す。
+### Tablet (web 741–1100 px)
 
-| Token | Value | Usage |
-|---|---:|---|
-| `--space-1` | `4px` | アイコンとラベル |
-| `--space-2` | `8px` | 小さなまとまり |
-| `--space-3` | `12px` | コンパクトな内側余白 |
-| `--space-4` | `16px` | 標準間隔 |
-| `--space-5` | `20px` | 操作群 |
-| `--space-6` | `24px` | パネル内側余白 |
-| `--space-8` | `32px` | 情報群の区切り |
-| `--space-10` | `40px` | セクション間隔 |
-| `--space-12` | `48px` | 大きな間隔 |
-| `--space-16` | `64px` | ページ余白 |
-| `--space-20` | `80px` | welcomeの呼吸 |
-| `--event-navigator-width` | `320px` | desktopイベントナビゲーション幅 |
-| `--event-inspector-width` | `240px` | desktopイベント詳細幅 |
-| `--camera-stage-spatial-min` | `720px` | 車両配置切り替えを許可するstage幅 |
-| `--playback-deck-height` | `224px` | desktop再生操作と履歴タイムラインの合計高 |
-| `--playback-deck-expanded-height` | `268px` | desktopで近接記録clusterを開いたときの合計高 |
-| `--event-thumbnail-width` | `88px` | イベントカードのサムネイル幅 |
-| `--event-card-min-height` | `96px` | イベント行の最小高 |
-| `--theater-tile-min` | `120px` | desktop/tabletカメラタイル最小高 |
-| `--theater-terminal-tile-min` | `80px` | 代表映像と併記するterminalカメラ状態の最小高 |
-| `--theater-tablet-min` | `720px` | tabletシアター全体の検証高 |
-| `--theater-mobile-tile-min` | `180px` | mobileカメラタイル最小高 |
-| `--theater-mobile-tile-target` | `30dvb` | 固定transportと重ならずmobileで映像を主役にするタイル高 |
-| `--theater-event-list-max` | `320px` | tablet event listの最大高 |
-| `--theater-representative-max` | `40dvb` | 代表映像の最大表示高 |
-| `--theater-mobile-expanded-min` | `60dvb` | mobile expanded映像の最小高 |
-| `--theater-video-fit` | `contain` | 録画範囲を切らずに表示 |
-| `--app-header-height` | `56px` | desktop/tabletの固定ヘッダー高 |
-| `--transport-mobile-max` | `140px` | mobile transportの最大高 |
-| `--composite-export-progress-inline-size` | `min(240px, 22vi)` | desktop/tablet書き出し進捗の幅 |
-| `--composite-export-dialog-inline-size` | `520px` | 書き出し確認ダイアログの最大幅 |
-| `--composite-export-detail-label-inline-size` | `88px` | 書き出し確認の項目名列幅 |
-| `--size-composite-label-inset` | `8px` | 保存する合成動画のカメラ名を映像端から離す距離 |
-| `--size-composite-label-padding-inline` | `8px` | 保存する合成動画のカメラ名背景の左右余白 |
-| `--size-composite-label-height` | `24px` | 保存する合成動画のカメラ名背景の高さ |
-| `--size-composite-label-baseline` | `17px` | 保存する合成動画のカメラ名のbaseline位置 |
+Library collapses to 320 px and can be hidden with a toggle in the event pill; icon-only view switch and
+export; skip buttons move into a `…` menu; touch targets 44 px.
 
-### Grid
+### Phone (web ≤ 740 px)
 
-- 作業開始画面は読み幅640pxを上限とし、カードで囲わず左揃えにする。入力と得られる結果が一画面で読める。
-- 完成形のdesktopは320pxのEventNavigatorと残りのTheaterSessionに分け、TheaterSession内は可変CameraStageと240pxのEventInspectorを並べる。下端224pxはPlaybackControlsとDayTimelineが共有する。
-- CameraStageのcontent boxが720px以上のdesktopだけ車両配置を許可し、frontを上中央、pillarを車両左右、repeaterとbackを下段へ置く。同じcanonical orderの6動画要素を使い、中央の静的車両画像だけを`vehicle` areaへ置く。
-- 640–1024pxはEventNavigator、TheaterContext、3×2 CameraStage、開閉式EventInspector、PlaybackDeckを積層する。閉じたEventInspectorでもカテゴリ、時刻、カメラ可用性を読める。639px以下は1画面カメラと6方向Camera switcherだけを局所横スクロールにする。
-- mobileでは6つのvideo要素を同期とObject URLのライフサイクル維持のためDOMへ残し、選択した一方向だけを表示する。6方向の切り替えはラベル付き横スクロール操作とする。
-- 検証幅は375px、768px、1280px。主コンテンツに横スクロールを発生させず、カメラ切り替えだけを局所的に横スクロール可能にする。
-- 外側余白は`clamp(var(--space-4), 5vw, var(--space-16))`を用いる。
+The library is the first screen (full width, same content). Choosing an event pushes the viewer with a
+`一覧へ` back button. The viewer shows one camera large; a **mini car** below it (the car glyph with six
+tappable mount dots, each with a visible label underneath) switches the camera. The transport is fixed to
+the bottom (≤ 140 px). All six `<video>` elements stay mounted for sync; only the selected one is visible.
 
-### Shape
+## 6. Components
 
-- `--radius-control: 6px`
-- `--radius-panel: 8px`
-- `--control-min-size: 44px`
+### Library (floating left)
 
-## 5. Components
+- **Header**: `TeslaCam Viewer` wordmark (Num 600 15 px), search icon button (opens an inline field with
+  placeholder `日時またはカテゴリ`), folder chip with the folder name (`別のフォルダを選ぶ` as accessible
+  name).
+- **Category segmented control**: `すべて` / `最近の走行` (shown as `走行`) / `保存済み` (shown as `保存`) /
+  `セントリー`, each with its count in Num 600 15 px. The accessible name keeps the full category name.
+- **Day**: `‹ 8月20日 木曜日 ›`. Chevrons move to the previous / next day that has recordings (skipping
+  empty days), accessible names `前の記録日` / `次の記録日`. The title opens a date picker. Changing the day
+  selects and plays the newest event of that day.
+- **Day rail**: 0–24 h track (`fill`, 4 px) with one 8 × 16 px marker per event coloured by category; the
+  current event marker is 10 × 24 px with a white ring. Markers whose 44 px hit areas overlap become a
+  cluster pill showing `20:35–20:45` and the count; activating it lists those events in the rows below.
+  Left/Right moves between markers, Home/End to the first/last of the day.
+- **Event rows**: 92 px 4:3 thumbnail (only when `thumb.png` exists; otherwise a quiet dark tile with the
+  category icon), start time `numeral-l`, category chip, facts (`2分`, `6カメラ`, Sentry detection time
+  `20:35:30に検知`). Missing cameras: one warning line naming them, e.g. `右リピーターの記録がありません`.
+  Selected row: `drive-soft` background. Rows are buttons; the list is virtualised.
+- **Footer**: scan warnings as one sentence each (e.g. encrypted clips skipped), `micro` `ink-3`.
 
-### Primary action
+### Event pill and details (floating top)
 
-- **Structure**: icon、動詞を先頭にしたbutton label。
-- **Variants**: primaryのみ。welcome画面に主操作を複数置かない。
-- **Spacing**: `--space-3`と`--space-5`、高さは`--control-min-size`以上。
-- **States**: default、hover、active、focus-visible、disabled、loadingを持つ。Task 1はdefault、hover、active、focus-visibleを実装する。
-- **Accessibility**: semantic `button`、可視ラベル、3pxの二重focus ring、キーボード到達、44px以上。
-- **Motion**: 色と境界の160msのみ。位置や大きさを動かさない。
-- **Layout**: inline cluster。狭幅では内容幅に収まり、テキストを途中で切らない。
+- Pill: category chip (30 px), start time `numeral-m` + `開始`, place (city, street from `event.json`,
+  pin icon), Sentry detection (`物体の接近を20:35:30に検知` style: reason in words + time in `sentry-ink`).
+  Items drop from the right as the window narrows: detection, then place.
+- Activating the pill opens a details popover (glass, 22 px radius, 360 px) with rows, shown only when the
+  data exists: `場所（Teslaの推定値）`, `推定座標`, `検知`, `再生開始`, `カメラ`, `長さ`, `セグメント`,
+  `録画開始`, and a closed `技術情報` disclosure with the raw `reason`. No external map links, no reverse
+  geocoding: location never leaves the device.
 
-### 作業開始画面
+### Actions pill (floating top right)
 
-- **Structure**: compact product header、入力を示す見出し、primary action、`RecentClips / SavedClips / SentryClips → イベント一覧 / 6カメラ`の結果説明、browser guidance。
-- **Variants**: desktop、tablet、mobile。
-- **Spacing**: `--space-4`から`--space-20`。
-- **States**: emptyが標準。errorとloadingは後続タスクで追加する。
-- **Accessibility**: landmark、論理的な見出し順、自然な日本語改行、200%拡大でも情報を失わない。
-- **Motion**: なし。
-- **Layout**: 左揃えのstack。背景装飾、中央のrounded panel、英語の大文字eyebrowを置かない。
+- View segmented: `車両配置` (car icon) / `6分割` (grid icon) / `代表映像` (only when `event.mp4` exists).
+- `書き出す` (download icon). During export it becomes a progress button (`書き出し中 42%` with a ring);
+  activating it offers `中止`.
 
-### Source summary
+### Stage
 
-- **Structure**: 左レールに選択したフォルダ名と総イベント件数を置き、再選択操作は製品ヘッダー右端へ一度だけ置く。読み込み警告は件数だけをsummaryへ示し、詳細を閉じた状態から確認できるようにする。
-- **States**: standard、warning collapsed、warning expanded。warningだけを色とアイコンで強調する。
-- **Accessibility**: フォルダ名は省略表示してもtitle相当の全文を読み取れる。再選択は可視ラベルを持つ。
-- **Layout**: desktopでは左レール上部、tablet/mobileではheader直下に置く。
+- **Camera window**: 4:3, radius 14, `video` background, `contain`-fit. Name pill bottom-left
+  (`フロント`, `左ピラー`, `右ピラー`, `左リピーター`, `リア`, `右リピーター`). States: loading (spinner +
+  `読み込み中`), ready, missing (stripes + camera-off icon + `記録がありません`), unavailable
+  (`映像を読み込めません`), corrupt (`映像が破損しています`), unsupported (`未対応の映像形式です`).
+- Click / Enter expands that camera to fill the stage; the other five shrink into a strip of mini windows
+  along the stage's bottom edge, and a mini car with mount dots sits at the strip's left for spatial
+  switching. `Esc` or the same window returns to `車両配置`.
+- **Wedges**: drawn under the windows from the mount point to the two window corners that face the car.
+  Mount points (relative to the car image box): front 50 %/22 %, left pillar 16 %/46 %, right pillar
+  84 %/46 %, left repeater 10 %/31 %, right repeater 90 %/31 %, back 50 %/93 %. The active camera shows a
+  `drive` mount dot with a white ring.
+- **6分割**: 3 × 2 grid of the same windows (front, back, left pillar, right pillar, left repeater, right
+  repeater — reading order), no car, no wedges.
+- **代表映像**: one large window with native-like controls; the six-camera clock pauses.
 
-### App header
+### Transport (floating bottom)
 
-- **Structure**: 製品名とフォルダ再選択だけを置く。選択フォルダ名、ローカル処理説明、状態badgeを重複表示しない。
-- **Layout**: すべての幅で一段、56pxを基準とし、再選択操作は44px以上を維持する。
+`‹` previous event (`過去の記録`), round 58 px `ink` play / pause button, clock (`0:15` in `clock`,
+`/ 1:00` in Num 500 13 px `ink-3`), scrubber, `⟲10` / `⟳10` (`10秒戻る` / `10秒進む`), rate pill
+(`1×`; a menu with 0.5× / 1× / 1.5× / 2×, accessible name `再生速度`), `›` next event (`新しい記録`).
+Scrubber: 6 px `fill` track, `drive` fill, 20 px white thumb with a 2 px `drive` ring; segment boundaries
+as 2 × 12 px ticks; Sentry detection as a `sentry` tick labelled `検知`; when playback started at the
+pre-roll, the start shows a hollow tick labelled `検知の15秒前`.
 
-### Event row
+### Welcome, scanning, errors
 
-- **Structure**: category、local timestamp、duration、segment count、`n/6 cameras`、欠損方向。
-- **States**: default、hover、focus-visible、selected、partial、no-poster。
-- **Copy**: 正常時は`6/6 カメラ`と肯定形で示す。欠損時だけ`5/6 カメラ・右リピーターなし`のように方向を示す。`0台のカメラがありません`は使わない。
-- **Thumbnail**: 実際のposterがある場合だけ表示する。posterがない健康なイベントに空の画像枠やエラーアイコンを置かない。
-- **Layout**: cardを並べず、一覧面の中をdividerとselected barで区切る。
-- **Atomic labels**: 時刻とカテゴリを`minmax(0, 1fr) max-content`へ分け、カテゴリのLucideアイコンと`セントリー`、`保存済み`、`最近の走行`は縮小・改行させない。時刻だけを必要時に省略し、完全値はアクセシブル名とtitleで保持する。
+- Welcome lives in the library panel while the stage shows the car with six empty windows (white 55 %,
+  camera names centred). Headline `TeslaCamの記録を見る`, paragraph, primary pill `フォルダを選ぶ`
+  (50 px, `drive`), two short notes at the panel bottom (Sentry pre-roll, composite export). Web adds the
+  browser note `MacのChromeまたはEdgeに対応しています。` under the button.
+- Scanning: the button becomes a progress block — `読み込み中`, the processed count in `numeral-l`
+  (`1,250件を確認しました`), an indeterminate 4 px bar. Cancelable.
+- Errors replace the paragraph with what happened and what to do, plus the retry button; never apologise.
 
-### Event navigator
+### Composite export dialog
 
-- **Structure**: source summary、category/date/query filters、Event listを一つの320px列へまとめる。
-- **Surface**: ライトトークンだけを使い、内部の一覧面が縦スクロールを所有する。
-- **Responsive**: 1024px以下では積層し、Event list disclosureで既存の開閉状態を維持する。
+Glass dialog, 22 px radius, max 520 px, centred on the stage over `scrim`. Shows the event, the full
+range, the layout (a thumbnail of the export frame), `1280 × 720`, the detected format, and
+`書き出しを開始`. After completion the actions pill shows `MP4を保存` / `WEBMを保存` on the web. The Mac
+asks for the destination with the native save panel when `書き出しを開始` is pressed, so its finished state
+shows `書き出し完了` with `Finderで表示` instead.
 
-### Event inspector
+### Export frame (1280 × 720, both platforms)
 
-- **Structure**: 場所、推定座標、検知、再生開始、欠損カメラを先に置き、カテゴリ、録画開始、長さ、セグメント、カメラ可用性を続ける。生の`reason`は閉じた`技術情報`へ退避する。`event.json`に`city`または`street`がある場合だけ`場所（Teslaの推定値）`を、`est_lat`と`est_lon`が揃う場合だけ`推定座標`を追加し、空のラベルや片方だけの座標は表示しない。
-- **Surface**: desktopは240pxのライト面。640–1024pxでは映像直下の開閉領域とする。639px以下では位置情報があるイベントだけ44px以上の`場所を確認`開閉領域を残し、開いた領域には場所、座標、閉じた`技術情報`だけを表示する。位置情報がないイベントでは非表示にして映像を優先する。
-- **Privacy**: SSD内の`event.json`に記録されたTeslaの推定値だけをブラウザ内で表示する。外部地図、逆ジオコーディング、位置情報API、外部リンクを追加せず、位置情報を外部へ送信しない。
+The saved video looks like the app. Rects are in `packages/contract/composite-layout.json`:
 
-### Vehicle spatial stage
+| Slot | Rect (x, y, w, h) |
+|---|---|
+| front | 464, 12, 352, 264 |
+| left_pillar | 56, 112, 352, 264 |
+| right_pillar | 872, 112, 352, 264 |
+| left_repeater | 56, 444, 352, 264 |
+| right_repeater | 872, 444, 352, 264 |
+| back | 480, 456, 320, 240 |
+| vehicle | 598, 285, 84, 168 |
 
-- **Structure**: `front`、`back`、`left-pillar`、`left-repeater`、`right-pillar`、`right-repeater`、`vehicle`のgrid areaを持つ。
-- **Persistence**: 見た目だけをCSS Gridで変え、canonical DOM order、6つのvideo、同期位置、Blob URLを維持する。映像は常に`object-fit: contain`とする。
-- **Surface**: CameraStageだけを暗いtheater tokenへ閉じ込め、glass、glow、gradient、shadowを使わない。
+- Background `floor`; every video `contain`-fit inside its slot; the fitted video rect gets 12 px rounded
+  corners (implemented as one static overlay image: `floor` everywhere except rounded holes, plus the
+  neutral wedges, the car and the labels). The overlay is rendered once per export.
+- Labels: pill at the fitted rect's bottom-left, inset 10, height 24, padding 10, UI 500 13 px,
+  `video-label-scrim`, `video-text`. Missing camera: `video-missing-a` fill, centred `記録なし` in
+  `video-muted`, label pill as usual.
+- 30 fps H.264 MP4 (WebM fallback on web only), segments concatenated in order, progress 0–1 over the
+  whole event.
 
-### Composite video export
-
-- **Structure**: TheaterContextの操作群に中立な`書き出す`操作を置き、表示切替と同じ一段へまとめる。開始前だけ確認ダイアログを開き、選択イベント、全区間、車両配置、1280 × 720、検出済み形式を確認できるようにする。
-- **Output**: 選択中イベントの全セグメントを一つのCanvasへ描画し、常に`front / left-pillar / vehicle / right-pillar / left-repeater / back / right-repeater`の車両配置で録画する。中央車両はライブ画面と同じ`/vehicle-top.png`をexport sessionごとに一度だけ読み込み、透過を保って`contain`描画する。各映像も`contain`で端まで残し、欠損方向にはカメラ名と`記録なし`を表示する。
-- **Token hand-off**: Canvasは開始時にrootの`--color-composite-*`と`--font-composite-label`を一度だけ解決してsessionへ渡し、フレーム描画中にCSSを読み直さない。保存映像の背景、欠損面、ラベルscrim、文字色、書体を通常UIと同じdesign systemで管理する。
-- **Format**: ブラウザがMediaRecorderで対応するMP4を優先し、未対応時はWebMへ切り替える。拡張子と形式は検出結果と一致させ、MP4対応を仮定した文言を表示しない。
-- **Progress**: 開始後は確認ダイアログを閉じ、同じ文脈面で経過、全長、progress、中止を表示する。完了後だけ保存操作を出し、中止した未完成Blobは保存させない。WebCodecsが利用できる場合は実時間を待たずにMP4へ書き出し、利用できない場合だけMediaRecorderによるリアルタイム書き出しへ切り替える。
-- **Privacy**: File、Blob、Canvas、MediaStreamはブラウザ内に閉じ、映像、ファイル名、時刻、位置情報をWorkerや外部へ送らない。通常再生のvideo、Object URL、同期runtimeとは別のexport sessionとして扱う。
-- **Responsive**: 1280pxでは表示切替と同じ一段の別群、768pxでは書き出しだけを右寄せ、375pxではイベント文脈の右側に44px以上の操作を置き、進捗中だけ専用行を確保する。ダイアログは狭幅で画面下端へ接続し、ページ全体に横スクロールを作らない。
-- **Accessibility**: 確認はnative `dialog`、見出しと説明の関連付け、Esc終了、triggerへのfocus復帰を持つ。進捗は`progress`とpolite status、開始・中止・保存は可視ラベル付き44px操作にする。
-
-### Playback deck and day timeline
-
-- **Structure**: desktop下端224pxにPlaybackControlsと選択日の24時間DayTimelineを連続配置する。rangeはイベント内位置、DayTimeline markerは別イベント選択を担当する。日付ヘッダーには記録が存在する前後の日、現在日、同日件数を置き、記録のない日を飛ばして移動する。
-- **Surface**: PlaybackControlsはライト面、24時間のrulerとmarker領域は暗いevidence面にする。
-- **Semantics**: 録画開始時刻をローカル文字列のまま24時間位置へ変換し、Sentryは有効な検知時刻の15秒前から自動再生する。SavedClipsとRecentClipsは0秒から自動再生する。日付移動は左の一覧の日付filterと同期し、移動先で最も新しい記録を選択して再生する。イベント移動は一覧位置ではなく、`過去の記録`と`新しい記録`の時間方向で表す。
-- **Dense history**: 44pxの操作面が重なる近接記録は一つのclusterへまとめ、`20:35–20:45・3件`のように時間幅と件数を示す。clusterを開くとタイムライン内に専用行を確保して時刻順の記録buttonを表示し、日付移動や再生操作を覆わず、色だけに依存せず時刻、カテゴリ、選択状態を読めるようにする。
-- **Responsive**: 1280pxでは24時間rulerとclusterを表示する。768pxではrulerを時刻順のイベント一覧へ縮退する。375pxでは前後の記録日と`履歴を開く`を常設し、展開した縦一覧からイベントを選べるようにして、ページ全体へ新しい横スクロールを作らない。
-- **Interaction**: marker、cluster、記録日の操作は44px以上とし、左右キーで同日の記録、Home/Endで同日の先頭と末尾へfocusを移す。日付移動と履歴展開は位置や高さをアニメーションせず、選択色と境界だけを`--motion-fast`で変える。
-
-### Theater context
-
-- **Structure**: category、local timestamp、event duration、segment count、camera availability、表示切替、書き出し。source folderは左レールへ一度だけ置く。
-- **States**: complete、partial、terminal fallback。
-- **Accessibility**: 色だけに依存せず、シアター単体のスクリーンショットでも現在の証拠を特定できる。
-- **Layout**: camera gridの直上に一段で常設し、mobileでもイベント一覧を読み戻さず確認できる。書き出し進捗だけは文脈情報と競合しない専用行へ展開する。
-
-### 6-camera theater
-
-- **Structure**: canonical orderの6タイル、共有timeline、transport、速度、前後イベント操作。
-- **Variants**: 2×3 grid、単一カメラexpanded、6方向すべてterminal時だけ代表映像。
-- **States**: loading、ready、missing、unavailable、corrupt、unsupportedを各タイルで独立表示する。
-- **Terminal fallback**: 代表映像を併記するときはカメラ名とterminal状態を80pxタイルの左右へ分け、互いに重ねず、6状態・代表映像・transportを別領域に保つ。
-- **Accessibility**: 各タイルは日本語カメラ名と拡大状態を持ち、transportは可視ラベル、44px操作、range label、キーボードshortcutsを備える。
-- **Motion**: 状態色とborderの`--motion-fast`のみ。expanded切替で位置やサイズをアニメーションしない。
-- **Layout**: desktopは2×3、tablet/mobileは縦方向へ再配置し、375pxで横overflowを生じさせない。各映像は録画された全範囲をクロップせず、シアター面の余白を許容して表示する。
-- **Persistence**: transportはdesktopでシアター下端にsticky、tablet/mobileではviewport下端に固定し、映像をスクロール中も操作可能にする。
-
-### Camera switcher
-
-- **Structure**: canonical orderの6方向ラベルと現在選択状態。
-- **States**: mobileで常時表示し、選択中は`aria-pressed`とaccent境界を併用する。desktop/tabletでは6画面シアターを優先して非表示にする。
-- **Accessibility**: 「表示するカメラ」というgroup名、方向ごとの可視ラベル、44px以上の操作面、明確なfocus ringを持つ。
-- **Motion**: 色とborderだけを`--motion-fast`で遷移し、reduced motionでは0msにする。
-- **Layout**: 375pxでは一行横スクロールとし、ページ全体の横overflowへ波及させない。
-
-### Event list disclosure
-
-- **Structure**: 件数と開閉buttonをイベント見出しへまとめる。
-- **States**: 1024px以下で表示し、開閉を`aria-expanded`と矢印方向で示す。desktopではイベント一覧を常時表示する。
-- **Accessibility**: `aria-controls`で一覧と関連付け、44px以上の操作面とfocus ringを持つ。
-- **Motion**: 状態理解に不要な開閉アニメーションは行わない。
-
-### Compatibility status
-
-- `showDirectoryPicker`がない環境では、互換モードでOSのフォルダ選択を使うことをwelcome上へ常時表示する。
-- primary actionの直接操作からdirectory inputを開き、ブラウザのuser activationを保持する。
-- 未対応を失敗と表現せず、Chrome/Edgeの標準選択とdirectory inputの違いを正確に案内する。
-
-### Playback transport
-
-- **Structure**: 前へ、-10秒、再生/一時停止、+10秒、次へ、elapsed/duration、range、速度選択。
-- **States**: default、hover、active、focus-visible、disabled、recoverable play error。
-- **Accessibility**: iconと日本語ラベルを併用し、検知位置はrange上の非操作markerとして名前を持つ。
-- **Mobile layout**: rangeを一段、再生と前後移動を一段にまとめ、defaultで`--transport-mobile-max`以下にする。速度はラベル付きselectで保持し、映像を45dvb以上確保する。
-
-## 6. Motion & Interaction
-
-### Timing
+## 7. Motion
 
 | Token | Duration | Easing | Usage |
 |---|---:|---|---|
-| `--motion-fast` | `160ms` | `cubic-bezier(0.2, 0, 0, 1)` | hover、active、focusの状態遷移 |
+| `motion-fast` | 160 ms | `cubic-bezier(.2, 0, 0, 1)` | Hover, pressed, focus, selection colour |
+| `motion-sheet` | 320 ms | `cubic-bezier(.22, .8, .24, 1)` | Expanding a camera, opening the details popover, phone push |
 
-### Rules
+- One orchestrated moment: when a folder finishes loading, the six empty windows fill with video in mount
+  order (front first), 40 ms apart. Nothing else animates on its own.
+- Motion answers actions only. `prefers-reduced-motion` (web) / "Reduce motion" (macOS) sets all durations
+  to 0.
 
-- 状態理解に必要な色、border-color、opacityだけを160msで遷移する。
-- レイアウト、位置、サイズをアニメーションしない。
-- `prefers-reduced-motion: reduce`ではtransition durationを0msにする。
-- hoverだけに意味を置かず、focus-visibleとactiveでも同等の状態を伝える。
+## 8. Copy
 
-## 7. Depth & Surface
+- Japanese, plain verbs, sentence-final punctuation only in paragraphs.
+- Actions keep one name through the flow: `書き出す` → `書き出し中` → `書き出し完了` → `MP4を保存` (web) /
+  `Finderで表示` (Mac).
+- Healthy states are stated positively (`6カメラ`); faults name the direction (`右リピーターの記録がありません`).
+- No `·`-joined meta strings, no `0台のカメラがありません`, no English labels except the wordmark.
 
-戦略はtonal-shiftを主とし、操作境界とfault stateにだけ1px borderを併用する。box-shadow、blur、glow、gradientは使わない。Canvas、Rail、Surface、Surface raisedの小さな差で作業面を分け、Camera gridの内側だけをTheater系トークンへ切り替える。文脈、カメラ切り替え、再生操作はライト面に残す。6pxは操作、8pxはシアター外枠に限定する。通常のイベント行、ラベル、メタデータをrounded outlineで囲わない。
+## 9. Accessibility
 
-## 8. Accessibility Constraints & Accepted Debt
+- WCAG 2.2 AA: 4.5:1 text, 3:1 large text and control boundaries (every pair in §2 is checked by a test
+  over `design-tokens.json`).
+- Everything keyboard reachable; visible focus ring; segmented controls are radio groups; the scrubber is
+  a slider with `aria-valuetext` like `0分15秒 / 1分`.
+- Category, warnings and states always pair colour with icon + word.
+- Keyboard (ignored while focus is in a text field or a button): `Space` play/pause, `←`/`→` −10 s / +10 s,
+  `1`–`6` expand that camera (front, back, left pillar, left repeater, right pillar, right repeater; the same
+  key again returns), `Esc` back to the vehicle layout, `[`/`]` previous / next event (new).
+- Reduced motion and forced colours (web: selected items get a 3 px `Highlight` outline) are respected.
 
-### Constraints
+## 10. Platform mapping
 
-- WCAG 2.2 AAを目標とし、通常文字4.5:1、大文字または24px以上の文字とUI境界3:1を下限とする。
-- 全操作をキーボードで到達可能にし、focus-visibleを背景から明確に識別できる二重ringで示す。
-- タップ領域は44×44px以上。色に加えて文言とアイコンでカテゴリ、警告、状態を伝える。
-- 200%拡大、375px幅、日本語の長いラベル、reduced motion、Windows high contrastを考慮する。
-- forced colorsでは選択中の表示切り替えと日マーカーを3px Highlight outlineで示す。reduced motionでは全transitionを0msにし、stage、カメラ位置、timeline位置をアニメーションしない。
-- 走査進捗と再生エラーは後続実装でlive regionへ通知する。
-
-### Accepted Debt
-
-| Item | Location | Why accepted | Owner / Exit |
-|---|---|---|---|
-| VoiceOver実機確認 | viewer shell | 自動検証とキーボード確認までを継続する | 公開後の実SSD確認時に読み順と操作を確認 |
+| Concept | Web (`apps/web`) | Mac (`apps/mac`) |
+|---|---|---|
+| Tokens | CSS custom properties `--<token>` in `styles/tokens.css`, verified against `design-tokens.json` | `Theme` struct built from `design-tokens.json` (`include_str!`), verified by a unit test |
+| Floating glass | `background: glass; backdrop-filter` | `glass` colour; no blur (GPUI) |
+| Barlow | `@font-face` importing `packages/assets/fonts/` (bundled by Vite) | Registered at startup from `packages/assets/fonts/` (`include_bytes!`) |
+| Car image | `/vehicle-top.png` | `apps/web/public/vehicle-top.png` via `include_bytes!` (same file) |
+| Wedges | SVG polygons with linear gradients, recomputed on resize | `canvas()` paint paths with gradient fills |
+| Video | `<video>` per camera | `surface()` per camera from AVPlayerItemVideoOutput |

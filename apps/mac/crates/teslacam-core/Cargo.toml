@@ -1,0 +1,14 @@
+[package]
+name = "teslacam-core"
+description = "Platform-independent TeslaCam domain rules, pure state machines and design tokens"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+
+[lints]
+workspace = true

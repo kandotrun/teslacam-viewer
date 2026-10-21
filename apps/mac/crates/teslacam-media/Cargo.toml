@@ -1,0 +1,32 @@
+[package]
+name = "teslacam-media"
+description = "macOS media layer: synchronized six-camera playback and composite export on AVFoundation"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+teslacam-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+objc2.workspace = true
+block2.workspace = true
+objc2-foundation = { workspace = true, features = ["std", "NSString", "NSURL", "NSArray", "NSDictionary", "NSValue", "NSError", "NSObject", "NSAttributedString", "block2"] }
+objc2-core-foundation = { workspace = true, features = ["std", "CFCGTypes", "CFRunLoop", "CFDate", "CFString", "CFDictionary", "CFNumber", "CFArray", "CFAttributedString"] }
+objc2-core-media = { workspace = true, features = ["std", "CMTime", "CMSync", "CMTimeRange", "CMBase", "CMSampleBuffer", "CMFormatDescription", "objc2-core-video"] }
+objc2-core-video = { workspace = true, features = ["std", "CVBase", "CVBuffer", "CVImageBuffer", "CVPixelBuffer", "CVReturn", "CVPixelBufferIOSurface", "objc2-core-graphics", "objc2-io-surface"] }
+objc2-core-graphics = { workspace = true, features = ["std", "CGImage", "CGColor", "CGColorSpace", "CGContext", "CGDataProvider", "CGBitmapContext", "CGGradient", "CGPath", "CGAffineTransform", "objc2"] }
+objc2-core-text = { workspace = true, features = ["std", "CTFont", "CTLine", "CTStringAttributes", "objc2-core-graphics"] }
+objc2-quartz-core = { workspace = true, features = ["std", "CALayer", "CAAnimation", "CAMediaTiming", "CATransaction", "objc2-core-foundation", "objc2-core-graphics", "CABase"] }
+objc2-av-foundation = { workspace = true, features = ["block2", "objc2-core-foundation", "objc2-core-graphics", "objc2-core-media", "objc2-core-video", "objc2-quartz-core"] }
+objc2-io-surface = { workspace = true, features = ["std", "IOSurfaceRef", "objc2-core-foundation"] }
+objc2-app-kit = { workspace = true, features = ["std", "NSFont", "NSFontDescriptor", "objc2-core-foundation", "objc2-core-graphics"] }
+
+[[test]]
+name = "media_main_thread"
+harness = false
+
+[lints]
+workspace = true

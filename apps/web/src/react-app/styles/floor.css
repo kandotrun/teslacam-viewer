@@ -1,0 +1,100 @@
+/* The garage floor: the stage fills the floor; library, top pills and transport float above it. */
+.floor {
+  --library-w: var(--size-library-width);
+  --stage-left: calc(var(--library-w) + var(--gutter) * 2);
+  --stage-top: calc(var(--gutter) + var(--size-topbar-height) + 14px);
+  --transport-room: 124px;
+  position: relative;
+  height: 100dvh;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 75% at 62% 46%, var(--floor-light) 0%, var(--floor) 62%);
+}
+
+.floor[data-library-hidden="true"] {
+  --stage-left: var(--gutter);
+}
+
+.library {
+  position: absolute;
+  z-index: 3;
+  top: var(--gutter);
+  bottom: var(--gutter);
+  left: var(--gutter);
+  width: var(--library-w);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid color-mix(in srgb, var(--ink) 5%, transparent);
+  border-radius: var(--radius-panel);
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: var(--shadow-float);
+  overflow: hidden;
+}
+
+.library[hidden] {
+  display: none;
+}
+
+.topbar {
+  position: absolute;
+  z-index: 4;
+  top: var(--gutter);
+  left: var(--stage-left);
+  right: var(--gutter);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.stage {
+  position: absolute;
+  z-index: 1;
+  top: var(--stage-top);
+  bottom: var(--transport-room);
+  left: var(--stage-left);
+  right: var(--gutter);
+}
+
+.stage[data-message="true"] {
+  bottom: calc(var(--transport-room) + 40px);
+}
+
+.floor[data-phase="welcome"] .stage {
+  top: var(--gutter);
+  bottom: var(--gutter);
+}
+
+.floor[data-phase="ready"][data-session="false"] .stage {
+  bottom: var(--gutter);
+}
+
+.transport {
+  position: absolute;
+  z-index: 4;
+  bottom: var(--gutter);
+  left: calc(var(--stage-left) + 24px);
+  right: calc(var(--gutter) + 24px);
+  max-width: var(--size-transport-max-width);
+  margin: 0 auto;
+}
+
+.placeholder-pill {
+  display: grid;
+  height: auto;
+  min-height: var(--size-topbar-height);
+  gap: 2px;
+  padding: 10px 22px;
+  border-radius: var(--radius-panel);
+}
+
+.placeholder-pill h1 {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.placeholder-pill p {
+  font: var(--type-small);
+  color: var(--ink-2);
+}

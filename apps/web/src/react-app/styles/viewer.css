@@ -1,0 +1,341 @@
+/* Top row: event pill (left) and actions pill (right) */
+.event-pill-group {
+  container: event-pill-group / inline-size;
+  position: relative;
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.event-pill {
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 18px 0 8px;
+  text-align: left;
+  transition: box-shadow var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.event-pill:hover {
+  box-shadow: 0 0 0 2px var(--ink), var(--shadow-float);
+}
+
+.event-pill__when {
+  flex: none;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.event-pill__when .num {
+  font: var(--type-numeral-m);
+}
+
+.event-pill__where,
+.event-pill__detect {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  padding-left: 14px;
+  font-size: 13px;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.event-pill__where::before,
+.event-pill__detect::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 1px;
+  height: 18px;
+  margin-top: -9px;
+  background: var(--line);
+}
+
+.event-pill__where {
+  overflow: hidden;
+  flex-shrink: 1;
+}
+
+.event-pill__where svg {
+  flex: none;
+}
+
+/* A flex item's text cannot take an ellipsis, so the place name sits in its own block. */
+.event-pill__where-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-pill__detect {
+  flex: none;
+}
+
+.event-pill__detect .num {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--sentry-ink);
+}
+
+.back-button {
+  flex: none;
+  gap: 6px;
+  padding: 0 14px 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.pill--icon {
+  flex: none;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  padding: 0;
+  color: var(--ink-2);
+}
+
+/* Details popover */
+.details {
+  left: 0;
+  right: auto;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 120px);
+  padding: 16px 18px;
+  overflow-y: auto;
+  border-radius: var(--radius-dialog);
+}
+
+.details__list {
+  display: grid;
+  gap: 10px;
+}
+
+.details__row {
+  display: grid;
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: 12px;
+  font: var(--type-ui);
+}
+
+.details__row dt {
+  font: var(--type-small);
+  color: var(--ink-3);
+}
+
+.details__row dd {
+  overflow-wrap: anywhere;
+}
+
+.details__row--wide {
+  grid-template-columns: 1fr;
+}
+
+.details__warning {
+  display: block;
+  font-size: 12px;
+  color: var(--warning);
+}
+
+.details__technical {
+  margin-top: 2px;
+  font: var(--type-small);
+  color: var(--ink-2);
+}
+
+.details__technical summary {
+  width: fit-content;
+  min-height: 28px;
+  cursor: pointer;
+}
+
+.details__technical code {
+  display: block;
+  margin-top: 4px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--fill);
+  font: inherit;
+  overflow-wrap: anywhere;
+}
+
+/* Actions pill: view switch and export */
+.actions-pill {
+  position: relative;
+  flex: none;
+}
+
+.action-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: var(--hit);
+  height: var(--hit);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font: var(--type-ui);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.action-button:hover {
+  background: var(--fill);
+}
+
+.action-button[aria-disabled="true"] {
+  color: var(--ink-3);
+}
+
+.action-button--progress {
+  color: var(--drive);
+}
+
+.progress-ring circle {
+  fill: none;
+  stroke-width: 2.5;
+  stroke: var(--line);
+}
+
+.progress-ring circle + circle {
+  stroke: var(--drive);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+}
+
+.export-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.export-control__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 6px 0 10px;
+  color: var(--saved-ink);
+  font: var(--type-ui);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.export-popover {
+  display: grid;
+  gap: 8px;
+  width: max-content;
+  max-width: min(300px, calc(100vw - 32px));
+}
+
+.export-popover progress {
+  width: 220px;
+  max-width: 100%;
+  height: 6px;
+  accent-color: var(--drive);
+}
+
+.export-popover .text-button {
+  justify-self: start;
+  margin-left: -14px;
+}
+
+/* Export dialog */
+.export-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  padding: 20px 22px 18px;
+  border: 0;
+  border-radius: var(--radius-dialog);
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: var(--shadow-float);
+  color: var(--ink);
+  overflow-y: auto;
+}
+
+/* DESIGN.md §6: centred on the stage, not on the window behind the library. */
+@media (min-width: 1101px) {
+  .export-dialog {
+    inset-inline: var(--stage-left) var(--gutter);
+  }
+}
+
+.export-dialog::backdrop {
+  background: var(--scrim);
+}
+
+.export-dialog__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -6px -8px 8px 0;
+}
+
+.export-dialog__head h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.export-dialog__text {
+  font: var(--type-body);
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.export-preview {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.export-preview__floor {
+  fill: var(--floor);
+}
+
+.export-preview__slot {
+  fill: var(--video);
+}
+
+.export-dialog__facts {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.export-dialog__facts div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 12px;
+  font: var(--type-ui);
+}
+
+.export-dialog__facts dt {
+  color: var(--ink-3);
+}
+
+.export-dialog__notice {
+  margin-top: 12px;
+  font: var(--type-small);
+  color: var(--warning);
+}
+
+.export-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}

@@ -1,0 +1,724 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "local-timestamp",
+  "source": [
+    "apps/web/src/react-app/local-timestamp.ts"
+  ],
+  "cases": [
+    {
+      "name": "filename end of day",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_23-59-59"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 23,
+        "millisecond": 0,
+        "minute": 59,
+        "month": 8,
+        "ordinalSeconds": 63923212799,
+        "second": 59,
+        "secondsOfDay": 86399,
+        "timeLabel": "23:59:59",
+        "year": 2026
+      }
+    },
+    {
+      "name": "filename start of day",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_00-00-00"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 0,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923126400,
+        "second": 0,
+        "secondsOfDay": 0,
+        "timeLabel": "00:00:00",
+        "year": 2026
+      }
+    },
+    {
+      "name": "filename epoch",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "0001-01-01_00-00-00"
+      },
+      "expected": {
+        "dateKey": "0001-01-01",
+        "day": 1,
+        "hour": 0,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 1,
+        "ordinalSeconds": 0,
+        "second": 0,
+        "secondsOfDay": 0,
+        "timeLabel": "00:00:00",
+        "year": 1
+      }
+    },
+    {
+      "name": "filename year 0000",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "0000-01-01_00-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename year 9999",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "9999-12-31_23-59-59"
+      },
+      "expected": {
+        "dateKey": "9999-12-31",
+        "day": 31,
+        "hour": 23,
+        "millisecond": 0,
+        "minute": 59,
+        "month": 12,
+        "ordinalSeconds": 315537897599,
+        "second": 59,
+        "secondsOfDay": 86399,
+        "timeLabel": "23:59:59",
+        "year": 9999
+      }
+    },
+    {
+      "name": "filename leap day 2028",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2028-02-29_12-00-00"
+      },
+      "expected": {
+        "dateKey": "2028-02-29",
+        "day": 29,
+        "hour": 12,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 2,
+        "ordinalSeconds": 63971035200,
+        "second": 0,
+        "secondsOfDay": 43200,
+        "timeLabel": "12:00:00",
+        "year": 2028
+      }
+    },
+    {
+      "name": "filename leap day 2000",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2000-02-29_12-00-00"
+      },
+      "expected": {
+        "dateKey": "2000-02-29",
+        "day": 29,
+        "hour": 12,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 2,
+        "ordinalSeconds": 63087422400,
+        "second": 0,
+        "secondsOfDay": 43200,
+        "timeLabel": "12:00:00",
+        "year": 2000
+      }
+    },
+    {
+      "name": "filename non-leap 2026",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-02-29_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename non-leap 1900",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "1900-02-29_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename March after leap day",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2028-03-01_00-00-00"
+      },
+      "expected": {
+        "dateKey": "2028-03-01",
+        "day": 1,
+        "hour": 0,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 3,
+        "ordinalSeconds": 63971078400,
+        "second": 0,
+        "secondsOfDay": 0,
+        "timeLabel": "00:00:00",
+        "year": 2028
+      }
+    },
+    {
+      "name": "filename December 31",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-12-31_23-59-59"
+      },
+      "expected": {
+        "dateKey": "2026-12-31",
+        "day": 31,
+        "hour": 23,
+        "millisecond": 0,
+        "minute": 59,
+        "month": 12,
+        "ordinalSeconds": 63934358399,
+        "second": 59,
+        "secondsOfDay": 86399,
+        "timeLabel": "23:59:59",
+        "year": 2026
+      }
+    },
+    {
+      "name": "filename April 31",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-04-31_00-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename month 00",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-00-10_00-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename month 13",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-13-10_00-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename day 00",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-00_00-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename hour 24",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_24-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename minute 60",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_12-60-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename second 60",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_12-00-60"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename metadata format",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename trailing newline",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_12-00-30\n"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename short year",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "226-08-24_12-00-30"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename full-width digits",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": "２０２６-08-24_12-00-30"
+      },
+      "expected": null
+    },
+    {
+      "name": "filename empty",
+      "fn": "parseFilenameLocalTimestamp",
+      "input": {
+        "value": ""
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata plain",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 12,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923169630,
+        "second": 30,
+        "secondsOfDay": 43230,
+        "timeLabel": "12:00:30",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata utc suffix",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30Z"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 12,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923169630,
+        "second": 30,
+        "secondsOfDay": 43230,
+        "timeLabel": "12:00:30",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata milliseconds",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30.250Z"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 12,
+        "millisecond": 250,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923169630,
+        "second": 30,
+        "secondsOfDay": 43230,
+        "timeLabel": "12:00:30",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata one fraction digit",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30.2"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 12,
+        "millisecond": 200,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923169630,
+        "second": 30,
+        "secondsOfDay": 43230,
+        "timeLabel": "12:00:30",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata two fraction digits",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30.25"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 12,
+        "millisecond": 250,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923169630,
+        "second": 30,
+        "secondsOfDay": 43230,
+        "timeLabel": "12:00:30",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata three fraction digits",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:05.900"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 12,
+        "millisecond": 900,
+        "minute": 0,
+        "month": 8,
+        "ordinalSeconds": 63923169605,
+        "second": 5,
+        "secondsOfDay": 43205,
+        "timeLabel": "12:00:05",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata fraction 999",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T23:59:59.999Z"
+      },
+      "expected": {
+        "dateKey": "2026-08-24",
+        "day": 24,
+        "hour": 23,
+        "millisecond": 999,
+        "minute": 59,
+        "month": 8,
+        "ordinalSeconds": 63923212799,
+        "second": 59,
+        "secondsOfDay": 86399,
+        "timeLabel": "23:59:59",
+        "year": 2026
+      }
+    },
+    {
+      "name": "metadata four fraction digits",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30.2500"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata empty fraction",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30."
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata comma fraction",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30,250"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata offset +09:00",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30+09:00"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata lower-case z",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30z"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata lower-case t",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24t12:00:30"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata space separator",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24 12:00:30"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata filename format",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24_12-00-30"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata missing seconds",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata invalid date",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-02-30T12:00:30"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata hour 24",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T24:00:00"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata leap day",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2028-02-29T00:00:00Z"
+      },
+      "expected": {
+        "dateKey": "2028-02-29",
+        "day": 29,
+        "hour": 0,
+        "millisecond": 0,
+        "minute": 0,
+        "month": 2,
+        "ordinalSeconds": 63970992000,
+        "second": 0,
+        "secondsOfDay": 0,
+        "timeLabel": "00:00:00",
+        "year": 2028
+      }
+    },
+    {
+      "name": "metadata double Z",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "2026-08-24T12:00:30ZZ"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata invalid",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": "invalid"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata empty",
+      "fn": "parseMetadataLocalTimestamp",
+      "input": {
+        "value": ""
+      },
+      "expected": null
+    },
+    {
+      "name": "offset year boundary",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 30,
+        "value": "2026-12-31_23-59-45"
+      },
+      "expected": "2027-01-01 00:00:15"
+    },
+    {
+      "name": "offset into leap day",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 1,
+        "value": "2028-02-28_23-59-59"
+      },
+      "expected": "2028-02-29 00:00:00"
+    },
+    {
+      "name": "offset negative into previous year",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": -20,
+        "value": "2026-01-01_00-00-10"
+      },
+      "expected": "2025-12-31 23:59:50"
+    },
+    {
+      "name": "offset zero",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 0,
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "offset sentry pre-roll",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 5,
+        "value": "2026-08-24_12-01-00"
+      },
+      "expected": "2026-08-24 12:01:05"
+    },
+    {
+      "name": "offset one day",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 86400,
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": "2026-08-25 12:00:00"
+    },
+    {
+      "name": "offset leap year length",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 31622400,
+        "value": "2028-01-01_00-00-00"
+      },
+      "expected": "2029-01-01 00:00:00"
+    },
+    {
+      "name": "offset century non-leap",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 1,
+        "value": "2100-02-28_23-59-59"
+      },
+      "expected": "2100-03-01 00:00:00"
+    },
+    {
+      "name": "offset to epoch",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": -10,
+        "value": "0001-01-01_00-00-10"
+      },
+      "expected": "0001-01-01 00:00:00"
+    },
+    {
+      "name": "offset before epoch",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": -1,
+        "value": "0001-01-01_00-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset past year 9999",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 1,
+        "value": "9999-12-31_23-59-59"
+      },
+      "expected": "10000-01-01 00:00:00"
+    },
+    {
+      "name": "offset fractional offset",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 1.5,
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset NaN offset",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": "NaN",
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset infinite offset",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": "Infinity",
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset negative infinite offset",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": "-Infinity",
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset unsafe integer result",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 9007199254740992,
+        "value": "2026-08-24_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset invalid timestamp",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 30,
+        "value": "2026-02-29_12-00-00"
+      },
+      "expected": null
+    },
+    {
+      "name": "offset metadata timestamp",
+      "fn": "formatFilenameTimestampAtOffset",
+      "input": {
+        "offsetSeconds": 30,
+        "value": "2026-08-24T12:00:00"
+      },
+      "expected": null
+    }
+  ]
+}

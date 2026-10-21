@@ -1,0 +1,863 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "event-metadata",
+  "source": [
+    "apps/web/src/teslacam/event-metadata.ts",
+    "apps/web/src/teslacam/scan-limits.ts"
+  ],
+  "cases": [
+    {
+      "name": "parse all known fields",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "camera": "left_repeater",
+          "city": "Sample city",
+          "est_lat": "35.0000",
+          "est_lon": "139.0000",
+          "reason": "sentry_aware_object_detection",
+          "street": "Sample street",
+          "timestamp": "2026-08-21_14-30-45"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "camera": "left_repeater",
+          "city": "Sample city",
+          "est_lat": "35.0000",
+          "est_lon": "139.0000",
+          "reason": "sentry_aware_object_detection",
+          "street": "Sample street",
+          "timestamp": "2026-08-21_14-30-45"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse timestamp only",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse unknown fields dropped",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "nested": {
+            "deep": [
+              1,
+              2
+            ]
+          },
+          "timestamp": "2026-08-20T20:35:30",
+          "untrusted_extra": "discarded"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse empty strings kept",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": "",
+          "reason": "",
+          "timestamp": ""
+        }
+      },
+      "expected": {
+        "metadata": {
+          "city": "",
+          "reason": "",
+          "timestamp": ""
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse null",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": null
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse array",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": []
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse array with object",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": [
+          {
+            "timestamp": "2026-08-20T20:35:30"
+          }
+        ]
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse number",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": 42
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse string",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": "timestamp"
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse boolean",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": true
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse empty object",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {}
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse numeric timestamp",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "timestamp": 42
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse null timestamp",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "timestamp": null
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse numeric reason",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "reason": 42,
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse null city",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": null,
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse object street",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "street": {
+            "name": "x"
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse boolean camera",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "camera": false,
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "parse unknown field over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "notes": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse timestamp at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "timestamp": {
+            "$repeat": "x",
+            "count": 2048
+          }
+        }
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse timestamp over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "timestamp": {
+            "$repeat": "x",
+            "count": 2049
+          }
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse city at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": {
+            "$repeat": "x",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "city": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse city over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse street at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "street": {
+            "$repeat": "x",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "street": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse street over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "street": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse est_lat at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "est_lat": {
+            "$repeat": "x",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "est_lat": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse est_lat over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "est_lat": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse est_lon at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "est_lon": {
+            "$repeat": "x",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "est_lon": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse est_lon over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "est_lon": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse reason at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "reason": {
+            "$repeat": "x",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "reason": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse reason over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "reason": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse camera at the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "camera": {
+            "$repeat": "x",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "camera": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse camera over the string limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "camera": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse surrogate pairs at the limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": {
+            "$repeat": "😀",
+            "count": 1024
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "city": "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse surrogate pairs over the limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": {
+            "$repeat": "😀",
+            "count": 1025
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse CJK at the limit",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "street": {
+            "$repeat": "渋",
+            "count": 2048
+          },
+          "timestamp": "2026-08-20T20:35:30"
+        }
+      },
+      "expected": {
+        "metadata": {
+          "street": "渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋渋",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "parse too long field wins over invalid timestamp",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": {
+            "$repeat": "x",
+            "count": 2049
+          },
+          "timestamp": 42
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse too long field wins over missing timestamp",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "city": {
+            "$repeat": "x",
+            "count": 2049
+          }
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "parse too long timestamp with invalid reason",
+      "fn": "parseEventMetadata",
+      "input": {
+        "json": {
+          "reason": 42,
+          "timestamp": {
+            "$repeat": "x",
+            "count": 2049
+          }
+        }
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "read valid json",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\"timestamp\":\"2026-08-20T20:35:30\",\"reason\":\"manual_save\"}"
+      },
+      "expected": {
+        "metadata": {
+          "reason": "manual_save",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read e2e sentry fixture",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\n  \"timestamp\": \"2026-08-20T20:35:30\",\n  \"reason\": \"sentry_aware_object_detection\",\n  \"city\": \"SYNTHETIC_PRIVATE_CITY\",\n  \"street\": \"SYNTHETIC_PRIVATE_STREET\",\n  \"est_lat\": \"SYNTHETIC_PRIVATE_LAT\",\n  \"est_lon\": \"SYNTHETIC_PRIVATE_LON\"\n}"
+      },
+      "expected": {
+        "metadata": {
+          "city": "SYNTHETIC_PRIVATE_CITY",
+          "est_lat": "SYNTHETIC_PRIVATE_LAT",
+          "est_lon": "SYNTHETIC_PRIVATE_LON",
+          "reason": "sentry_aware_object_detection",
+          "street": "SYNTHETIC_PRIVATE_STREET",
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read byte order mark",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "﻿{\"timestamp\":\"2026-08-20T20:35:30\"}"
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read two byte order marks",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "﻿﻿{\"timestamp\":\"2026-08-20T20:35:30\"}"
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read duplicate keys last wins",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\"timestamp\": \"first\", \"timestamp\": \"2026-08-20T20:35:30\"}"
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read surrounding whitespace",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": " \n\t{\"timestamp\": \"2026-08-20T20:35:30\"}\r\n "
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read escaped unicode",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\"timestamp\": \"2026\", \"city\": \"\\u6e0b\\u8c37\"}"
+      },
+      "expected": {
+        "metadata": {
+          "city": "渋谷",
+          "timestamp": "2026"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read invalid json",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\"timestamp\": "
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read trailing comma",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\"timestamp\": \"2026-08-20T20:35:30\",}"
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read empty file",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": ""
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read json null",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "null"
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read json array",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "[]"
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read invalid UTF-8 inside a string",
+      "fn": "readEventMetadata",
+      "input": {
+        "base64": "eyJ0aW1lc3RhbXAiOiAiYeKCYiIsICJjaXR5IjogIvCfmP8ifQ=="
+      },
+      "expected": {
+        "metadata": {
+          "city": "��",
+          "timestamp": "a�b"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read invalid UTF-8 outside strings",
+      "fn": "readEventMetadata",
+      "input": {
+        "base64": "/3sidGltZXN0YW1wIjogIjIwMjYtMDgtMjBUMjA6MzU6MzAifQ=="
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    },
+    {
+      "name": "read field over the limit",
+      "fn": "readEventMetadata",
+      "input": {
+        "text": "{\"timestamp\":\"2026-08-20T20:35:30\",\"city\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"
+      },
+      "expected": {
+        "kind": "metadata-string",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "read declared size over one MiB",
+      "fn": "readEventMetadata",
+      "input": {
+        "declaredSize": 1048577,
+        "text": "{\"timestamp\":\"2026-08-20T20:35:30\"}"
+      },
+      "expected": {
+        "kind": "metadata-size",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "read declared size at one MiB",
+      "fn": "readEventMetadata",
+      "input": {
+        "declaredSize": 1048576,
+        "text": "{\"timestamp\":\"2026-08-20T20:35:30\"}"
+      },
+      "expected": {
+        "metadata": {
+          "timestamp": "2026-08-20T20:35:30"
+        },
+        "result": "ok"
+      }
+    },
+    {
+      "name": "read actual bytes over one MiB",
+      "fn": "readEventMetadata",
+      "input": {
+        "declaredSize": 1,
+        "text": {
+          "$repeat": " ",
+          "count": 1048577
+        }
+      },
+      "expected": {
+        "kind": "metadata-size",
+        "result": "scan-limit"
+      }
+    },
+    {
+      "name": "read actual bytes at one MiB",
+      "fn": "readEventMetadata",
+      "input": {
+        "declaredSize": 1,
+        "text": {
+          "$repeat": " ",
+          "count": 1048576
+        }
+      },
+      "expected": {
+        "result": "invalid"
+      }
+    }
+  ]
+}

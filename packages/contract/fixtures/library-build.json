@@ -1,0 +1,2649 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "library-build",
+  "source": [
+    "apps/web/src/teslacam/build-library.ts",
+    "apps/web/src/teslacam/event-metadata.ts",
+    "apps/web/src/teslacam/filename.ts",
+    "apps/web/src/teslacam/scan-limits.ts"
+  ],
+  "cases": [
+    {
+      "name": "saved clips grouped by directory and timestamp",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/2026-08-21_14-31-45-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/thumb.png"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/event.json",
+            "text": "{\"timestamp\":\"2026-08-21_14-30-45\",\"reason\":\"manual_save\",\"ignored\":\"untrusted\"}"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-b/2026-08-21_15-30-45-left_pillar.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_15-30-45-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "left_pillar": "TeslaCam/SavedClips/saved-b/2026-08-21_15-30-45-left_pillar.mp4"
+                },
+                "timestamp": "2026-08-21_15-30-45"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_15-30-45"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_14-30-45-2",
+            "metadata": {
+              "reason": "manual_save",
+              "timestamp": "2026-08-21_14-30-45"
+            },
+            "representative": "TeslaCam/SavedClips/saved-a/event.mp4",
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-back.mp4",
+                  "front": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-front.mp4"
+                },
+                "timestamp": "2026-08-21_14-30-45"
+              },
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/saved-a/2026-08-21_14-31-45-front.mp4"
+                },
+                "timestamp": "2026-08-21_14-31-45"
+              }
+            ],
+            "thumbnail": "TeslaCam/SavedClips/saved-a/thumb.png",
+            "timestamp": "2026-08-21_14-30-45"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_15-30-45-1",
+            "saved-2026-08-21_14-30-45-2"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 7,
+            "total": 7
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "six cameras in one segment",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-right_repeater.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_16-30-45-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-back.mp4",
+                  "front": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/saved-six/2026-08-21_16-30-45-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-21_16-30-45"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_16-30-45"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_16-30-45-1"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 6,
+            "total": 6
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "sentry directories with equal timestamps",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/sentry-a/2026-08-21_14-30-45-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/sentry-b/2026-08-21_14-30-45-right_repeater.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_14-30-45-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "right_repeater": "TeslaCam/SentryClips/sentry-a/2026-08-21_14-30-45-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-21_14-30-45"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_14-30-45"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_14-30-45-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "right_repeater": "TeslaCam/SentryClips/sentry-b/2026-08-21_14-30-45-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-21_14-30-45"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_14-30-45"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": [
+            "sentry-2026-08-21_14-30-45-1",
+            "sentry-2026-08-21_14-30-45-2"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "excluded files keep sanitized counts",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-front.mp4",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-cabin.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/saved-a/unrecognized.bin"
+          },
+          {
+            "relativePath": "TeslaCam/EncryptedClips/2026-08-21_14-30-45-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 4,
+            "total": 4
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "empty-media-file"
+          },
+          {
+            "count": 2,
+            "kind": "unknown-file"
+          },
+          {
+            "count": 1,
+            "kind": "encrypted-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "recent sessions across midnight",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_23-59-30-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-22_00-00-50-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-22_00-02-21-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-22_00-02-21-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-22_00-02-21-front.mp4"
+                },
+                "timestamp": "2026-08-22_00-02-21"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-22_00-02-21"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_23-59-30-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_23-59-30-front.mp4"
+                },
+                "timestamp": "2026-08-21_23-59-30"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/RecentClips/2026-08-22_00-00-50-back.mp4"
+                },
+                "timestamp": "2026-08-22_00-00-50"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_23-59-30"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-22_00-02-21-1",
+            "recent-2026-08-21_23-59-30-2"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "recent gap of exactly 90 seconds joins",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-01-30-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-03-01-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-03-01-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_10-03-01-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-03-01"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-03-01"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              },
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_10-01-30-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-01-30"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_10-03-01-1",
+            "recent-2026-08-21_10-00-00-2"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "recent session across a year boundary",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2027-01-01_00-00-30-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-12-31_23-59-30-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-12-31_23-58-30-left_pillar.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-12-31_23-58-30-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "left_pillar": "TeslaCam/RecentClips/2026-12-31_23-58-30-left_pillar.mp4"
+                },
+                "timestamp": "2026-12-31_23-58-30"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/RecentClips/2026-12-31_23-59-30-back.mp4"
+                },
+                "timestamp": "2026-12-31_23-59-30"
+              },
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2027-01-01_00-00-30-front.mp4"
+                },
+                "timestamp": "2027-01-01_00-00-30"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-12-31_23-58-30"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-12-31_23-58-30-1"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "recent session across a leap day",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2028-02-28_23-59-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2028-02-29_00-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2028-03-01_00-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2028-03-01_00-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2028-03-01_00-00-00-front.mp4"
+                },
+                "timestamp": "2028-03-01_00-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2028-03-01_00-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2028-02-28_23-59-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2028-02-28_23-59-00-front.mp4"
+                },
+                "timestamp": "2028-02-28_23-59-00"
+              },
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2028-02-29_00-00-00-front.mp4"
+                },
+                "timestamp": "2028-02-29_00-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2028-02-28_23-59-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2028-03-01_00-00-00-1",
+            "recent-2028-02-28_23-59-00-2"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "recent clips in sub-directories are accepted",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/nested/deeper/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-01-00-back.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/nested/deeper/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/RecentClips/2026-08-21_10-01-00-back.mp4"
+                },
+                "timestamp": "2026-08-21_10-01-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_10-00-00-1"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "helpers inside RecentClips are unknown files",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/thumb.png"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/event.json",
+            "text": "{\"timestamp\": \"2026-08-21T10:00:10\"}"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_10-00-00-1"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 4,
+            "total": 4
+          }
+        ],
+        "warnings": [
+          {
+            "count": 3,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a later helper replaces an earlier one",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/a/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/nested/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/thumb.png",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/event.json",
+            "text": "{\"timestamp\": \"first\"}"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/nested/event.json",
+            "text": "{\"timestamp\": \"second\"}"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/nested/2026-08-21_10-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-1",
+            "metadata": {
+              "timestamp": "second"
+            },
+            "representative": "TeslaCam/SavedClips/a/nested/event.mp4",
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/a/nested/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": "TeslaCam/SavedClips/a/thumb.png",
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_10-00-00-1"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 6,
+            "total": 6
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "a zero-byte event.mp4 is an empty media file",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/a/event.mp4",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/event.json",
+            "size": 0,
+            "text": ""
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": [
+            "sentry-2026-08-21_10-00-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "empty-media-file"
+          },
+          {
+            "count": 1,
+            "kind": "invalid-metadata-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a clip directly inside SavedClips forms its own event",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/2026-08-21_10-00-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/2026-08-21_10-00-00-back.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_10-00-00-1",
+            "saved-2026-08-21_10-00-00-2"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "a selected SentryClips root",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "SentryClips/event-a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "SentryClips/2026-08-21_11-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_11-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "SentryClips/2026-08-21_11-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_11-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_11-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "SentryClips/event-a/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": [
+            "sentry-2026-08-21_11-00-00-1",
+            "sentry-2026-08-21_10-00-00-2"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "duplicate timestamp and camera: the later file wins",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/sub/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/sub/2026-08-21_10-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/sub/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/a/sub/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_10-00-00-1"
+          ],
+          "saved": [
+            "saved-2026-08-21_10-00-00-1"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 4,
+            "total": 4
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "the first category name in the path wins",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/EncryptedClips/SavedClips/a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/EncryptedClips/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/SentryClips/2026-08-21_11-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/SavedClips/a/2026-08-21_12-00-00-front.mp4"
+          },
+          {
+            "relativePath": "SentryClips/RecentClips/2026-08-21_13-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_13-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "SentryClips/RecentClips/2026-08-21_13-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_13-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_13-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_12-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/SavedClips/a/2026-08-21_12-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_12-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_12-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_11-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/SentryClips/2026-08-21_11-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_11-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_11-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/EncryptedClips/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_12-00-00-1"
+          ],
+          "saved": [
+            "saved-2026-08-21_11-00-00-1",
+            "saved-2026-08-21_10-00-00-2"
+          ],
+          "sentry": [
+            "sentry-2026-08-21_13-00-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 5,
+            "total": 5
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "encrypted-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "backslash separators are accepted",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "name": "2026-08-21_10-00-00-front.mp4",
+            "relativePath": "TeslaCam\\SavedClips\\a\\2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "name": "event.mp4",
+            "relativePath": "TeslaCam/SavedClips\\a/event.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": "TeslaCam/SavedClips\\a/event.mp4",
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam\\SavedClips\\a\\2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_10-00-00-1"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "files outside every category",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/notes.txt"
+          },
+          {
+            "relativePath": "TeslaCam/2026-08-21_10-00-00-front.mp4",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/2026-08-21_10-00-00-front.MP4",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/Recentclips/2026-08-21_10-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 5,
+            "total": 5
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "empty-media-file"
+          },
+          {
+            "count": 4,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "encrypted files are counted whatever their name or size",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/EncryptedClips/a.bin",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/EncryptedClips/event.json",
+            "size": 0
+          },
+          {
+            "relativePath": "TeslaCam/EncryptedClips/2026-08-21_10-00-00-front.mp4",
+            "size": 0
+          }
+        ]
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": [
+          {
+            "count": 3,
+            "kind": "encrypted-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "an upper-case zero-byte clip is unknown",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.MP4",
+            "size": 0
+          }
+        ]
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 1,
+            "total": 1
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "an event with only helpers is dropped without reading metadata",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/only-helpers/event.json",
+            "text": "not json"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/only-helpers/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/only-helpers/thumb.png"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/oversized/event.json",
+            "size": 1048577
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/kept/2026-08-21_10-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/kept/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": [
+            "sentry-2026-08-21_10-00-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 5,
+            "total": 5
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "invalid event.json adds a warning and no metadata",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/event.json",
+            "text": "{\"timestamp\": 42}"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/b/2026-08-21_11-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/b/event.json",
+            "text": "null"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/c/2026-08-21_12-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/c/event.json",
+            "text": "{\"timestamp\": \"2026-08-21T12:00:10\", \"reason\": 42}"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_12-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/c/2026-08-21_12-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_12-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_12-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_11-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/b/2026-08-21_11-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_11-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_11-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_12-00-00-1"
+          ],
+          "sentry": [
+            "sentry-2026-08-21_11-00-00-1",
+            "sentry-2026-08-21_10-00-00-2"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 6,
+            "total": 6
+          }
+        ],
+        "warnings": [
+          {
+            "count": 3,
+            "kind": "invalid-metadata-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "event timestamp comes from the first segment, not event.json",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-01-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/event.json",
+            "text": "{\"timestamp\": \"2026-08-21T10:01:30\", \"camera\": \"5\"}"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-1",
+            "metadata": {
+              "camera": "5",
+              "timestamp": "2026-08-21T10:01:30"
+            },
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-back.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              },
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/a/2026-08-21_10-01-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-01-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": [
+            "sentry-2026-08-21_10-00-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "directory events are never split by gaps",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/a/2026-08-22_10-00-00-front.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/a/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              },
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/a/2026-08-22_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-22_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-21_10-00-00-1"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "equal timestamps across and within categories",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/z/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/y/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/x/2026-08-21_09-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/b/2026-08-21_10-00-00-back.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/y/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/b/2026-08-21_10-00-00-back.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/z/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-2",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-back.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-21_09-00-00-3",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SavedClips/x/2026-08-21_09-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_09-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_09-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_10-00-00-1"
+          ],
+          "saved": [
+            "saved-2026-08-21_10-00-00-1",
+            "saved-2026-08-21_10-00-00-2",
+            "saved-2026-08-21_09-00-00-3"
+          ],
+          "sentry": [
+            "sentry-2026-08-21_10-00-00-1",
+            "sentry-2026-08-21_10-00-00-2"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 6,
+            "total": 6
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "metadata string limit aborts the scan",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/event.json",
+            "text": "{\"timestamp\":\"2026-08-21T10:00:10\",\"street\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"
+          }
+        ]
+      },
+      "expected": {
+        "error": "scan-limit",
+        "kind": "metadata-string"
+      }
+    },
+    {
+      "name": "metadata at the string limit is kept",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/a/event.json",
+            "text": "{\"timestamp\":\"2026-08-21T10:00:10\",\"street\":\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"}"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-21_10-00-00-1",
+            "metadata": {
+              "street": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+              "timestamp": "2026-08-21T10:00:10"
+            },
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/SentryClips/a/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": [
+            "sentry-2026-08-21_10-00-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "declared metadata size over one MiB aborts the scan",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/event-a/2026-08-21_14-30-45-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-a/event.json",
+            "size": 1048577
+          }
+        ]
+      },
+      "expected": {
+        "error": "scan-limit",
+        "kind": "metadata-size"
+      }
+    },
+    {
+      "name": "actual metadata bytes over one MiB abort the scan",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/event-a/2026-08-21_14-30-45-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-a/event.json",
+            "size": 1,
+            "text": {
+              "$repeat": " ",
+              "count": 1048577
+            }
+          }
+        ]
+      },
+      "expected": {
+        "error": "scan-limit",
+        "kind": "metadata-size"
+      }
+    },
+    {
+      "name": "no files",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": []
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [],
+        "warnings": []
+      }
+    },
+    {
+      "name": "exactly 250 files report once",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [],
+        "generate": {
+          "count": 250,
+          "pathPattern": "TeslaCam/RecentClips/unknown-{i}.txt"
+        }
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 250,
+            "total": 250
+          }
+        ],
+        "warnings": [
+          {
+            "count": 250,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "251 unknown files",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [],
+        "generate": {
+          "count": 251,
+          "pathPattern": "TeslaCam/RecentClips/unknown-{i}.txt"
+        }
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 250,
+            "total": 251
+          },
+          {
+            "processed": 251,
+            "total": 251
+          }
+        ],
+        "warnings": [
+          {
+            "count": 251,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "600 files report every 250",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+          }
+        ],
+        "generate": {
+          "count": 599,
+          "pathPattern": "TeslaCam/Noise/n-{i}.txt",
+          "size": 1
+        }
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-21_10-00-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-21_10-00-00-front.mp4"
+                },
+                "timestamp": "2026-08-21_10-00-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-21_10-00-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-21_10-00-00-1"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 250,
+            "total": 600
+          },
+          {
+            "processed": 500,
+            "total": 600
+          },
+          {
+            "processed": 600,
+            "total": 600
+          }
+        ],
+        "warnings": [
+          {
+            "count": 599,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "100001 files exceed the entry limit",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [],
+        "generate": {
+          "count": 100001,
+          "pathPattern": "TeslaCam/RecentClips/unknown-{i}.txt"
+        }
+      },
+      "expected": {
+        "error": "scan-limit",
+        "kind": "entry-count"
+      }
+    },
+    {
+      "name": "the e2e fixture directory",
+      "fn": "buildTeslaCamLibrary",
+      "note": "apps/web/tests/e2e/fixtures/TeslaCam listed in name order",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/sentry-autoplay-20s.mp4",
+            "size": 39210
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/event.json",
+            "text": "{\n  \"timestamp\": \"2026-08-20T20:35:30\",\n  \"reason\": \"sentry_aware_object_detection\",\n  \"city\": \"SYNTHETIC_PRIVATE_CITY\",\n  \"street\": \"SYNTHETIC_PRIVATE_STREET\",\n  \"est_lat\": \"SYNTHETIC_PRIVATE_LAT\",\n  \"est_lon\": \"SYNTHETIC_PRIVATE_LON\"\n}"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4",
+            "size": 4096
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-20_20-45-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "front": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4"
+                },
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-45-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-20_20-45-00-1"
+          ],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 3,
+            "total": 3
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the e2e full tree",
+      "fn": "buildTeslaCamLibrary",
+      "note": "tests/e2e/support/viewer-fixtures.ts variant full",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/event.json",
+            "text": "{\n  \"timestamp\": \"2026-08-20T20:35:30\",\n  \"reason\": \"sentry_aware_object_detection\",\n  \"city\": \"SYNTHETIC_PRIVATE_CITY\",\n  \"street\": \"SYNTHETIC_PRIVATE_STREET\",\n  \"est_lat\": \"SYNTHETIC_PRIVATE_LAT\",\n  \"est_lon\": \"SYNTHETIC_PRIVATE_LON\"\n}"
+          }
+        ],
+        "generate": {
+          "count": 253,
+          "pathPattern": "TeslaCam/Noise/synthetic-{i}.txt",
+          "size": 1
+        }
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-20_20-45-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/RecentClips/2026-08-20_20-45-00-back.mp4",
+                  "front": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4",
+                  "left_pillar": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-40-00-1",
+            "metadata": null,
+            "representative": "TeslaCam/SavedClips/event-saved/event.mp4",
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-40-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-40-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-20_20-35-00-1",
+            "metadata": {
+              "city": "SYNTHETIC_PRIVATE_CITY",
+              "est_lat": "SYNTHETIC_PRIVATE_LAT",
+              "est_lon": "SYNTHETIC_PRIVATE_LON",
+              "reason": "sentry_aware_object_detection",
+              "street": "SYNTHETIC_PRIVATE_STREET",
+              "timestamp": "2026-08-20T20:35:30"
+            },
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-back.mp4",
+                  "front": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-front.mp4",
+                  "left_pillar": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-35-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-35-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-20_20-45-00-1"
+          ],
+          "saved": [
+            "saved-2026-08-20_20-40-00-1"
+          ],
+          "sentry": [
+            "sentry-2026-08-20_20-35-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 250,
+            "total": 273
+          },
+          {
+            "processed": 273,
+            "total": 273
+          }
+        ],
+        "warnings": [
+          {
+            "count": 253,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the e2e history tree",
+      "fn": "buildTeslaCamLibrary",
+      "note": "variant history with the Sentry right repeater missing (variant missing)",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-saved-previous/event.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SentryClips/event-sentry/event.json",
+            "text": "{\n  \"timestamp\": \"2026-08-20T20:35:30\",\n  \"reason\": \"sentry_aware_object_detection\",\n  \"city\": \"SYNTHETIC_PRIVATE_CITY\",\n  \"street\": \"SYNTHETIC_PRIVATE_STREET\",\n  \"est_lat\": \"SYNTHETIC_PRIVATE_LAT\",\n  \"est_lon\": \"SYNTHETIC_PRIVATE_LON\"\n}"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-2026-08-20_20-45-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/RecentClips/2026-08-20_20-45-00-back.mp4",
+                  "front": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4",
+                  "left_pillar": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-45-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-40-00-1",
+            "metadata": null,
+            "representative": "TeslaCam/SavedClips/event-saved/event.mp4",
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-40-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-40-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-20_20-35-00-1",
+            "metadata": {
+              "city": "SYNTHETIC_PRIVATE_CITY",
+              "est_lat": "SYNTHETIC_PRIVATE_LAT",
+              "est_lon": "SYNTHETIC_PRIVATE_LON",
+              "reason": "sentry_aware_object_detection",
+              "street": "SYNTHETIC_PRIVATE_STREET",
+              "timestamp": "2026-08-20T20:35:30"
+            },
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-back.mp4",
+                  "front": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-front.mp4",
+                  "left_pillar": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-right_pillar.mp4"
+                },
+                "timestamp": "2026-08-20_20-35-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-19_19-30-00-2",
+            "metadata": null,
+            "representative": "TeslaCam/SavedClips/event-saved-previous/event.mp4",
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-saved-previous/2026-08-19_19-30-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-19_19-30-00"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-19_19-30-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [
+            "recent-2026-08-20_20-45-00-1"
+          ],
+          "saved": [
+            "saved-2026-08-20_20-40-00-1",
+            "saved-2026-08-19_19-30-00-2"
+          ],
+          "sentry": [
+            "sentry-2026-08-20_20-35-00-1"
+          ]
+        },
+        "progress": [
+          {
+            "processed": 26,
+            "total": 26
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "the e2e export tree",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-right_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-front.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-back.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-left_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-left_repeater.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-right_pillar.mp4"
+          },
+          {
+            "relativePath": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-right_repeater.mp4"
+          }
+        ]
+      },
+      "expected": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "saved-2026-08-20_20-10-00-1",
+            "metadata": null,
+            "representative": null,
+            "segments": [
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-00-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-10-00"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-02-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-10-02"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-04-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-10-04"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-06-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-10-06"
+              },
+              {
+                "cameras": {
+                  "back": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-back.mp4",
+                  "front": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-front.mp4",
+                  "left_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-left_pillar.mp4",
+                  "left_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-left_repeater.mp4",
+                  "right_pillar": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-right_pillar.mp4",
+                  "right_repeater": "TeslaCam/SavedClips/event-export/2026-08-20_20-10-08-right_repeater.mp4"
+                },
+                "timestamp": "2026-08-20_20-10-08"
+              }
+            ],
+            "thumbnail": null,
+            "timestamp": "2026-08-20_20-10-00"
+          }
+        ],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [
+            "saved-2026-08-20_20-10-00-1"
+          ],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 30,
+            "total": 30
+          }
+        ],
+        "warnings": []
+      }
+    },
+    {
+      "name": "the e2e wrong folder",
+      "fn": "buildTeslaCamLibrary",
+      "input": {
+        "files": [
+          {
+            "relativePath": "SyntheticFolder/notes.txt",
+            "size": 1
+          }
+        ]
+      },
+      "expected": {
+        "events": [],
+        "eventsByCategory": {
+          "recent": [],
+          "saved": [],
+          "sentry": []
+        },
+        "progress": [
+          {
+            "processed": 1,
+            "total": 1
+          }
+        ],
+        "warnings": [
+          {
+            "count": 1,
+            "kind": "unknown-file"
+          }
+        ]
+      }
+    }
+  ]
+}

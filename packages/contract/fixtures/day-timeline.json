@@ -1,0 +1,3257 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "day-timeline",
+  "source": [
+    "apps/web/src/react-app/day-timeline.ts",
+    "apps/web/src/react-app/local-timestamp.ts"
+  ],
+  "cases": [
+    {
+      "name": "selectTimelineDate selected event wins over the filter",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "selected",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          }
+        ],
+        "filterDateKey": "2026-08-23",
+        "selectedEventId": "selected"
+      },
+      "expected": "2026-08-24"
+    },
+    {
+      "name": "selectTimelineDate date filter without selection",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [],
+        "filterDateKey": "2028-02-29",
+        "selectedEventId": null
+      },
+      "expected": "2028-02-29"
+    },
+    {
+      "name": "selectTimelineDate invalid date filter falls back to events",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "only",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          }
+        ],
+        "filterDateKey": "2026-02-30",
+        "selectedEventId": null
+      },
+      "expected": "2026-08-24"
+    },
+    {
+      "name": "selectTimelineDate first parsable event",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "bad",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-13-01_00-00-00"
+              }
+            ],
+            "timestamp": "2026-13-01_00-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "year-boundary",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2027-01-01_00-00-00"
+              }
+            ],
+            "timestamp": "2027-01-01_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "older",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-12-31_23-59-59"
+              }
+            ],
+            "timestamp": "2026-12-31_23-59-59"
+          }
+        ],
+        "filterDateKey": null,
+        "selectedEventId": null
+      },
+      "expected": "2027-01-01"
+    },
+    {
+      "name": "selectTimelineDate empty collection",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [],
+        "filterDateKey": null,
+        "selectedEventId": null
+      },
+      "expected": null
+    },
+    {
+      "name": "selectTimelineDate recent session uses its first segment",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-session",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-30"
+              },
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-25_00-00-20"
+              }
+            ],
+            "timestamp": "2026-08-25_00-00-20"
+          }
+        ],
+        "filterDateKey": null,
+        "selectedEventId": "recent-session"
+      },
+      "expected": "2026-08-24"
+    },
+    {
+      "name": "selectTimelineDate unknown selected id",
+      "fn": "selectTimelineDate",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "only",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          }
+        ],
+        "filterDateKey": "2026-08-01",
+        "selectedEventId": "missing"
+      },
+      "expected": "2026-08-01"
+    },
+    {
+      "name": "buildDayTimelineMarkers day bounds",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "start",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "end",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "category": "recent",
+          "dateKey": "2026-08-24",
+          "eventId": "start",
+          "positionPercent": 0,
+          "secondsOfDay": 0,
+          "timeLabel": "00:00:00"
+        },
+        {
+          "category": "saved",
+          "dateKey": "2026-08-24",
+          "eventId": "end",
+          "positionPercent": 100,
+          "secondsOfDay": 86399,
+          "timeLabel": "23:59:59"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineMarkers same second ordering",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-event",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-z",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-event",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "category": "sentry",
+          "dateKey": "2026-08-24",
+          "eventId": "sentry-event",
+          "positionPercent": 50.00057871040175,
+          "secondsOfDay": 43200,
+          "timeLabel": "12:00:00"
+        },
+        {
+          "category": "saved",
+          "dateKey": "2026-08-24",
+          "eventId": "saved-a",
+          "positionPercent": 50.00057871040175,
+          "secondsOfDay": 43200,
+          "timeLabel": "12:00:00"
+        },
+        {
+          "category": "saved",
+          "dateKey": "2026-08-24",
+          "eventId": "saved-z",
+          "positionPercent": 50.00057871040175,
+          "secondsOfDay": 43200,
+          "timeLabel": "12:00:00"
+        },
+        {
+          "category": "recent",
+          "dateKey": "2026-08-24",
+          "eventId": "recent-event",
+          "positionPercent": 50.00057871040175,
+          "secondsOfDay": 43200,
+          "timeLabel": "12:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineMarkers recent session on its first date",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-session",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-30"
+              },
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-25_00-00-20"
+              }
+            ],
+            "timestamp": "2026-08-25_00-00-20"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "category": "recent",
+          "dateKey": "2026-08-24",
+          "eventId": "recent-session",
+          "positionPercent": 99.96643479669903,
+          "secondsOfDay": 86370,
+          "timeLabel": "23:59:30"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineMarkers recent session not on its last date",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-08-25",
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-session",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-30"
+              },
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-25_00-00-20"
+              }
+            ],
+            "timestamp": "2026-08-25_00-00-20"
+          }
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "buildDayTimelineMarkers leap day",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2028-02-29",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "leap-day",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2028-02-29_12-00-00"
+              }
+            ],
+            "timestamp": "2028-02-29_12-00-00"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "category": "sentry",
+          "dateKey": "2028-02-29",
+          "eventId": "leap-day",
+          "positionPercent": 50.00057871040175,
+          "secondsOfDay": 43200,
+          "timeLabel": "12:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineMarkers other day hidden",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2028-02-29",
+        "events": [
+          {
+            "category": "saved",
+            "id": "other-day",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2028-03-01_12-00-00"
+              }
+            ],
+            "timestamp": "2028-03-01_12-00-00"
+          }
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "buildDayTimelineMarkers malformed event date",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-02-29",
+        "events": [
+          {
+            "category": "saved",
+            "id": "malformed",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-02-29_12-00-00"
+              }
+            ],
+            "timestamp": "2026-02-29_12-00-00"
+          }
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "buildDayTimelineMarkers null date",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": null,
+        "events": [
+          {
+            "category": "saved",
+            "id": "malformed",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-02-29_12-00-00"
+              }
+            ],
+            "timestamp": "2026-02-29_12-00-00"
+          }
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "buildDayTimelineMarkers invalid date key",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-8-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "buildDayTimelineMarkers evening",
+      "fn": "buildDayTimelineMarkers",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "category": "recent",
+          "dateKey": "2026-08-24",
+          "eventId": "recent-2026-08-24_00-00-00-2",
+          "positionPercent": 0,
+          "secondsOfDay": 0,
+          "timeLabel": "00:00:00"
+        },
+        {
+          "category": "saved",
+          "dateKey": "2026-08-24",
+          "eventId": "saved-2026-08-24_08-00-00-2",
+          "positionPercent": 33.333719140267824,
+          "secondsOfDay": 28800,
+          "timeLabel": "08:00:00"
+        },
+        {
+          "category": "sentry",
+          "dateKey": "2026-08-24",
+          "eventId": "sentry-2026-08-24_20-35-00-1",
+          "positionPercent": 85.76488153798077,
+          "secondsOfDay": 74100,
+          "timeLabel": "20:35:00"
+        },
+        {
+          "category": "saved",
+          "dateKey": "2026-08-24",
+          "eventId": "saved-2026-08-24_20-40-00-1",
+          "positionPercent": 86.11210777902521,
+          "secondsOfDay": 74400,
+          "timeLabel": "20:40:00"
+        },
+        {
+          "category": "recent",
+          "dateKey": "2026-08-24",
+          "eventId": "recent-2026-08-24_20-45-00-1",
+          "positionPercent": 86.45933402006968,
+          "secondsOfDay": 74700,
+          "timeLabel": "20:45:00"
+        },
+        {
+          "category": "sentry",
+          "dateKey": "2026-08-24",
+          "eventId": "sentry-2026-08-24_23-59-59-2",
+          "positionPercent": 100,
+          "secondsOfDay": 86399,
+          "timeLabel": "23:59:59"
+        }
+      ]
+    },
+    {
+      "name": "buildTimelineDays multiple days",
+      "fn": "buildTimelineDays",
+      "input": {
+        "events": [
+          {
+            "category": "saved",
+            "id": "late",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-25_23-00-00"
+              }
+            ],
+            "timestamp": "2026-08-25_23-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "first",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-23_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-23_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "middle",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-session",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-30"
+              },
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-25_00-00-20"
+              }
+            ],
+            "timestamp": "2026-08-25_00-00-20"
+          },
+          {
+            "category": "saved",
+            "id": "invalid",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-02-29_12-00-00"
+              }
+            ],
+            "timestamp": "2026-02-29_12-00-00"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "dateKey": "2026-08-23",
+          "eventIds": [
+            "first"
+          ]
+        },
+        {
+          "dateKey": "2026-08-24",
+          "eventIds": [
+            "middle",
+            "recent-session"
+          ]
+        },
+        {
+          "dateKey": "2026-08-25",
+          "eventIds": [
+            "late"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "buildTimelineDays evening",
+      "fn": "buildTimelineDays",
+      "input": {
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ]
+      },
+      "expected": [
+        {
+          "dateKey": "2026-08-24",
+          "eventIds": [
+            "recent-2026-08-24_00-00-00-2",
+            "saved-2026-08-24_08-00-00-2",
+            "sentry-2026-08-24_20-35-00-1",
+            "saved-2026-08-24_20-40-00-1",
+            "recent-2026-08-24_20-45-00-1",
+            "sentry-2026-08-24_23-59-59-2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "buildTimelineDays empty",
+      "fn": "buildTimelineDays",
+      "input": {
+        "events": []
+      },
+      "expected": []
+    },
+    {
+      "name": "adjacentTimelineDays between days",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": "2026-08-26",
+        "days": [
+          {
+            "dateKey": "2026-08-23",
+            "eventIds": [
+              "first"
+            ]
+          },
+          {
+            "dateKey": "2026-08-25",
+            "eventIds": [
+              "middle"
+            ]
+          },
+          {
+            "dateKey": "2026-08-28",
+            "eventIds": [
+              "last"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": {
+          "dateKey": "2026-08-28",
+          "eventIds": [
+            "last"
+          ]
+        },
+        "previous": {
+          "dateKey": "2026-08-25",
+          "eventIds": [
+            "middle"
+          ]
+        }
+      }
+    },
+    {
+      "name": "adjacentTimelineDays on a recorded day",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": "2026-08-24",
+        "days": [
+          {
+            "dateKey": "2026-08-23",
+            "eventIds": [
+              "first"
+            ]
+          },
+          {
+            "dateKey": "2026-08-24",
+            "eventIds": [
+              "middle",
+              "recent-session"
+            ]
+          },
+          {
+            "dateKey": "2026-08-25",
+            "eventIds": [
+              "late"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": {
+          "dateKey": "2026-08-25",
+          "eventIds": [
+            "late"
+          ]
+        },
+        "previous": {
+          "dateKey": "2026-08-23",
+          "eventIds": [
+            "first"
+          ]
+        }
+      }
+    },
+    {
+      "name": "adjacentTimelineDays first day",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": "2026-08-23",
+        "days": [
+          {
+            "dateKey": "2026-08-23",
+            "eventIds": [
+              "first"
+            ]
+          },
+          {
+            "dateKey": "2026-08-24",
+            "eventIds": [
+              "middle",
+              "recent-session"
+            ]
+          },
+          {
+            "dateKey": "2026-08-25",
+            "eventIds": [
+              "late"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": {
+          "dateKey": "2026-08-24",
+          "eventIds": [
+            "middle",
+            "recent-session"
+          ]
+        },
+        "previous": null
+      }
+    },
+    {
+      "name": "adjacentTimelineDays last day",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": "2026-08-25",
+        "days": [
+          {
+            "dateKey": "2026-08-23",
+            "eventIds": [
+              "first"
+            ]
+          },
+          {
+            "dateKey": "2026-08-24",
+            "eventIds": [
+              "middle",
+              "recent-session"
+            ]
+          },
+          {
+            "dateKey": "2026-08-25",
+            "eventIds": [
+              "late"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": null,
+        "previous": {
+          "dateKey": "2026-08-24",
+          "eventIds": [
+            "middle",
+            "recent-session"
+          ]
+        }
+      }
+    },
+    {
+      "name": "adjacentTimelineDays invalid current date",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": "2026-02-30",
+        "days": [
+          {
+            "dateKey": "2026-08-23",
+            "eventIds": [
+              "first"
+            ]
+          },
+          {
+            "dateKey": "2026-08-24",
+            "eventIds": [
+              "middle",
+              "recent-session"
+            ]
+          },
+          {
+            "dateKey": "2026-08-25",
+            "eventIds": [
+              "late"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": null,
+        "previous": null
+      }
+    },
+    {
+      "name": "adjacentTimelineDays null current date",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": null,
+        "days": [
+          {
+            "dateKey": "2026-08-23",
+            "eventIds": [
+              "first"
+            ]
+          },
+          {
+            "dateKey": "2026-08-24",
+            "eventIds": [
+              "middle",
+              "recent-session"
+            ]
+          },
+          {
+            "dateKey": "2026-08-25",
+            "eventIds": [
+              "late"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": null,
+        "previous": null
+      }
+    },
+    {
+      "name": "adjacentTimelineDays across a year",
+      "fn": "adjacentTimelineDays",
+      "input": {
+        "currentDateKey": "2027-01-01",
+        "days": [
+          {
+            "dateKey": "2026-12-31",
+            "eventIds": [
+              "old"
+            ]
+          },
+          {
+            "dateKey": "2027-01-02",
+            "eventIds": [
+              "new"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "next": {
+          "dateKey": "2027-01-02",
+          "eventIds": [
+            "new"
+          ]
+        },
+        "previous": {
+          "dateKey": "2026-12-31",
+          "eventIds": [
+            "old"
+          ]
+        }
+      }
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at 640",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": 640
+      },
+      "expected": [
+        {
+          "count": 2,
+          "durationSeconds": 5939,
+          "endPositionPercent": 6.873922151876758,
+          "endSecondsOfDay": 5939,
+          "endTimeLabel": "01:38:59",
+          "eventIds": [
+            "a",
+            "b"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "c"
+          ],
+          "id": "c",
+          "startPositionPercent": 13.749001724556997,
+          "startSecondsOfDay": 11879,
+          "startTimeLabel": "03:17:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at 340",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": 340
+      },
+      "expected": [
+        {
+          "count": 3,
+          "durationSeconds": 11879,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "a",
+            "b",
+            "c"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at 1000",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": 1000
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "a"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 6.873922151876758,
+          "endSecondsOfDay": 5939,
+          "endTimeLabel": "01:38:59",
+          "eventIds": [
+            "b"
+          ],
+          "id": "b",
+          "startPositionPercent": 6.873922151876758,
+          "startSecondsOfDay": 5939,
+          "startTimeLabel": "01:38:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "c"
+          ],
+          "id": "c",
+          "startPositionPercent": 13.749001724556997,
+          "startSecondsOfDay": 11879,
+          "startTimeLabel": "03:17:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at 1",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": 1
+      },
+      "expected": [
+        {
+          "count": 4,
+          "durationSeconds": 28800,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "a",
+            "b",
+            "c",
+            "d"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at 0",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": 0
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "a"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 6.873922151876758,
+          "endSecondsOfDay": 5939,
+          "endTimeLabel": "01:38:59",
+          "eventIds": [
+            "b"
+          ],
+          "id": "b",
+          "startPositionPercent": 6.873922151876758,
+          "startSecondsOfDay": 5939,
+          "startTimeLabel": "01:38:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "c"
+          ],
+          "id": "c",
+          "startPositionPercent": 13.749001724556997,
+          "startSecondsOfDay": 11879,
+          "startTimeLabel": "03:17:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at -1",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": -1
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "a"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 6.873922151876758,
+          "endSecondsOfDay": 5939,
+          "endTimeLabel": "01:38:59",
+          "eventIds": [
+            "b"
+          ],
+          "id": "b",
+          "startPositionPercent": 6.873922151876758,
+          "startSecondsOfDay": 5939,
+          "startTimeLabel": "01:38:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "c"
+          ],
+          "id": "c",
+          "startPositionPercent": 13.749001724556997,
+          "startSecondsOfDay": 11879,
+          "startTimeLabel": "03:17:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at NaN",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": "NaN"
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "a"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 6.873922151876758,
+          "endSecondsOfDay": 5939,
+          "endTimeLabel": "01:38:59",
+          "eventIds": [
+            "b"
+          ],
+          "id": "b",
+          "startPositionPercent": 6.873922151876758,
+          "startSecondsOfDay": 5939,
+          "startTimeLabel": "01:38:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "c"
+          ],
+          "id": "c",
+          "startPositionPercent": 13.749001724556997,
+          "startSecondsOfDay": 11879,
+          "startTimeLabel": "03:17:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters threshold at Infinity",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "saved",
+            "id": "a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_01-38-59"
+              }
+            ],
+            "timestamp": "2026-08-24_01-38-59"
+          },
+          {
+            "category": "saved",
+            "id": "c",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_03-17-59"
+              }
+            ],
+            "timestamp": "2026-08-24_03-17-59"
+          },
+          {
+            "category": "saved",
+            "id": "d",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          }
+        ],
+        "trackWidthPixels": "Infinity"
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "a"
+          ],
+          "id": "a",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 6.873922151876758,
+          "endSecondsOfDay": 5939,
+          "endTimeLabel": "01:38:59",
+          "eventIds": [
+            "b"
+          ],
+          "id": "b",
+          "startPositionPercent": 6.873922151876758,
+          "startSecondsOfDay": 5939,
+          "startTimeLabel": "01:38:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 13.749001724556997,
+          "endSecondsOfDay": 11879,
+          "endTimeLabel": "03:17:59",
+          "eventIds": [
+            "c"
+          ],
+          "id": "c",
+          "startPositionPercent": 13.749001724556997,
+          "startSecondsOfDay": 11879,
+          "startTimeLabel": "03:17:59"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "d"
+          ],
+          "id": "d",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters chained at 640",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "chain-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_10-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "chain-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_11-23-20"
+              }
+            ],
+            "timestamp": "2026-08-24_11-23-20"
+          },
+          {
+            "category": "recent",
+            "id": "chain-3",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-46-40"
+              }
+            ],
+            "timestamp": "2026-08-24_12-46-40"
+          }
+        ],
+        "trackWidthPixels": 640
+      },
+      "expected": [
+        {
+          "count": 3,
+          "durationSeconds": 10000,
+          "endPositionPercent": 53.24135696015,
+          "endSecondsOfDay": 46000,
+          "endTimeLabel": "12:46:40",
+          "eventIds": [
+            "chain-1",
+            "chain-2",
+            "chain-3"
+          ],
+          "id": "chain-1",
+          "startPositionPercent": 41.667148925334786,
+          "startSecondsOfDay": 36000,
+          "startTimeLabel": "10:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters chained at 340",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "chain-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_10-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "chain-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_11-23-20"
+              }
+            ],
+            "timestamp": "2026-08-24_11-23-20"
+          },
+          {
+            "category": "recent",
+            "id": "chain-3",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-46-40"
+              }
+            ],
+            "timestamp": "2026-08-24_12-46-40"
+          }
+        ],
+        "trackWidthPixels": 340
+      },
+      "expected": [
+        {
+          "count": 3,
+          "durationSeconds": 10000,
+          "endPositionPercent": 53.24135696015,
+          "endSecondsOfDay": 46000,
+          "endTimeLabel": "12:46:40",
+          "eventIds": [
+            "chain-1",
+            "chain-2",
+            "chain-3"
+          ],
+          "id": "chain-1",
+          "startPositionPercent": 41.667148925334786,
+          "startSecondsOfDay": 36000,
+          "startTimeLabel": "10:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters chained at 1000",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "chain-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_10-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "chain-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_11-23-20"
+              }
+            ],
+            "timestamp": "2026-08-24_11-23-20"
+          },
+          {
+            "category": "recent",
+            "id": "chain-3",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-46-40"
+              }
+            ],
+            "timestamp": "2026-08-24_12-46-40"
+          }
+        ],
+        "trackWidthPixels": 1000
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 41.667148925334786,
+          "endSecondsOfDay": 36000,
+          "endTimeLabel": "10:00:00",
+          "eventIds": [
+            "chain-1"
+          ],
+          "id": "chain-1",
+          "startPositionPercent": 41.667148925334786,
+          "startSecondsOfDay": 36000,
+          "startTimeLabel": "10:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 47.45425294274239,
+          "endSecondsOfDay": 41000,
+          "endTimeLabel": "11:23:20",
+          "eventIds": [
+            "chain-2"
+          ],
+          "id": "chain-2",
+          "startPositionPercent": 47.45425294274239,
+          "startSecondsOfDay": 41000,
+          "startTimeLabel": "11:23:20"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 53.24135696015,
+          "endSecondsOfDay": 46000,
+          "endTimeLabel": "12:46:40",
+          "eventIds": [
+            "chain-3"
+          ],
+          "id": "chain-3",
+          "startPositionPercent": 53.24135696015,
+          "startSecondsOfDay": 46000,
+          "startTimeLabel": "12:46:40"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters chained at 1",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "chain-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_10-00-00"
+          },
+          {
+            "category": "recent",
+            "id": "chain-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_11-23-20"
+              }
+            ],
+            "timestamp": "2026-08-24_11-23-20"
+          },
+          {
+            "category": "recent",
+            "id": "chain-3",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-46-40"
+              }
+            ],
+            "timestamp": "2026-08-24_12-46-40"
+          }
+        ],
+        "trackWidthPixels": 1
+      },
+      "expected": [
+        {
+          "count": 3,
+          "durationSeconds": 10000,
+          "endPositionPercent": 53.24135696015,
+          "endSecondsOfDay": 46000,
+          "endTimeLabel": "12:46:40",
+          "eventIds": [
+            "chain-1",
+            "chain-2",
+            "chain-3"
+          ],
+          "id": "chain-1",
+          "startPositionPercent": 41.667148925334786,
+          "startSecondsOfDay": 36000,
+          "startTimeLabel": "10:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters evening at 640",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ],
+        "trackWidthPixels": 640
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "recent-2026-08-24_00-00-00-2"
+          ],
+          "id": "recent-2026-08-24_00-00-00-2",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "saved-2026-08-24_08-00-00-2"
+          ],
+          "id": "saved-2026-08-24_08-00-00-2",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        },
+        {
+          "count": 3,
+          "durationSeconds": 600,
+          "endPositionPercent": 86.45933402006968,
+          "endSecondsOfDay": 74700,
+          "endTimeLabel": "20:45:00",
+          "eventIds": [
+            "sentry-2026-08-24_20-35-00-1",
+            "saved-2026-08-24_20-40-00-1",
+            "recent-2026-08-24_20-45-00-1"
+          ],
+          "id": "sentry-2026-08-24_20-35-00-1",
+          "startPositionPercent": 85.76488153798077,
+          "startSecondsOfDay": 74100,
+          "startTimeLabel": "20:35:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 100,
+          "endSecondsOfDay": 86399,
+          "endTimeLabel": "23:59:59",
+          "eventIds": [
+            "sentry-2026-08-24_23-59-59-2"
+          ],
+          "id": "sentry-2026-08-24_23-59-59-2",
+          "startPositionPercent": 100,
+          "startSecondsOfDay": 86399,
+          "startTimeLabel": "23:59:59"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters evening at 340",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ],
+        "trackWidthPixels": 340
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "recent-2026-08-24_00-00-00-2"
+          ],
+          "id": "recent-2026-08-24_00-00-00-2",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "saved-2026-08-24_08-00-00-2"
+          ],
+          "id": "saved-2026-08-24_08-00-00-2",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        },
+        {
+          "count": 3,
+          "durationSeconds": 600,
+          "endPositionPercent": 86.45933402006968,
+          "endSecondsOfDay": 74700,
+          "endTimeLabel": "20:45:00",
+          "eventIds": [
+            "sentry-2026-08-24_20-35-00-1",
+            "saved-2026-08-24_20-40-00-1",
+            "recent-2026-08-24_20-45-00-1"
+          ],
+          "id": "sentry-2026-08-24_20-35-00-1",
+          "startPositionPercent": 85.76488153798077,
+          "startSecondsOfDay": 74100,
+          "startTimeLabel": "20:35:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 100,
+          "endSecondsOfDay": 86399,
+          "endTimeLabel": "23:59:59",
+          "eventIds": [
+            "sentry-2026-08-24_23-59-59-2"
+          ],
+          "id": "sentry-2026-08-24_23-59-59-2",
+          "startPositionPercent": 100,
+          "startSecondsOfDay": 86399,
+          "startTimeLabel": "23:59:59"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters evening at 1000",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ],
+        "trackWidthPixels": 1000
+      },
+      "expected": [
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 0,
+          "endSecondsOfDay": 0,
+          "endTimeLabel": "00:00:00",
+          "eventIds": [
+            "recent-2026-08-24_00-00-00-2"
+          ],
+          "id": "recent-2026-08-24_00-00-00-2",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 33.333719140267824,
+          "endSecondsOfDay": 28800,
+          "endTimeLabel": "08:00:00",
+          "eventIds": [
+            "saved-2026-08-24_08-00-00-2"
+          ],
+          "id": "saved-2026-08-24_08-00-00-2",
+          "startPositionPercent": 33.333719140267824,
+          "startSecondsOfDay": 28800,
+          "startTimeLabel": "08:00:00"
+        },
+        {
+          "count": 3,
+          "durationSeconds": 600,
+          "endPositionPercent": 86.45933402006968,
+          "endSecondsOfDay": 74700,
+          "endTimeLabel": "20:45:00",
+          "eventIds": [
+            "sentry-2026-08-24_20-35-00-1",
+            "saved-2026-08-24_20-40-00-1",
+            "recent-2026-08-24_20-45-00-1"
+          ],
+          "id": "sentry-2026-08-24_20-35-00-1",
+          "startPositionPercent": 85.76488153798077,
+          "startSecondsOfDay": 74100,
+          "startTimeLabel": "20:35:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 100,
+          "endSecondsOfDay": 86399,
+          "endTimeLabel": "23:59:59",
+          "eventIds": [
+            "sentry-2026-08-24_23-59-59-2"
+          ],
+          "id": "sentry-2026-08-24_23-59-59-2",
+          "startPositionPercent": 100,
+          "startSecondsOfDay": 86399,
+          "startTimeLabel": "23:59:59"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters evening at 1",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ],
+        "trackWidthPixels": 1
+      },
+      "expected": [
+        {
+          "count": 6,
+          "durationSeconds": 86399,
+          "endPositionPercent": 100,
+          "endSecondsOfDay": 86399,
+          "endTimeLabel": "23:59:59",
+          "eventIds": [
+            "recent-2026-08-24_00-00-00-2",
+            "saved-2026-08-24_08-00-00-2",
+            "sentry-2026-08-24_20-35-00-1",
+            "saved-2026-08-24_20-40-00-1",
+            "recent-2026-08-24_20-45-00-1",
+            "sentry-2026-08-24_23-59-59-2"
+          ],
+          "id": "recent-2026-08-24_00-00-00-2",
+          "startPositionPercent": 0,
+          "startSecondsOfDay": 0,
+          "startTimeLabel": "00:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters same second at 640",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "recent",
+            "id": "recent-event",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-z",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-event",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          }
+        ],
+        "trackWidthPixels": 640
+      },
+      "expected": [
+        {
+          "count": 4,
+          "durationSeconds": 0,
+          "endPositionPercent": 50.00057871040175,
+          "endSecondsOfDay": 43200,
+          "endTimeLabel": "12:00:00",
+          "eventIds": [
+            "sentry-event",
+            "saved-a",
+            "saved-z",
+            "recent-event"
+          ],
+          "id": "sentry-event",
+          "startPositionPercent": 50.00057871040175,
+          "startSecondsOfDay": 43200,
+          "startTimeLabel": "12:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters near pair at 1000",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-24",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "near-a",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_10-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_10-00-00"
+          },
+          {
+            "category": "saved",
+            "id": "near-b",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_10-00-30"
+              }
+            ],
+            "timestamp": "2026-08-24_10-00-30"
+          },
+          {
+            "category": "recent",
+            "id": "separate",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_12-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_12-00-00"
+          }
+        ],
+        "trackWidthPixels": 1000
+      },
+      "expected": [
+        {
+          "count": 2,
+          "durationSeconds": 30,
+          "endPositionPercent": 41.70187154943923,
+          "endSecondsOfDay": 36030,
+          "endTimeLabel": "10:00:30",
+          "eventIds": [
+            "near-a",
+            "near-b"
+          ],
+          "id": "near-a",
+          "startPositionPercent": 41.667148925334786,
+          "startSecondsOfDay": 36000,
+          "startTimeLabel": "10:00:00"
+        },
+        {
+          "count": 1,
+          "durationSeconds": 0,
+          "endPositionPercent": 50.00057871040175,
+          "endSecondsOfDay": 43200,
+          "endTimeLabel": "12:00:00",
+          "eventIds": [
+            "separate"
+          ],
+          "id": "separate",
+          "startPositionPercent": 50.00057871040175,
+          "startSecondsOfDay": 43200,
+          "startTimeLabel": "12:00:00"
+        }
+      ]
+    },
+    {
+      "name": "buildDayTimelineClusters no date at 640",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": null,
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ],
+        "trackWidthPixels": 640
+      },
+      "expected": []
+    },
+    {
+      "name": "buildDayTimelineClusters empty day at 640",
+      "fn": "buildDayTimelineClusters",
+      "input": {
+        "dateKey": "2026-08-23",
+        "events": [
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_20-35-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-35-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-35-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_20-40-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-40-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-40-00"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_20-45-00-1",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_20-45-00"
+              }
+            ],
+            "timestamp": "2026-08-24_20-45-00"
+          },
+          {
+            "category": "saved",
+            "id": "saved-2026-08-24_08-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_08-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_08-00-00"
+          },
+          {
+            "category": "sentry",
+            "id": "sentry-2026-08-24_23-59-59-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_23-59-59"
+              }
+            ],
+            "timestamp": "2026-08-24_23-59-59"
+          },
+          {
+            "category": "recent",
+            "id": "recent-2026-08-24_00-00-00-2",
+            "segments": [
+              {
+                "cameras": [
+                  "front"
+                ],
+                "timestamp": "2026-08-24_00-00-00"
+              }
+            ],
+            "timestamp": "2026-08-24_00-00-00"
+          }
+        ],
+        "trackWidthPixels": 640
+      },
+      "expected": []
+    }
+  ]
+}

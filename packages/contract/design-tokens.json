@@ -1,0 +1,115 @@
+{
+  "$comment": "Single source of the TeslaCam Viewer design tokens (see DESIGN.md). Colours are #RRGGBB or #RRGGBBAA.",
+  "color": {
+    "floor": "#E9EBEE",
+    "floor-light": "#F7F8FA",
+    "surface": "#FFFFFF",
+    "glass": "#FFFFFFF0",
+    "ink": "#171A20",
+    "ink-2": "#5C5E62",
+    "ink-3": "#6B6E74",
+    "line": "#E2E4E8",
+    "fill": "#F2F3F5",
+    "fill-hover": "#E9EBEE",
+    "drive": "#3E6AE1",
+    "drive-hover": "#3459C4",
+    "drive-soft": "#3E6AE124",
+    "sentry": "#E31937",
+    "sentry-ink": "#C8102E",
+    "sentry-soft": "#E319371A",
+    "saved": "#12805A",
+    "saved-ink": "#0E6B4B",
+    "saved-soft": "#12805A1A",
+    "recent": "#5C5E62",
+    "recent-marker": "#9AA0A8",
+    "warning": "#8A5A00",
+    "warning-soft": "#FFF4DC",
+    "video": "#000000",
+    "video-missing-a": "#15181D",
+    "video-missing-b": "#181B21",
+    "video-label-scrim": "#0000008C",
+    "video-text": "#FFFFFF",
+    "video-muted": "#C2C8D0",
+    "scrim": "#171A2052",
+    "wedge": "#171A2012",
+    "wedge-active": "#3E6AE147"
+  },
+  "shadow": {
+    "float": [
+      { "x": 0, "y": 1, "blur": 2, "color": "#171A200F" },
+      { "x": 0, "y": 14, "blur": 40, "color": "#171A201F" }
+    ],
+    "control": [{ "x": 0, "y": 1, "blur": 3, "color": "#171A201F" }]
+  },
+  "radius": {
+    "panel": 22,
+    "dialog": 22,
+    "camera": 14,
+    "row": 16,
+    "segmented": 14,
+    "thumbnail": 10,
+    "pill": 999
+  },
+  "font": {
+    "ui": ["Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "system-ui", "sans-serif"],
+    "num": ["Barlow", "Hiragino Sans", "system-ui", "sans-serif"]
+  },
+  "type": {
+    "display": { "family": "ui", "weight": 600, "size": 30, "lineHeight": 1.3 },
+    "title": { "family": "ui", "weight": 600, "size": 20, "lineHeight": 1.3 },
+    "clock": { "family": "num", "weight": 600, "size": 34, "lineHeight": 1 },
+    "numeral-l": { "family": "num", "weight": 600, "size": 24, "lineHeight": 1.05 },
+    "numeral-m": { "family": "num", "weight": 600, "size": 18, "lineHeight": 1.2 },
+    "body": { "family": "ui", "weight": 400, "size": 14, "lineHeight": 1.9 },
+    "ui": { "family": "ui", "weight": 500, "size": 13, "lineHeight": 1.4 },
+    "small": { "family": "ui", "weight": 400, "size": 12, "lineHeight": 1.5 },
+    "micro": { "family": "ui", "weight": 600, "size": 11, "lineHeight": 1.4 }
+  },
+  "space": { "unit": 4, "gutter": 16 },
+  "size": {
+    "library-width": 372,
+    "library-width-compact": 320,
+    "topbar-height": 46,
+    "transport-max-width": 920,
+    "play-button": 58,
+    "thumbnail-width": 92,
+    "hit-target-desktop": 36,
+    "hit-target-touch": 44
+  },
+  "motion": {
+    "fast": { "durationMs": 160, "easing": [0.2, 0, 0, 1] },
+    "sheet": { "durationMs": 320, "easing": [0.22, 0.8, 0.24, 1] },
+    "reveal-stagger-ms": 40
+  },
+  "breakpoint": { "phone-max": 740, "tablet-max": 1100, "compact-library-max": 1280 },
+  "stage": {
+    "areas": [["left_pillar", "front", "right_pillar"], ["left_pillar", "vehicle", "right_pillar"], ["left_repeater", "back", "right_repeater"]],
+    "rows": [0.8, 1.12, 0.86],
+    "columns": [1, 1.18, 1],
+    "gap": { "row": 14, "column": 26 },
+    "back-width-ratio": 0.86,
+    "mounts": {
+      "front": [0.5, 0.22],
+      "left_pillar": [0.16, 0.46],
+      "right_pillar": [0.84, 0.46],
+      "left_repeater": [0.1, 0.31],
+      "right_repeater": [0.9, 0.31],
+      "back": [0.5, 0.93]
+    }
+  },
+  "contrast": [
+    { "fg": "ink", "bg": "surface", "min": 4.5 },
+    { "fg": "ink-2", "bg": "surface", "min": 4.5 },
+    { "fg": "ink-3", "bg": "surface", "min": 4.5 },
+    { "fg": "ink-3", "bg": "fill", "min": 4.5 },
+    { "fg": "ink", "bg": "floor", "min": 4.5 },
+    { "fg": "surface", "bg": "drive", "min": 4.5 },
+    { "fg": "drive", "bg": "surface", "min": 4.5 },
+    { "fg": "sentry-ink", "bg": "sentry-soft", "min": 4.5 },
+    { "fg": "saved-ink", "bg": "saved-soft", "min": 4.5 },
+    { "fg": "recent", "bg": "fill", "min": 4.5 },
+    { "fg": "warning", "bg": "surface", "min": 4.5 },
+    { "fg": "video-text", "bg": "video-label-scrim", "min": 4.5 },
+    { "fg": "video-muted", "bg": "video-missing-a", "min": 4.5 }
+  ]
+}

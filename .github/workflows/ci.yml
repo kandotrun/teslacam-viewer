@@ -8,14 +8,19 @@ permissions:
   contents: read
 
 jobs:
-  quality:
+  web:
+    name: web (apps/web)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
       - run: npm run cf-typegen
       - run: git diff --exit-code -- worker-configuration.d.ts
@@ -26,3 +31,18 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run test:e2e
       - run: npx wrangler deploy --dry-run
+
+  mac:
+    name: mac (apps/mac)
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: apps/mac
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - run: rustup toolchain install stable --profile minimal --component clippy,rustfmt
+      - run: cargo fmt --all --check
+      - run: cargo clippy -p teslacam-core -p teslacam-media --all-targets -- -D warnings
+      - run: cargo test -p teslacam-core
+      # The media crate's main-thread tests need ffmpeg-generated fixtures and run locally (just mac-test).
+      - run: cargo test -p teslacam-media --lib

@@ -1,0 +1,282 @@
+:root {
+  --hit: var(--size-hit-target-desktop);
+  color-scheme: light;
+  font-family: var(--font-ui);
+  color: var(--ink);
+  background: var(--floor);
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: var(--floor);
+  color: var(--ink);
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled,
+button[aria-disabled="true"] {
+  cursor: default;
+}
+
+:focus-visible {
+  outline: 2px solid var(--drive);
+  outline-offset: 3px;
+}
+
+h1,
+h2,
+h3,
+p,
+dl,
+dd,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+ul {
+  list-style: none;
+}
+
+svg {
+  flex: none;
+}
+
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+/* Japanese wraps at phrase boundaries, never leaving a lone kana or 。 on the last line. */
+h1,
+h2,
+h3,
+p,
+dd,
+.details__warning {
+  word-break: auto-phrase;
+  text-wrap: pretty;
+}
+
+.visually-hidden,
+.directory-input {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.spinner {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+/* Shared controls */
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: var(--hit);
+  height: var(--hit);
+  border-radius: var(--radius-pill);
+  color: var(--ink-2);
+  transition: background-color var(--motion-fast-duration) var(--motion-fast-easing), color var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.icon-button:hover:not(:disabled) {
+  background: var(--fill);
+  color: var(--ink);
+}
+
+.icon-button:disabled {
+  opacity: 0.35;
+}
+
+.text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--hit);
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  font: var(--type-ui);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.text-button:hover {
+  background: var(--fill);
+}
+
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 22px;
+  border-radius: var(--radius-pill);
+  background: var(--drive);
+  color: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.primary-button:hover {
+  background: var(--drive-hover);
+}
+
+.primary-button--small {
+  height: var(--hit);
+  padding: 0 14px;
+  font-size: 13px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill);
+  font: var(--type-micro);
+  white-space: nowrap;
+  flex: none;
+}
+
+.chip[data-size="large"] {
+  height: 30px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.chip[data-category="sentry"] {
+  color: var(--sentry-ink);
+  background: var(--sentry-soft);
+}
+
+.chip[data-category="saved"] {
+  color: var(--saved-ink);
+  background: var(--saved-soft);
+}
+
+.chip[data-category="recent"] {
+  color: var(--recent);
+  background: var(--fill);
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: var(--size-topbar-height);
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: var(--shadow-float);
+}
+
+.popover {
+  position: absolute;
+  z-index: 6;
+  top: calc(100% + 8px);
+  right: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: var(--shadow-float);
+  font: var(--type-ui);
+  color: var(--ink);
+}
+
+.popover[data-open="false"] {
+  display: none;
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-segmented);
+  background: var(--fill);
+}
+
+.segmented > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--hit);
+  border-radius: 11px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background-color var(--motion-fast-duration) var(--motion-fast-easing), color var(--motion-fast-duration) var(--motion-fast-easing);
+}
+
+.segmented > button:hover:not(:disabled) {
+  color: var(--ink);
+}
+
+.segmented > button[aria-checked="true"] {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: var(--shadow-control);
+}
+
+.segmented > button:disabled {
+  opacity: 0.4;
+}
+
+.segmented--pill {
+  border-radius: var(--radius-pill);
+  padding: 2px;
+}
+
+.segmented--pill > button {
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  font: var(--type-ui);
+}

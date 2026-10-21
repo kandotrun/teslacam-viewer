@@ -1,0 +1,1370 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "playback-timeline",
+  "source": [
+    "apps/web/src/react-app/playback/timeline.ts"
+  ],
+  "cases": [
+    {
+      "name": "eventDuration 0 segments",
+      "fn": "eventDuration",
+      "input": {
+        "segmentCount": 0
+      },
+      "expected": 0
+    },
+    {
+      "name": "eventDuration 1 segments",
+      "fn": "eventDuration",
+      "input": {
+        "segmentCount": 1
+      },
+      "expected": 60
+    },
+    {
+      "name": "eventDuration 2 segments",
+      "fn": "eventDuration",
+      "input": {
+        "segmentCount": 2
+      },
+      "expected": 120
+    },
+    {
+      "name": "eventDuration 3 segments",
+      "fn": "eventDuration",
+      "input": {
+        "segmentCount": 3
+      },
+      "expected": 180
+    },
+    {
+      "name": "eventDuration 12 segments",
+      "fn": "eventDuration",
+      "input": {
+        "segmentCount": 12
+      },
+      "expected": 720
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 0",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 0.1",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0.1,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 30.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 30.5,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 59.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.9,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 59.999",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.999,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 60",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 60.000001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60.000001,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 65",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 65,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 119.75",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 119.75,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 120",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 120,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 150",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 150,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 179.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 179.9,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 180",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 180.0001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180.0001,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 200",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 200,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 718.25",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 718.25,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at 720",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 720,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at -0.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -0.5,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at -3",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -3,
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at NaN",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "NaN",
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "Infinity",
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 0 segments at -Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "-Infinity",
+        "segmentCount": 0
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 0",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 0.1",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0.1,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 0.1,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 30.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 30.5,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 30.5,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 59.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.9,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 59.9,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 59.999",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.999,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 59.999,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 60",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 60.000001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60.000001,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 65",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 65,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 119.75",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 119.75,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 120",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 120,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 150",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 150,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 179.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 179.9,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 180",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 180.0001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180.0001,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 200",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 200,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 718.25",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 718.25,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at 720",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 720,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at -0.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -0.5,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at -3",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -3,
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at NaN",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "NaN",
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "Infinity",
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 1 segments at -Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "-Infinity",
+        "segmentCount": 1
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 0",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 0.1",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0.1,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0.1,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 30.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 30.5,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 30.5,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 59.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.9,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 59.9,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 59.999",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.999,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 59.999,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 60",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 60.000001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60.000001,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 9.999999974752427e-7,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 65",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 65,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 5,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 119.75",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 119.75,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 59.75,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 120",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 120,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 150",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 150,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 179.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 179.9,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 180",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 180.0001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180.0001,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 200",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 200,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 718.25",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 718.25,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at 720",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 720,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at -0.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -0.5,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at -3",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -3,
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at NaN",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "NaN",
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "Infinity",
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 2 segments at -Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "-Infinity",
+        "segmentCount": 2
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 0",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 0.1",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0.1,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0.1,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 30.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 30.5,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 30.5,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 59.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.9,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 59.9,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 59.999",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.999,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 59.999,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 60",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 60.000001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60.000001,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 9.999999974752427e-7,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 65",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 65,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 5,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 119.75",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 119.75,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 59.75,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 120",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 120,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 150",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 150,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 30,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 179.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 179.9,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 59.900000000000006,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 180",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 180.0001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180.0001,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 200",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 200,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 718.25",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 718.25,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at 720",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 720,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at -0.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -0.5,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at -3",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -3,
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at NaN",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "NaN",
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "Infinity",
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 3 segments at -Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "-Infinity",
+        "segmentCount": 3
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 0",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 0.1",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 0.1,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0.1,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 30.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 30.5,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 30.5,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 59.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.9,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 59.9,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 59.999",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 59.999,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 59.999,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 60",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 60.000001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 60.000001,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 9.999999974752427e-7,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 65",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 65,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 5,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 119.75",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 119.75,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 59.75,
+        "segmentIndex": 1
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 120",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 120,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 150",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 150,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 30,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 179.9",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 179.9,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 59.900000000000006,
+        "segmentIndex": 2
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 180",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 3
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 180.0001",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 180.0001,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0.00010000000000331966,
+        "segmentIndex": 3
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 200",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 200,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 20,
+        "segmentIndex": 3
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 718.25",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 718.25,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 58.25,
+        "segmentIndex": 11
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at 720",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": 720,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 11
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at -0.5",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -0.5,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at -3",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": -3,
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at NaN",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "NaN",
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "Infinity",
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 60,
+        "segmentIndex": 11
+      }
+    },
+    {
+      "name": "locatePlaybackTime 12 segments at -Infinity",
+      "fn": "locatePlaybackTime",
+      "input": {
+        "elapsedSeconds": "-Infinity",
+        "segmentCount": 12
+      },
+      "expected": {
+        "offsetSeconds": 0,
+        "segmentIndex": 0
+      }
+    }
+  ]
+}
