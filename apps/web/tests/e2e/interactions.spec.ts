@@ -53,7 +53,7 @@ test('drives categories, autoplay, the transport and keyboard shortcuts without 
   await page.keyboard.press('ArrowRight')
   expect(await playbackPosition(page)).toBeGreaterThan(1)
   await page.keyboard.press('Digit6')
-  await expect(page.getByRole('button', { name: '右リピーターカメラを縮小' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '右リピーターカメラをグリッドへ戻す' })).toBeVisible()
   await expect(page.locator('.stage')).toHaveAttribute('data-mode', 'expanded')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: '右リピーターカメラを拡大' })).toBeVisible()

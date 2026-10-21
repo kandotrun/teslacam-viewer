@@ -85,7 +85,7 @@ test('keeps the same six videos playing through 6分割, expansion and back with
   await expect(page.locator('.stage')).toHaveAttribute('data-mode', 'expanded')
   await expect(page.getByRole('group', { name: '表示するカメラ' })).toBeVisible()
   await page.getByRole('button', { name: 'リアを表示' }).click()
-  await expect(page.getByRole('button', { name: 'リアカメラを縮小' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'リアカメラをグリッドへ戻す' })).toBeVisible()
   await page.screenshot({ path: `${evidenceRoot}/1280x800-expanded.png` })
   await page.keyboard.press('Escape')
   await expect(page.locator('.stage')).toHaveAttribute('data-mode', 'grid')

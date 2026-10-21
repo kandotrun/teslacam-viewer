@@ -102,7 +102,7 @@ export const CameraWindow = memo(function CameraWindow({
   return (
     <div className="camera-slot" data-area={area} data-camera={cameraId} style={area === 'hidden' ? undefined : { gridArea: area }}>
       <button
-        aria-label={`${label}カメラを${expanded ? '縮小' : '拡大'}`}
+        aria-label={`${label}カメラを${expanded ? 'グリッドへ戻す' : '拡大'}`}
         aria-pressed={expanded}
         className="camera-window"
         data-active={active}
