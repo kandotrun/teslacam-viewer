@@ -3,6 +3,7 @@
 
 pub mod components;
 pub mod date_picker;
+pub mod export_dialog;
 pub mod library;
 pub mod rail;
 pub mod root;
@@ -12,6 +13,7 @@ pub mod style;
 mod tests;
 pub mod thumbnails;
 pub mod top_row;
+pub mod transport;
 
 use teslacam_core::app_state::AppState;
 
@@ -23,6 +25,9 @@ pub fn floor_phase(store: &AppStore) -> FloorPhase {
     match store.state() {
         AppState::Ready(_) => FloorPhase::Ready {
             session: store.session().is_some(),
+            message_lines: store
+                .playback_message()
+                .map_or(0, |message| message.text().lines().count()),
         },
         _ => FloorPhase::Welcome,
     }
