@@ -14,6 +14,8 @@ type TransportProps = {
   readonly preRollSeconds: number | null
   readonly onOlder: (() => void) | null
   readonly onNewer: (() => void) | null
+  /** The six-camera message is hidden while event.mp4 plays instead. */
+  readonly showMessage?: boolean
 }
 
 const rates = [0.5, 1, 1.5, 2] as const
@@ -38,7 +40,7 @@ function SkipButtons({ playback }: { readonly playback: SynchronizedPlayback }) 
 }
 
 /** The floating transport (DESIGN.md §6 Transport). */
-export function Transport({ playback, band, detectionSeconds, preRollSeconds, onOlder, onNewer }: TransportProps) {
+export function Transport({ playback, band, detectionSeconds, preRollSeconds, onOlder, onNewer, showMessage = true }: TransportProps) {
   const [moreOpen, setMoreOpen] = useState(false)
   const duration = playback.durationSeconds
   const segmentTicks = Array.from({ length: Math.max(0, Math.round(duration / 60) - 1) }, (_, index) => percentOf((index + 1) * 60, duration))
@@ -125,7 +127,7 @@ export function Transport({ playback, band, detectionSeconds, preRollSeconds, on
           <ChevronRight aria-hidden="true" size={22} />
         </button>
       </div>
-      {playback.message !== null && <p className="transport__message" role="status">{playback.message}</p>}
+      {showMessage && playback.message !== null && <p className="transport__message" role="status">{playback.message}</p>}
     </footer>
   )
 }

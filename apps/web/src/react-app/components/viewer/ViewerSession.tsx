@@ -155,7 +155,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
         )}
         mode={mode}
         reveal={reveal}
-        roomForMessage={playback.message !== null}
+        roomForMessage={playback.message !== null && view !== 'representative'}
       >
         {cameraIds.map((cameraId) => (
           <CameraWindow
@@ -178,6 +178,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
       </StageFrame>
       <Transport
         band={band}
+        showMessage={view !== 'representative'}
         detectionSeconds={view === 'representative' || detection === null ? null : detection.seconds}
         playback={playback}
         preRollSeconds={startsAtPreRoll(event) ? initialPlaybackSeconds(event) : null}

@@ -33,3 +33,45 @@ test('captures the welcome and viewer screens for visual review', async ({ brows
     await context.close()
   }
 })
+
+test('captures the scanning and error states of the library panel', async ({ browser }) => {
+  const media = [...await readFile(fixturePath)]
+  const scanning = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  await installPicker(scanning, media, 'full')
+  const scanningPage = await scanning.newPage()
+  await scanningPage.goto('/')
+  await scanningPage.evaluate(() => {
+    const original = window.showDirectoryPicker
+    if (original === undefined) return
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => {
+        const root = await original()
+        return {
+          kind: 'directory',
+          name: root.name,
+          async *values() {
+            for await (const entry of root.values()) {
+              yield entry
+              await new Promise((resolve) => setTimeout(resolve, 400))
+            }
+          },
+        }
+      },
+    })
+  })
+  await scanningPage.getByRole('button', { name: 'フォルダを選ぶ', exact: true }).click()
+  await expect(scanningPage.getByText('件を確認しました')).toBeVisible()
+  await scanningPage.screenshot({ path: `${evidenceRoot}/1440x900-scanning.png` })
+  await scanning.close()
+
+  const failing = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+  await installPicker(failing, media, 'wrong')
+  const failingPage = await failing.newPage()
+  await failingPage.goto('/')
+  await failingPage.getByRole('button', { name: 'フォルダを選ぶ', exact: true }).click()
+  await expect(failingPage.getByRole('alert')).toBeVisible()
+  await failingPage.screenshot({ path: `${evidenceRoot}/1440x900-error.png` })
+  await failing.close()
+})
+
