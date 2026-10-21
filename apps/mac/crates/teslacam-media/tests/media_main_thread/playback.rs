@@ -55,6 +55,10 @@ pub const TESTS: &[crate::Test] = &[
         "probe_job_reports_durations_sizes_and_faults",
         probe_job_reports_durations_sizes_and_faults,
     ),
+    (
+        "short_tails_hold_the_last_frame",
+        short_tails_hold_the_last_frame,
+    ),
 ];
 
 const LOAD_TIMEOUT: Duration = Duration::from_secs(15);
@@ -365,6 +369,21 @@ fn gaps_show_missing_and_keep_the_other_cameras_in_sync(mtm: MainThreadMarker) {
         playback.status(CameraId::Back, host_now()),
         CameraStatus::Missing
     );
+    // At 40 s the back clip returns and the front gap ends: both rejoin in sync while playing.
+    let cameras = [CameraId::Front, CameraId::Back, CameraId::LeftPillar];
+    play_from(&mut playback, 38.5);
+    let stats = sample(&mut playback, &cameras, Duration::from_secs(3));
+    println!("  across 40 s: {stats:?}");
+    assert!(
+        stats.complete > 100,
+        "back / front did not come back: {stats:?}"
+    );
+    assert_eq!(stats.spread_max, 0, "{stats:?}");
+    assert!(stats.min_frame >= frame_at(40.0));
+    assert_eq!(
+        playback.status(CameraId::Back, host_now()),
+        CameraStatus::Ready
+    );
     playback.pause(host_now());
 }
 
@@ -520,4 +539,57 @@ fn probe_job_reports_durations_sizes_and_faults(_mtm: MainThreadMarker) {
         segments[0].cameras[CameraId::RightRepeater],
         Some(Err(FileFault::Unavailable))
     );
+}
+
+fn short_tails_hold_the_last_frame(mtm: MainThreadMarker) {
+    // A 19.6 s copy of the first front clip, followed by the next segment at 20 s: the 0.4 s tail
+    // holds the last frame instead of flashing a missing tile.
+    let source = fixtures::clip(
+        &fixtures::gaps_dir(),
+        "2026-10-20_13-00-00",
+        CameraId::Front,
+    );
+    let trimmed = fixtures::scratch().join("front-19.6s.mp4");
+    let status = std::process::Command::new("ffmpeg")
+        .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
+        .arg(&source)
+        .args(["-t", "19.6", "-c", "copy"])
+        .arg(&trimmed)
+        .status()
+        .expect("ffmpeg");
+    assert!(status.success());
+    let mut event = fixtures::gaps_event();
+    event.segments[0].files[CameraId::Front] = Some(trimmed);
+    let mut playback = open_ready(&event, mtm);
+    let clip = playback.timeline().unwrap().cameras[CameraId::Front].clips[0];
+    assert!(clip.hold > 0.3 && clip.hold < 0.45, "{clip:?}");
+    let last = (clip.duration * fixtures::FPS).round() as u32 - 1;
+    for t in [clip.duration + 0.05, 19.95] {
+        playback.seek(t, host_now());
+        settle(&mut playback);
+        assert_eq!(
+            playback.status(CameraId::Front, host_now()),
+            CameraStatus::Ready
+        );
+        let ok = pump_until(Duration::from_secs(2), || {
+            stamps(&mut playback, &[CameraId::Front], host_now())
+                == [Some(Stamp { frame: last, id: 1 })]
+        });
+        assert!(ok, "t {t}: front does not hold frame {last}");
+    }
+    // Playing through the tail: front holds its last frame until 20 s, then both cameras run in
+    // sync again from the first frame of segment 1.
+    let cameras = [CameraId::Front, CameraId::LeftPillar];
+    play_from(&mut playback, 19.0);
+    let during = sample(&mut playback, &cameras, Duration::from_millis(1100));
+    let after = sample(&mut playback, &cameras, Duration::from_secs(1));
+    println!("  through the held tail: {during:?}");
+    println!("  after the held tail: {after:?}");
+    assert!(
+        during.spread_max <= (clip.hold * fixtures::FPS).ceil() as u32 + 1,
+        "{during:?}"
+    );
+    assert!(after.min_frame >= frame_at(20.0), "{after:?}");
+    assert_eq!(after.spread_max, 0, "{after:?}");
+    playback.pause(host_now());
 }
