@@ -23,6 +23,7 @@ pub mod copy;
 pub mod day_timeline;
 pub mod detection;
 pub mod event_timeline;
+pub mod export_plan;
 pub mod export_state;
 pub mod filename;
 pub mod filters;
@@ -33,6 +34,7 @@ pub mod playback;
 pub mod scan;
 pub mod shortcuts;
 pub mod summary;
+pub mod theme;
 pub mod timeline;
 pub mod timestamp;
 

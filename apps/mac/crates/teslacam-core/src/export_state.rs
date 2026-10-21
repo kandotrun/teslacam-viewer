@@ -12,6 +12,13 @@
 use std::path::PathBuf;
 
 use crate::copy;
+use crate::library::Event;
+use crate::summary::camera_availability;
+
+/// Whether `event` can be exported: some camera has footage in every segment (spec A-7).
+pub fn export_available(event: &Event) -> bool {
+    camera_availability(event).available > 0
+}
 
 /// Where the export control is.
 #[derive(Debug, Clone, PartialEq)]
@@ -197,6 +204,25 @@ mod tests {
             machine.dispatch(ExportAction::Start),
             vec![ExportEffect::StartExport]
         );
+    }
+
+    #[test]
+    fn availability_needs_a_camera_in_every_segment() {
+        use crate::contract::event_input;
+        let event = |segments: serde_json::Value| {
+            event_input(
+                &serde_json::json!({"id": "e", "category": "saved", "timestamp": "2026-08-20_20-10-00", "segments": segments}),
+            )
+        };
+        assert!(export_available(&event(serde_json::json!([
+            {"timestamp": "2026-08-20_20-10-00", "cameras": ["front", "back"]},
+            {"timestamp": "2026-08-20_20-11-00", "cameras": ["front"]},
+        ]))));
+        assert!(!export_available(&event(serde_json::json!([
+            {"timestamp": "2026-08-20_20-10-00", "cameras": ["front"]},
+            {"timestamp": "2026-08-20_20-11-00", "cameras": ["back"]},
+        ]))));
+        assert!(!export_available(&event(serde_json::json!([]))));
     }
 
     #[test]
