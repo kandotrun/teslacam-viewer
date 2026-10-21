@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, Ellipsis, Pause, Play, RotateCcw, RotateCw } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 
 import type { SynchronizedPlayback } from '../../playback/use-synchronized-playback'
 import { scrubberValueText, transportTimeLabel } from '../../presentation/event-copy'
@@ -39,9 +39,56 @@ function SkipButtons({ playback }: { readonly playback: SynchronizedPlayback }) 
   )
 }
 
+/** Tablet and phone: the skip buttons behind その他の操作; closes on Escape and on a press outside. */
+function MoreMenu({ playback }: { readonly playback: SynchronizedPlayback }) {
+  const [open, setOpen] = useState(false)
+  const wrapper = useRef<HTMLDivElement>(null)
+  const button = useRef<HTMLButtonElement>(null)
+  const menuId = useId()
+
+  useEffect(() => {
+    if (!open) return undefined
+    const closeOnOutside = (pointer: PointerEvent): void => {
+      if (pointer.target instanceof Node && wrapper.current?.contains(pointer.target) === true) return
+      setOpen(false)
+    }
+    document.addEventListener('pointerdown', closeOnOutside)
+    return () => document.removeEventListener('pointerdown', closeOnOutside)
+  }, [open])
+
+  return (
+    <div
+      className="transport__more"
+      ref={wrapper}
+      onKeyDown={(keyboard) => {
+        if (keyboard.key !== 'Escape' || !open) return
+        keyboard.stopPropagation()
+        setOpen(false)
+        button.current?.focus()
+      }}
+    >
+      <button
+        aria-controls={menuId}
+        aria-expanded={open}
+        aria-label="その他の操作"
+        className="icon-button"
+        ref={button}
+        type="button"
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Ellipsis aria-hidden="true" size={22} />
+      </button>
+      {open && (
+        <div className="popover transport__menu" id={menuId}>
+          <SkipButtons playback={playback} />
+        </div>
+      )}
+    </div>
+  )
+}
+
 /** The floating transport (DESIGN.md §6 Transport). */
 export function Transport({ playback, band, detectionSeconds, preRollSeconds, onOlder, onNewer, showMessage = true }: TransportProps) {
-  const [moreOpen, setMoreOpen] = useState(false)
   const duration = playback.durationSeconds
   const segmentTicks = Array.from({ length: Math.max(0, Math.round(duration / 60) - 1) }, (_, index) => percentOf((index + 1) * 60, duration))
   const detectionPercent = detectionSeconds === null || duration === 0 ? null : percentOf(detectionSeconds, duration)
@@ -98,22 +145,7 @@ export function Transport({ playback, band, detectionSeconds, preRollSeconds, on
       </div>
       <div className="transport__tools">
         {band !== 'desktop' ? (
-          <div className="transport__more">
-            <button
-              aria-expanded={moreOpen}
-              aria-label="その他の操作"
-              className="icon-button"
-              type="button"
-              onClick={() => setMoreOpen((open) => !open)}
-            >
-              <Ellipsis aria-hidden="true" size={22} />
-            </button>
-            {moreOpen && (
-              <div className="popover transport__menu">
-                <SkipButtons playback={playback} />
-              </div>
-            )}
-          </div>
+          <MoreMenu playback={playback} />
         ) : (
           <SkipButtons playback={playback} />
         )}
