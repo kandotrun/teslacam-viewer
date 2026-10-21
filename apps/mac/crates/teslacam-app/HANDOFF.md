@@ -18,8 +18,8 @@ the map of the finished crate and of what is still open.
 | `src/scan.rs`, `src/dev.rs` | Scan worker; `TESLACAM_*` development variables (table in the module docs) | unit |
 | `src/sync_probe.rs` | Development: decodes the fixtures' burned-in frame counter from drawn frames, spread statistics | unit |
 | `src/assets.rs` | Lucide icons, custom filled play / pause and thin skip icons, Barlow, `vehicle-top.png` | — |
-| `src/presentation/` | Pure logic: `floor_layout` (incl. the message room), `stage_layout` (vehicle, grid, expanded + strip, mini car, representative, `video_rect`), `transport` (scrubber marks and pointer mapping), `floor_art` (floor, car shadow, wedges, progress ring SVG), `bitmap` (overlay → BMP), `motion`, `numerals`, `lru` | unit |
-| `src/ui/` | Views: `root`, `library` (+ `rail`, `date_picker`, `thumbnails`), `top_row` (event pill, view switch, export control), `stage`, `transport`, `export_dialog`, `components`, `style` | `ui/tests.rs` (headless) |
+| `src/presentation/` | Pure logic: `floor_layout` (incl. the message room), `stage_layout` (vehicle, grid, expanded + strip, mini car, representative, `video_rect`), `transport` (scrubber marks, pointer mapping, slider keys), `event_pill` (which items fit), `line_break` (Japanese wrapping without stranded tails or a leading `、`/`。`), `floor_art` (floor, car shadow, wedges, progress ring SVG), `bitmap` (overlay → BMP), `motion` (reveal, `motion-sheet`), `numerals`, `lru` | unit |
+| `src/ui/` | Views: `root` (shortcuts, focus routing, tab groups), `library` (+ `rail`, `date_picker`, `thumbnails`), `top_row` (event pill, view switch, export control), `stage`, `transport`, `export_dialog`, `components` (incl. `KeyboardFocus` + focus ring), `text` (`ja_text` element), `style` | `ui/tests.rs` (headless) |
 
 State and rules live in `teslacam-core` (playback, export and app machines, copy) or in pure modules
 (`presentation/`, `bridge.rs`); views and `media.rs` only read, dispatch and carry out effects. Every
@@ -42,10 +42,12 @@ AppStore (Entity) ── observed by root, library (cached), top row (cached), s
                             RevealOutput (Finder) / DiscardOutput
 ```
 
-- **Frame loop.** `StageView::render` asks `AppStore::media_active` (`bridge::frame_loop_needed`:
-  probing, running, exporting, the representative video busy, or a seek settling while some camera
-  can show video) and schedules one `on_next_frame` tick; the tick calls `media_tick` and notifies
-  the stage, so the window redraws at display rate while playing and is idle when paused. The
+- **Frame loop.** `StageView::render` asks `AppStore::media_active` (`bridge::frame_loop`: every
+  display frame while probing, running, exporting, the representative video is busy, or a seek
+  settles while some camera can show video; every 250 ms while only a camera is still loading, so a
+  late file shows its still frame while paused; idle otherwise) and schedules one tick; the tick
+  calls `media_tick` and notifies the stage, so the window redraws at display rate while playing and
+  is idle when paused. The
   library and the top row are `cached` views: per-frame redraws cost the root, stage and transport
   only. The per-frame clock is read from the media (transport), never pushed through the store.
 - **Video.** `EventPlayback::frame(camera, now)` returns retained `420f` IOSurface buffers that go
@@ -67,14 +69,33 @@ AppStore (Entity) ── observed by root, library (cached), top row (cached), s
   The finished file is the user's: closing or ending the session never deletes it. Quitting during an
   export cancels it and waits (up to 2 s) so the partial file and AVFoundation's temp file are removed.
 
+- **Keyboard.** Every control is a tab stop (`KeyboardFocus::keyboard_focus`: `tab_index(0)` + a
+  2 pt `drive` ring 3 pt outside, shown for keyboard focus only). A click focuses the control like a
+  button on the web, and `RootView::focus_target` then reports `FocusTarget::Button` (any focused
+  element but the floor) or `TextField` (search field, or an open popover / menu), so the theater
+  shortcuts wait (spec §2.10.10 rule 2, AT-KEY-02); a click on the bare floor focuses the floor again.
+  Tab / Shift-Tab are GPUI Kit's root bindings; the floating layers are tab groups (library 1, top
+  row 2, stage 3, transport 4, dialog 5). The export dialog is a GPUI Kit focus trap: it takes focus
+  when it opens and gives it back to `書き出す` when dismissed. The day rail moves focus with
+  `←`/`→`/`Home`/`End` (`rail::rail_focus_target`, handles owned by the library); the scrubber is a
+  focusable slider (`aria_value` like `0分15秒 / 1分`) that seeks ±10 s / to the ends.
+- **Motion.** Besides the reveal, expanding or collapsing a camera moves the windows from their last
+  drawn rects over `motion-sheet` (320 ms), and the details popover fades in and settles 8 pt down;
+  "Reduce motion" makes both instant (`presentation::motion::Sheet`).
+- **Japanese text.** Warnings, error paragraphs and popover messages use `ui::text::ja_text`, which
+  measures with the text system and breaks with `presentation::line_break` (ASCII words whole, no
+  line starting with closing punctuation or a small kana, at least three characters on the last line).
+  The event pill drops the detection, then the place, whole when they do not fit (measured text,
+  `presentation::event_pill`).
+
 ## Verifying
 
 ```bash
-cargo test --workspace                  # core 167, media 57 + 16 main-thread, app 58 (9 headless UI)
+cargo test --workspace                  # core 171, media 58 + 18 main-thread, app 80 (19 headless UI)
 cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --check
 ./scripts/gen-fixtures.sh               # media fixtures + the realistic library
 ./scripts/capture.sh /tmp/x.png TESLACAM_OPEN="$PWD/.fixtures/TeslaCam" TESLACAM_SELECT=…  # see README
-./scripts/bundle.sh                     # target/bundle/TeslaCam Viewer.app
+./scripts/bundle.sh                     # target/bundle/TeslaCam Viewer.app (with AppIcon.icns)
 ```
 
 Measured on the development machine (Apple M4 Max, heavily loaded by other work during the runs):
@@ -92,19 +113,21 @@ Measured on the development machine (Apple M4 Max, heavily loaded by other work 
 
 ## Known gaps
 
-- Keyboard reachability (from stage 1): no Tab order or visible focus ring (`DESIGN.md` §9); the
-  rail's arrow-key navigation is missing. The rate menu, the export popovers and the dialog are
-  mouse-first (Esc closes the dialog and the rate menu).
-- Motion: the reveal is the only animation; popovers and the expanded camera open without the
-  `motion-sheet` transition.
-- The scrubber has no keyboard control and no hover preview; dragging seeks continuously (each move
-  is an exact seek of six players).
-- The export dialog's thumbnail draws every slot as video (black) even for a camera with no footage
-  in the whole event; the exported video draws `記録なし` there.
+- The rate menu, the date picker and the details popover open from the keyboard but their items are
+  plain tab stops: no arrow-key roving inside a menu, and focus does not move into a popover when it
+  opens (the export dialog does).
+- The scrubber has no hover preview; dragging seeks continuously (each move is an exact seek of six
+  players).
 - `StartFailed` is never reported: the AVFoundation sync engine starts after its timeouts in every
   case, so `PlaybackMessage::Rejected` cannot appear on the Mac.
 - `Finderで表示` and the save panel are verified by hand only (the save panel is skipped in
-  development runs with `TESLACAM_EXPORT_TO`; the headless tests stop at the machine's effects).
+  development runs with `TESLACAM_EXPORT_TO`; the headless tests stop at the machine's effects). The
+  finished state offers `Finderで表示` where `DESIGN.md` §6/§8 and spec §2.11 still say `MP4を保存`
+  (the destination is chosen up front on the Mac); the documents have not recorded this yet.
 - 4:3 footage keeps a ~4 pt black rim inside its window (see Video above).
-- Not signed or notarized; no app icon (`.icns`) in the bundle yet.
-- Japanese line breaking (stage 1): GPUI allows breaks before `、` / `。`.
+- Not signed or notarized.
+- `ja_text` handles single-style text; mixed runs (Barlow numerals inside a sentence) still use GPUI's
+  wrapping, which may break anywhere.
+- The `copy-format.json` fixture does not pin the UI-label formatters (cluster, category option, day
+  button, date picker, export and rate labels): the web keeps them inline in components, so adding
+  cases needs those formatters exported on the web first.

@@ -28,6 +28,12 @@ Choose the USB drive's `TeslaCam` folder with `フォルダを選ぶ` or ⌘O. T
 `Space` plays / pauses, `←` / `→` skip 10 s, `1`–`6` expand a camera, `Esc` returns, `[` / `]` step
 through events. `書き出す` exports the event as one 1280 × 720 MP4 (the save panel asks where).
 
+Every control is reachable with `Tab` / `⇧Tab` (library → top row → stage → transport, a 2 pt blue
+focus ring) and activates with `Space` or `Return`. While a control has focus — also after clicking it,
+as on the web — it keeps the keys, so the shortcuts above wait (`Esc` still collapses a camera); click
+the bare floor to give them back. On the day rail `←` / `→` / `Home` / `End` move between markers; on
+the scrubber they seek ±10 s or to either end. The export dialog keeps `Tab` inside it.
+
 ### App bundle
 
 ```bash
@@ -35,8 +41,9 @@ through events. `書き出す` exports the event as one 1280 × 720 MP4 (the sav
 open "target/bundle/TeslaCam Viewer.app"
 ```
 
-The bundle (`run.kan.teslacam-viewer`, macOS 14+, high resolution) holds the executable and its
-`Info.plist`; fonts, icons and the car image are compiled into the binary. It is neither signed nor
+The bundle (`run.kan.teslacam-viewer`, macOS 14+, high resolution) holds the executable, its
+`Info.plist` and `AppIcon.icns` (rendered from `assets/AppIcon.svg` with `sips` and `iconutil`); fonts,
+icons and the car image are compiled into the binary. It is neither signed nor
 notarized, so a copy moved to another Mac needs right-click > Open the first time.
 
 ## Test
@@ -56,7 +63,8 @@ just mac-check                    # fmt + clippy -D warnings
 
 The app reads `TESLACAM_*` variables for development (table in `crates/teslacam-app/src/dev.rs`):
 open a folder, select an event, choose a view, play / pause / seek, open popovers, start an export
-without the save panel, delay the players (loading state), log the sync of the drawn frames.
+without the save panel, delay the players (loading state), press Tab (`TESLACAM_UI=tab:<n>`, shows
+the focus ring), log the sync of the drawn frames.
 `scripts/capture.sh` runs the debug build, captures its window to a PNG and quits:
 
 ```bash
