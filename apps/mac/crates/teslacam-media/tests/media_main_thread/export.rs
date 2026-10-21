@@ -134,7 +134,8 @@ fn grey_frames(path: &Path, nth: usize) -> Vec<Vec<u8>> {
         .args(["-f", "rawvideo", "-"])
         .output()
         .expect("ffmpeg");
-    out.stdout.chunks_exact(W * H).map(<[u8]>::to_vec).collect()
+    let (frames, _) = out.stdout.as_chunks::<{ W * H }>();
+    frames.iter().map(|frame| frame.to_vec()).collect()
 }
 
 /// Decodes frame `index` as RGB24.
@@ -342,8 +343,9 @@ fn export_shows_missing_tiles_only_while_a_camera_has_no_video(mtm: MainThreadMa
     for (t, missing, video) in cases {
         let index = (t * 30.0) as u64;
         let rgb = rgb_frame(&output, index);
-        let grey: Vec<u8> = rgb
-            .chunks_exact(3)
+        let (pixels, _) = rgb.as_chunks::<3>();
+        let grey: Vec<u8> = pixels
+            .iter()
             .map(|p| {
                 ((u32::from(p[0]) * 77 + u32::from(p[1]) * 150 + u32::from(p[2]) * 29) >> 8) as u8
             })
