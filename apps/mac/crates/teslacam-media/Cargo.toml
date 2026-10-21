@@ -1,0 +1,13 @@
+[package]
+name = "teslacam-media"
+description = "macOS media layer: synchronized six-camera playback and composite export on AVFoundation"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+license.workspace = true
+
+[dependencies]
+teslacam-core.workspace = true
+
+[lints]
+workspace = true

@@ -1,5 +1,17 @@
 # TeslaCam Viewer — macOS native parity specification
 
+> **Superseded parts (2026-10-21).** The visual design was replaced by the garage-floor system in
+> `DESIGN.md`. Where this document and `DESIGN.md` disagree on layout, colours, typography, copy that only
+> exists in the old layout, or the export frame geometry (§3.2–§3.3, §4, §6.3.13), `DESIGN.md` and
+> `packages/contract/design-tokens.json` / `composite-layout.json` win. Domain rules (§1), states (§2 where
+> not visual), export timing (§3.4–§3.8) and the acceptance checklist (§7) still apply. Decisions on the
+> open questions: window minimum 1100 × 700, default 1440 × 900; symbolic links are not followed;
+> directory entries are listed in name order; shortcuts ignore keys pressed with ⌘/⌃/⌥; browser-only copy
+> is dropped on the Mac (A-list items about browser notes). Behaviour bugs A-1 (cancelling a re-pick
+> clears the library), the overwritten "no playable camera" message, detection markers on non-Sentry
+> events, the pre-roll label when detection is earlier than 15 s, and the fixed 640 px cluster width are
+> fixed on both platforms rather than copied.
+
 | Field | Value |
 |---|---|
 | Status | Draft for implementation and review |

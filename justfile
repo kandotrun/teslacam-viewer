@@ -55,4 +55,37 @@ web-deploy-dry-run: web-build
 # Mac (apps/mac)
 # ---------------------------------------------------------------------------
 
-# TODO(mac): add mac-* recipes here (build, test, run, bundle).
+# Run the Mac domain, media and app tests
+[group('mac')]
+[working-directory('apps/mac')]
+mac-test:
+    cargo test --workspace
+
+# Lint the Mac workspace
+[group('mac')]
+[working-directory('apps/mac')]
+mac-check:
+    cargo fmt --all --check
+    cargo clippy --workspace --all-targets -- -D warnings
+
+# Run the Mac app in release mode
+[group('mac')]
+[working-directory('apps/mac')]
+mac-run:
+    cargo run --release -p teslacam-app
+
+# Generate TeslaCam-like media fixtures for local playback tests
+[group('mac')]
+[working-directory('apps/mac')]
+mac-fixtures:
+    ./scripts/gen-fixtures.sh .fixtures
+
+# ---------------------------------------------------------------------------
+# Shared contract (packages/contract)
+# ---------------------------------------------------------------------------
+
+# Regenerate the golden fixtures from the web implementation
+[group('contract')]
+[working-directory('apps/web')]
+contract-generate:
+    npm run contract:generate
