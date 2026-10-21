@@ -27,7 +27,7 @@ export function CategoryChip({ category, wording, size = 'regular' }: CategoryCh
   return (
     <span className="chip" data-category={category} data-size={size}>
       <CategoryIcon category={category} size={size === 'large' ? 14 : 13} />
-      {wording === 'full' ? categoryLabel(category) : shortCategoryLabels[category]}
+      <span className="chip__word">{wording === 'full' ? categoryLabel(category) : shortCategoryLabels[category]}</span>
     </span>
   )
 }

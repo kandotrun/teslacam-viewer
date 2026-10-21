@@ -1,7 +1,9 @@
 /* Top row: event pill (left) and actions pill (right) */
 .event-pill-group {
+  container: event-pill-group / inline-size;
   position: relative;
   display: flex;
+  flex: 1 1 0;
   align-items: center;
   gap: 10px;
   min-width: 0;
@@ -21,6 +23,7 @@
 }
 
 .event-pill__when {
+  flex: none;
   font-size: 15px;
   font-weight: 600;
   white-space: nowrap;

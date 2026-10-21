@@ -42,14 +42,6 @@
     padding: 0 14px 0 6px;
   }
 
-  .floor[data-library-hidden="false"] .event-pill__suffix {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-
   .topbar,
   .event-pill-group {
     gap: 8px;
@@ -126,13 +118,6 @@
     width: auto;
   }
 
-  .floor[data-library-hidden] .event-pill__suffix {
-    position: static;
-    width: auto;
-    height: auto;
-    clip-path: none;
-  }
-
   .topbar {
     gap: 6px;
   }
@@ -150,10 +135,11 @@
     padding: 0 9px;
   }
 
+  /* Fixed to the event pill group (a size container), which starts at the 8 px gutter. */
   .details {
     position: fixed;
-    top: 66px;
-    left: 8px;
+    top: 58px;
+    left: 0;
   }
 
   .stage {
@@ -190,5 +176,34 @@
 
   .cta {
     align-self: stretch;
+  }
+}
+
+/*
+ * The event pill drops items from the right as its room narrows (DESIGN.md §6): the place, then the
+ * 開始 suffix, then the category word (the icon and colour stay; the word stays in the accessible name).
+ * The start time never shrinks.
+ */
+@container event-pill-group (max-width: 300px) {
+  .event-pill__suffix {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+}
+
+@container event-pill-group (max-width: 240px) {
+  .event-pill .chip__word {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .event-pill .chip {
+    padding: 0 8px;
   }
 }
