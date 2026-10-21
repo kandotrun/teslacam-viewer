@@ -17,7 +17,7 @@ use teslacam_media::{
     PlaybackEvent, RepresentativePlayer, VideoFrame,
 };
 
-use crate::bridge::{LoopState, MediaCall, frame_loop_needed, media_calls, tile_status};
+use crate::bridge::{FrameLoop, LoopState, MediaCall, frame_loop, media_calls, tile_status};
 
 /// What changed in the media since the previous [`SessionMedia::tick`].
 #[derive(Debug, Clone)]
@@ -59,6 +59,7 @@ pub struct SessionMedia {
     export: Option<ExportJob>,
     /// Whether some camera was loading or ready at the last tick.
     live_cameras: bool,
+    loading_cameras: bool,
     mtm: MainThreadMarker,
 }
 
@@ -82,6 +83,7 @@ impl SessionMedia {
             representative: representative.map(|path| Representative { path, player: None }),
             export: None,
             live_cameras: true,
+            loading_cameras: true,
             mtm,
         }
     }
@@ -104,6 +106,9 @@ impl SessionMedia {
         }
         let statuses = CameraMap::from_fn(|camera| tile_status(self.playback.status(camera, now)));
         self.live_cameras = statuses.iter().any(|(_, status)| !status.is_terminal());
+        self.loading_cameras = statuses
+            .iter()
+            .any(|(_, status)| *status == TileStatus::Loading);
         MediaReport {
             loaded,
             statuses,
@@ -151,8 +156,8 @@ impl SessionMedia {
         self.playback.current_time(now)
     }
 
-    /// Whether the frame loop must keep running (see [`frame_loop_needed`]).
-    pub fn needs_ticks(&self) -> bool {
+    /// How the frame loop must run (see [`frame_loop`]).
+    pub fn needs_ticks(&self) -> FrameLoop {
         let representative_busy = self
             .representative
             .as_ref()
@@ -160,11 +165,12 @@ impl SessionMedia {
             .is_some_and(|player| {
                 player.is_playing() || (!player.is_settled() && player.duration() != Some(0.0))
             });
-        frame_loop_needed(LoopState {
+        frame_loop(LoopState {
             probing: self.playback.duration().is_none(),
             running: self.playback.is_running(),
             settled: self.playback.is_settled(),
             live_cameras: self.live_cameras,
+            loading_cameras: self.loading_cameras,
             exporting: self.export.is_some(),
             representative_busy,
         })

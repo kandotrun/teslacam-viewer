@@ -389,11 +389,14 @@ impl AppStore {
         }
     }
 
-    /// Whether the frame loop must run (playing, loading, settling, exporting).
-    pub fn media_active(&self, cx: &gpui_kit::App) -> bool {
+    /// How the frame loop must run (every frame while playing, loading, settling or exporting;
+    /// polled while only a late camera is still loading).
+    pub fn media_active(&self, cx: &gpui_kit::App) -> crate::bridge::FrameLoop {
         self.media
             .as_ref()
-            .is_some_and(|media| media.read(cx).needs_ticks())
+            .map_or(crate::bridge::FrameLoop::Idle, |media| {
+                media.read(cx).needs_ticks()
+            })
     }
 
     /// One step of the frame loop: the media applies finished work, then its report goes to the

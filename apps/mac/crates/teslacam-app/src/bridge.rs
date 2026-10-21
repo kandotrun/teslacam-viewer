@@ -79,20 +79,48 @@ pub struct LoopState {
     pub settled: bool,
     /// Some camera is loading or ready (not every one is missing or broken).
     pub live_cameras: bool,
+    /// Some camera is still loading (a slow file can become ready after the load grace).
+    pub loading_cameras: bool,
     /// A composite export runs.
     pub exporting: bool,
     /// The representative video plays or settles a seek.
     pub representative_busy: bool,
 }
 
-/// Whether the frame loop must tick: something can still change on screen. A group that cannot
-/// settle because no camera can show video (every file broken) does not keep the loop alive.
+/// Whether the frame loop must tick every display frame: something changes on screen. A group that
+/// cannot settle because no camera can show video (every file broken) does not keep the loop alive.
 pub fn frame_loop_needed(state: LoopState) -> bool {
     state.probing
         || state.running
         || state.exporting
         || state.representative_busy
         || (!state.settled && state.live_cameras)
+}
+
+/// How often the media must be ticked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FrameLoop {
+    /// Nothing can change: no ticks.
+    Idle,
+    /// Only a late camera can still become ready: tick every [`POLL_INTERVAL`].
+    Poll,
+    /// Every display frame.
+    EveryFrame,
+}
+
+/// Interval of the [`FrameLoop::Poll`] ticks.
+pub const POLL_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
+
+/// The frame loop for `state`: every frame while [`frame_loop_needed`], polled while a camera is
+/// still loading (so it can join and show its still frame while paused), idle otherwise.
+pub fn frame_loop(state: LoopState) -> FrameLoop {
+    if frame_loop_needed(state) {
+        FrameLoop::EveryFrame
+    } else if state.loading_cameras {
+        FrameLoop::Poll
+    } else {
+        FrameLoop::Idle
+    }
 }
 
 #[cfg(test)]
@@ -167,10 +195,12 @@ mod tests {
             running: false,
             settled: true,
             live_cameras: true,
+            loading_cameras: false,
             exporting: false,
             representative_busy: false,
         };
         assert!(!frame_loop_needed(idle));
+        assert_eq!(frame_loop(idle), FrameLoop::Idle);
         // Probing, running (also through a gap where every camera is missing), exporting, or the
         // representative video playing keep it going.
         assert!(frame_loop_needed(LoopState {
@@ -201,5 +231,34 @@ mod tests {
             live_cameras: false,
             ..idle
         }));
+    }
+
+    #[test]
+    fn a_camera_still_loading_while_paused_is_polled_not_drawn_every_frame() {
+        // Paused after the load grace, one camera on a slow volume is still loading.
+        let paused = LoopState {
+            probing: false,
+            running: false,
+            settled: true,
+            live_cameras: true,
+            loading_cameras: true,
+            exporting: false,
+            representative_busy: false,
+        };
+        assert_eq!(frame_loop(paused), FrameLoop::Poll);
+        assert_eq!(
+            frame_loop(LoopState {
+                running: true,
+                ..paused
+            }),
+            FrameLoop::EveryFrame
+        );
+        assert_eq!(
+            frame_loop(LoopState {
+                loading_cameras: false,
+                ..paused
+            }),
+            FrameLoop::Idle
+        );
     }
 }

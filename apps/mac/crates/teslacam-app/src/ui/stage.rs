@@ -28,6 +28,7 @@ use teslacam_media::{VideoFrame, host_now};
 use super::components::{hairline, ring};
 use super::style::{AppTheme, Palette, TypeExt as _, icon};
 use crate::assets::{Icon, vehicle_image};
+use crate::bridge::{FrameLoop, POLL_INTERVAL};
 use crate::dev::DevFlags;
 use crate::media::RepresentativeView;
 use crate::presentation::floor_art::{CAR_SHADOW_BOX, car_shadow_svg, wedges_svg};
@@ -137,6 +138,25 @@ impl StageView {
             this.store.update(cx, |store, cx| store.media_tick(now, cx));
             cx.notify();
         });
+    }
+
+    /// Runs one step of the frame loop after [`POLL_INTERVAL`] (a camera is still loading while
+    /// nothing else moves).
+    fn schedule_poll(&mut self, cx: &mut Context<Self>) {
+        if self.tick_scheduled {
+            return;
+        }
+        self.tick_scheduled = true;
+        cx.spawn(async move |this, cx| {
+            cx.background_executor().timer(POLL_INTERVAL).await;
+            let _ = this.update(cx, |this, cx| {
+                this.tick_scheduled = false;
+                let now = host_now();
+                this.store.update(cx, |store, cx| store.media_tick(now, cx));
+                cx.notify();
+            });
+        })
+        .detach();
     }
 
     /// Development: records how far apart the drawn frames' counters are.
@@ -696,8 +716,10 @@ impl Render for StageView {
                 store.media_active(cx),
             )
         };
-        if active_loop {
-            self.schedule_tick(window, cx);
+        match active_loop {
+            FrameLoop::EveryFrame => self.schedule_tick(window, cx),
+            FrameLoop::Poll => self.schedule_poll(cx),
+            FrameLoop::Idle => {}
         }
         let floor = floor_layout(viewport.0, viewport.1, phase, tokens);
         let stage = Rect::new(0.0, 0.0, floor.stage.width, floor.stage.height);
