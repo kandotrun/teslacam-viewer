@@ -1,14 +1,8 @@
-import { afterEach, vi } from 'vitest'
-
 import { createLocalFileRef } from '../test/teslacam-fixtures'
 import { buildTeslaCamLibrary } from './build-library'
-import type { ScanProgress } from './types'
+import type { LocalFileRef, ScanProgress } from './types'
 
 describe('buildTeslaCamLibrary', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
   it('groups saved camera clips by parent event and timestamp', async () => {
     const front = createLocalFileRef(
       'TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-front.mp4',
@@ -172,8 +166,7 @@ describe('buildTeslaCamLibrary', () => {
     expect(olderSession?.segments[1]?.cameras.back).toBe(joined)
   })
 
-  it('reports every 250 entries and yields before completion', async () => {
-    vi.useFakeTimers()
+  it('reports every 250 entries and once more at the end', async () => {
     const files = Array.from({ length: 251 }, (_, index) =>
       createLocalFileRef(`TeslaCam/RecentClips/unknown-${index}.txt`, {
         type: 'text/plain',
@@ -181,21 +174,58 @@ describe('buildTeslaCamLibrary', () => {
     )
     const progress: ScanProgress[] = []
 
-    const libraryPromise = buildTeslaCamLibrary(files, (update) => {
+    const library = await buildTeslaCamLibrary(files, (update) => {
       progress.push(update)
     })
-
-    await Promise.resolve()
-
-    expect(progress).toEqual([{ processed: 250, total: 251 }])
-
-    await vi.advanceTimersByTimeAsync(0)
-    const library = await libraryPromise
 
     expect(progress).toEqual([
       { processed: 250, total: 251 },
       { processed: 251, total: 251 },
     ])
     expect(library.warnings).toEqual([{ kind: 'unknown-file', count: 251 }])
+  })
+
+  it('reads event.json files in parallel and applies them in folder order', async () => {
+    let inFlight = 0
+    let peak = 0
+    const metadataFile = (directory: string, reason: string, delay: number): LocalFileRef => {
+      const contents = JSON.stringify({ timestamp: '2026-08-21T14:30:50', reason })
+      return {
+        ...createLocalFileRef(`TeslaCam/SavedClips/${directory}/event.json`, { contents, type: 'application/json' }),
+        getFile: async () => {
+          inFlight += 1
+          peak = Math.max(peak, inFlight)
+          await new Promise((resolve) => setTimeout(resolve, delay))
+          inFlight -= 1
+          return new File([contents], 'event.json')
+        },
+      }
+    }
+    const files = ['a', 'b', 'c', 'd'].flatMap((directory, index) => [
+      createLocalFileRef(`TeslaCam/SavedClips/${directory}/2026-08-21_14-3${index}-45-front.mp4`),
+      metadataFile(directory, `reason-${directory}`, 20 - index * 5),
+    ])
+
+    const library = await buildTeslaCamLibrary(files, () => undefined)
+
+    expect(peak).toBeGreaterThan(1)
+    expect(library.eventsByCategory.saved.map((event) => event.metadata?.reason)).toEqual([
+      'reason-d',
+      'reason-c',
+      'reason-b',
+      'reason-a',
+    ])
+  })
+
+  it('still fails the whole scan when one event.json exceeds a scan limit', async () => {
+    const tooLarge = createLocalFileRef('TeslaCam/SavedClips/b/event.json', { size: 1024 * 1024 + 1 })
+    const files = [
+      createLocalFileRef('TeslaCam/SavedClips/a/2026-08-21_14-30-45-front.mp4'),
+      createLocalFileRef('TeslaCam/SavedClips/a/event.json', { contents: '{"timestamp":"2026-08-21T14:30:50"}' }),
+      createLocalFileRef('TeslaCam/SavedClips/b/2026-08-21_14-31-45-front.mp4'),
+      tooLarge,
+    ]
+
+    await expect(buildTeslaCamLibrary(files, () => undefined)).rejects.toMatchObject({ kind: 'metadata-size' })
   })
 })

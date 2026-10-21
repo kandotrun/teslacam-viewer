@@ -1,7 +1,12 @@
 import { afterEach, vi } from 'vitest'
 
 import { buildTeslaCamLibrary } from './build-library'
-import { pickTeslaCamDirectory } from './directory-picker'
+import {
+  DIRECTORY_SNAPSHOT_CONCURRENCY,
+  pickTeslaCamDirectory,
+  requestTeslaCamDirectory,
+  scanTeslaCamDirectory,
+} from './directory-picker'
 import type { ScanProgress } from './types'
 
 type FakeFileHandle = {
@@ -51,7 +56,6 @@ function rejectDirectory(name: string): void {
 }
 
 afterEach(() => {
-  vi.useRealTimers()
   Reflect.deleteProperty(window, 'showDirectoryPicker')
 })
 
@@ -141,28 +145,116 @@ describe('pickTeslaCamDirectory', () => {
     }
   })
 
-  it('reports and yields every 250 discovered entries before final progress', async () => {
-    vi.useFakeTimers()
+  it('reports progress every 250 discovered entries and once more at the end', async () => {
     const entries = Array.from({ length: 251 }, (_, index) =>
       fileHandle(`2026-08-21_14-30-45-front-${index}.mp4`),
     )
     selectDirectory(directoryHandle('RecentClips', entries))
     const progress: ScanProgress[] = []
 
-    const selection = pickTeslaCamDirectory((update) => {
+    await pickTeslaCamDirectory((update) => {
       progress.push(update)
     })
-    for (let index = 0; index < 2000; index += 1) {
-      await Promise.resolve()
-    }
 
-    expect(progress).toEqual([{ processed: 250, total: 250 }])
-    await vi.advanceTimersByTimeAsync(0)
-    await selection
     expect(progress).toEqual([
       { processed: 250, total: 250 },
       { processed: 251, total: 251 },
     ])
+  })
+
+  it('walks the tree without waiting for each file snapshot and reads snapshots in parallel', async () => {
+    let inFlight = 0
+    let peak = 0
+    const release: Array<() => void> = []
+    let enumerated = 0
+    const files = Array.from({ length: 40 }, (_, index): FakeFileHandle => {
+      const name = `2026-08-21_14-30-${String(index).padStart(2, '0')}-front.mp4`
+      return {
+        kind: 'file',
+        name,
+        getFile: () => {
+          inFlight += 1
+          peak = Math.max(peak, inFlight)
+          return new Promise<File>((resolve) => {
+            release.push(() => {
+              inFlight -= 1
+              resolve(new File(['clip'], name))
+            })
+          })
+        },
+      }
+    })
+    const root: FakeDirectoryHandle = {
+      kind: 'directory',
+      name: 'RecentClips',
+      async *values() {
+        for (const file of files) {
+          enumerated += 1
+          yield file
+        }
+      },
+    }
+    selectDirectory(root)
+
+    const selection = pickTeslaCamDirectory(() => undefined)
+    await vi.waitFor(() => expect(enumerated).toBe(40))
+    expect(peak).toBeGreaterThan(1)
+    while (release.length > 0) {
+      release.shift()?.()
+      await Promise.resolve()
+    }
+    const result = await selection
+
+    expect(peak).toBeLessThanOrEqual(DIRECTORY_SNAPSHOT_CONCURRENCY)
+    expect(result.status).toBe('selected')
+    if (result.status === 'selected') {
+      expect(result.files.map((file) => file.name)).toEqual(files.map((file) => file.name))
+      expect(result.files.every((file) => file.size === 4)).toBe(true)
+    }
+  })
+
+  it('gets the playable File from the handle lazily and only once', async () => {
+    const file = new File(['clip'], '2026-08-21_14-30-45-front.mp4', { type: 'video/mp4' })
+    const getFile = vi.fn(async () => file)
+    selectDirectory(directoryHandle('RecentClips', [{ kind: 'file', name: file.name, getFile }]))
+
+    const result = await pickTeslaCamDirectory(() => undefined)
+    if (result.status !== 'selected') throw new Error('directory was not selected')
+    const scannedCalls = getFile.mock.calls.length
+    const ref = result.files[0]
+    if (ref === undefined) throw new Error('file reference is missing')
+
+    await expect(ref.getFile()).resolves.toBe(file)
+    await expect(ref.getFile()).resolves.toBe(file)
+    expect(getFile.mock.calls.length).toBe(scannedCalls + 1)
+  })
+
+  it('separates choosing a folder from scanning it', async () => {
+    const root = directoryHandle('RecentClips', [fileHandle('2026-08-21_14-30-45-front.mp4')])
+    selectDirectory(root)
+
+    const request = await requestTeslaCamDirectory()
+    expect(request.status).toBe('picked')
+    if (request.status !== 'picked') return
+    const result = await scanTeslaCamDirectory(request.root, () => undefined)
+
+    expect(result).toMatchObject({ status: 'selected', folderName: 'RecentClips' })
+  })
+
+  it('stops walking when the scan is aborted', async () => {
+    const controller = new AbortController()
+    const root: FakeDirectoryHandle = {
+      kind: 'directory',
+      name: 'RecentClips',
+      async *values() {
+        yield fileHandle('2026-08-21_14-30-45-front.mp4')
+        controller.abort()
+        yield fileHandle('2026-08-21_14-30-45-back.mp4')
+      },
+    }
+
+    await expect(scanTeslaCamDirectory(root, () => undefined, { signal: controller.signal }))
+      .rejects.toMatchObject({ name: 'AbortError' })
   })
 
   it.each([

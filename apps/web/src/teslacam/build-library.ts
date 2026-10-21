@@ -1,6 +1,8 @@
+import { createYieldBudget } from './cooperative-yield'
 import { readEventMetadata } from './event-metadata'
 import { parseClipFileName } from './filename'
 import { ensureScanEntryCount } from './scan-limits'
+import { mapWithConcurrency } from './task-pool'
 import type { CameraId, ClipCategory, LocalFileRef, ScanProgress, ScanWarning, TeslaCamEvent, TeslaCamLibrary, TeslaCamSegment } from './types'
 
 type DirectoryEvent = {
@@ -99,11 +101,8 @@ function createSegments(
     }))
 }
 
-function yieldToBrowser(): Promise<void> {
-  return new Promise((resolve) => {
-    globalThis.setTimeout(resolve, 0)
-  })
-}
+/** `event.json` files read at once; results are still applied in folder order. */
+const metadataReadConcurrency = 4
 
 function eventSort(left: TeslaCamEvent, right: TeslaCamEvent): number {
   return timestampValue(right.timestamp) - timestampValue(left.timestamp)
@@ -127,6 +126,7 @@ export async function buildTeslaCamLibrary(
   report: (progress: ScanProgress) => void,
 ): Promise<TeslaCamLibrary> {
   ensureScanEntryCount(files.length)
+  const budget = createYieldBudget()
   const directoryEvents = new Map<string, DirectoryEvent>()
   const recentClips = new Map<string, Map<CameraId, LocalFileRef>>()
   const warningCounts = new Map<ScanWarning['kind'], number>()
@@ -178,25 +178,32 @@ export async function buildTeslaCamLibrary(
     }
 
     const processed = index + 1
-    if (processed % 250 === 0) {
-      report({ processed, total: files.length })
-      await yieldToBrowser()
-    }
+    if (processed % 250 === 0) report({ processed, total: files.length })
+    await budget.checkpoint()
   }
 
   if (files.length % 250 !== 0) report({ processed: files.length, total: files.length })
 
-  const savedEvents: TeslaCamEvent[] = []
-  const sentryEvents: TeslaCamEvent[] = []
-  for (const directoryEvent of directoryEvents.values()) {
+  const eventsWithSegments = [...directoryEvents.values()].flatMap((directoryEvent) => {
     const segments = createSegments(directoryEvent.clips)
     const firstSegment = segments.at(0)
-    if (firstSegment === undefined) continue
+    return firstSegment === undefined ? [] : [{ directoryEvent, segments, firstSegment }]
+  })
+  const metadataOutcomes = await mapWithConcurrency(
+    eventsWithSegments,
+    metadataReadConcurrency,
+    async ({ directoryEvent }) => directoryEvent.metadataFile === undefined
+      ? undefined
+      : readEventMetadata(directoryEvent.metadataFile),
+  )
 
-    const metadata =
-      directoryEvent.metadataFile === undefined
-        ? undefined
-        : await readEventMetadata(directoryEvent.metadataFile)
+  const savedEvents: TeslaCamEvent[] = []
+  const sentryEvents: TeslaCamEvent[] = []
+  for (const [index, { directoryEvent, segments, firstSegment }] of eventsWithSegments.entries()) {
+    const outcome = metadataOutcomes[index]
+    if (outcome === undefined) throw new Error('Event metadata outcome is missing')
+    if (outcome.status === 'rejected') throw outcome.reason
+    const metadata = outcome.value
     if (directoryEvent.metadataFile !== undefined && metadata === null) {
       addWarning('invalid-metadata-file')
     }
