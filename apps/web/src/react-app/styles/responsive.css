@@ -177,6 +177,11 @@
   .cta {
     align-self: stretch;
   }
+
+  /* The phrase-sized no-wrap spans are wider than the dialog here; phrase breaking takes over. */
+  .export-dialog .nowrap {
+    white-space: normal;
+  }
 }
 
 /*
