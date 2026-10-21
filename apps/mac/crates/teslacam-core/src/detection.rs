@@ -7,6 +7,7 @@
 //! pre-roll label) when the detection is earlier than 15 s into the event.
 
 use crate::camera::ClipCategory;
+use crate::copy;
 use crate::event_timeline::EventTimeline;
 use crate::library::Event;
 use crate::timestamp::{
@@ -75,12 +76,15 @@ pub struct SentryDetection {
 }
 
 impl SentryDetection {
-    /// The pre-roll start as `YYYY-MM-DD hh:mm:ss`, for the details row `再生開始`.
-    pub fn pre_roll_label(&self, timeline: &EventTimeline) -> Option<String> {
-        let start = self.pre_roll_start?;
-        timeline
-            .wall_clock_at(start)
-            .map(|moment| moment.date_time_label())
+    /// The details row `再生開始`: `12:01:05（検知の15秒前）`, or the event start with
+    /// `（記録の最初から）` when there was no pre-roll.
+    pub fn playback_start_text(&self, timeline: &EventTimeline) -> Option<String> {
+        let start = self.pre_roll_start.unwrap_or(0.0);
+        let moment = timeline.wall_clock_at(start)?;
+        Some(copy::playback_start_text(
+            &moment.time_label(),
+            self.pre_roll_start.is_some(),
+        ))
     }
 }
 
@@ -157,8 +161,8 @@ mod tests {
         assert_eq!(detection.pre_roll_start, Some(15.0));
         assert_eq!(initial, 15.0);
         assert_eq!(
-            detection.pre_roll_label(&timeline).as_deref(),
-            Some("2026-08-20 20:35:15")
+            detection.playback_start_text(&timeline).as_deref(),
+            Some("20:35:15（検知の15秒前）")
         );
     }
 
@@ -168,7 +172,10 @@ mod tests {
         let (detection, initial, timeline) = mac_detection(&early);
         let detection = detection.expect("detection");
         assert_eq!(detection.pre_roll_start, None);
-        assert_eq!(detection.pre_roll_label(&timeline), None);
+        assert_eq!(
+            detection.playback_start_text(&timeline).as_deref(),
+            Some("12:00:00（記録の最初から）")
+        );
         assert_eq!(initial, 0.0);
         let boundary = event("sentry", &["2026-08-24_12-00-00"], "2026-08-24T12:00:15");
         assert_eq!(

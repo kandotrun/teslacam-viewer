@@ -4,7 +4,8 @@
   "module": "copy",
   "source": [
     "apps/web/src/react-app/event-summary.ts",
-    "apps/web/src/react-app/event-filters.ts"
+    "apps/web/src/react-app/event-filters.ts",
+    "apps/web/src/react-app/presentation/event-copy.ts"
   ],
   "cases": [
     {
@@ -340,6 +341,1408 @@
         "timestamp": "2027-01-01_00-00-00"
       },
       "expected": "2027-01-01 00:00:00"
+    },
+    {
+      "name": "shortCategoryLabel recent",
+      "fn": "shortCategoryLabel",
+      "input": {
+        "category": "recent"
+      },
+      "expected": "走行"
+    },
+    {
+      "name": "shortCategoryLabel saved",
+      "fn": "shortCategoryLabel",
+      "input": {
+        "category": "saved"
+      },
+      "expected": "保存"
+    },
+    {
+      "name": "shortCategoryLabel sentry",
+      "fn": "shortCategoryLabel",
+      "input": {
+        "category": "sentry"
+      },
+      "expected": "セントリー"
+    },
+    {
+      "name": "startClock 2026-08-20_20-45-00",
+      "fn": "startClock",
+      "input": {
+        "timestamp": "2026-08-20_20-45-00"
+      },
+      "expected": "20:45"
+    },
+    {
+      "name": "startClock 2026-08-20_09-05-59",
+      "fn": "startClock",
+      "input": {
+        "timestamp": "2026-08-20_09-05-59"
+      },
+      "expected": "09:05"
+    },
+    {
+      "name": "cameraCountText 6 available",
+      "fn": "cameraCountText",
+      "input": {
+        "missing": []
+      },
+      "expected": "6カメラ"
+    },
+    {
+      "name": "cameraCountText 5 available",
+      "fn": "cameraCountText",
+      "input": {
+        "missing": [
+          "right_repeater"
+        ]
+      },
+      "expected": "5カメラ"
+    },
+    {
+      "name": "cameraCountText 1 available",
+      "fn": "cameraCountText",
+      "input": {
+        "missing": [
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "1カメラ"
+    },
+    {
+      "name": "cameraCountText 0 available",
+      "fn": "cameraCountText",
+      "input": {
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "0カメラ"
+    },
+    {
+      "name": "missingCamerasText 0 missing",
+      "fn": "missingCamerasText",
+      "input": {
+        "missing": []
+      },
+      "expected": null
+    },
+    {
+      "name": "missingCamerasText 1 missing",
+      "fn": "missingCamerasText",
+      "input": {
+        "missing": [
+          "right_repeater"
+        ]
+      },
+      "expected": "右リピーターの記録がありません"
+    },
+    {
+      "name": "missingCamerasText 5 missing",
+      "fn": "missingCamerasText",
+      "input": {
+        "missing": [
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "リア、左ピラー、左リピーター、右ピラー、右リピーターの記録がありません"
+    },
+    {
+      "name": "missingCamerasText 6 missing",
+      "fn": "missingCamerasText",
+      "input": {
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "フロント、リア、左ピラー、左リピーター、右ピラー、右リピーターの記録がありません"
+    },
+    {
+      "name": "detectionFact object detection",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "object detection",
+          "metadata": {
+            "reason": "sentry_aware_object_detection",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "detectionSentence object detection",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "object detection",
+          "metadata": {
+            "reason": "sentry_aware_object_detection",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "物体の接近を20:35:30に検知"
+    },
+    {
+      "name": "playbackStartText object detection",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "object detection",
+          "metadata": {
+            "reason": "sentry_aware_object_detection",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:15（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact acceleration",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "acceleration",
+          "metadata": {
+            "reason": "sentry_aware_accel_0.52",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "detectionSentence acceleration",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "acceleration",
+          "metadata": {
+            "reason": "sentry_aware_accel_0.52",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "車体の揺れを20:35:30に検知"
+    },
+    {
+      "name": "playbackStartText acceleration",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "acceleration",
+          "metadata": {
+            "reason": "sentry_aware_accel_0.52",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:15（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact door handle",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "door handle",
+          "metadata": {
+            "reason": "sentry_locked_handle_pulled",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "detectionSentence door handle",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "door handle",
+          "metadata": {
+            "reason": "sentry_locked_handle_pulled",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "ドアハンドルの操作を20:35:30に検知"
+    },
+    {
+      "name": "playbackStartText door handle",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "door handle",
+          "metadata": {
+            "reason": "sentry_locked_handle_pulled",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:15（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact unknown reason",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "unknown reason",
+          "metadata": {
+            "reason": "user_interaction_honk",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "detectionSentence unknown reason",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "unknown reason",
+          "metadata": {
+            "reason": "user_interaction_honk",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "playbackStartText unknown reason",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "unknown reason",
+          "metadata": {
+            "reason": "user_interaction_honk",
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:15（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact no reason",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "no reason",
+          "metadata": {
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "detectionSentence no reason",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "no reason",
+          "metadata": {
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:30に検知"
+    },
+    {
+      "name": "playbackStartText no reason",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "no reason",
+          "metadata": {
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "20:35:15（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact second segment",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "second segment",
+          "metadata": {
+            "reason": "sentry_aware_object_detection",
+            "timestamp": "2026-08-24T12:01:20"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:01:20に検知"
+    },
+    {
+      "name": "detectionSentence second segment",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "second segment",
+          "metadata": {
+            "reason": "sentry_aware_object_detection",
+            "timestamp": "2026-08-24T12:01:20"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "物体の接近を12:01:20に検知"
+    },
+    {
+      "name": "playbackStartText second segment",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "second segment",
+          "metadata": {
+            "reason": "sentry_aware_object_detection",
+            "timestamp": "2026-08-24T12:01:20"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:01:05（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact early detection",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "early detection",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:14"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:00:14に検知"
+    },
+    {
+      "name": "detectionSentence early detection",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "early detection",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:14"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:00:14に検知"
+    },
+    {
+      "name": "playbackStartText early detection",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "early detection",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:14"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:00:00（記録の最初から）"
+    },
+    {
+      "name": "detectionFact detection at 15 seconds",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection at 15 seconds",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:15"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:00:15に検知"
+    },
+    {
+      "name": "detectionSentence detection at 15 seconds",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection at 15 seconds",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:15"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:00:15に検知"
+    },
+    {
+      "name": "playbackStartText detection at 15 seconds",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection at 15 seconds",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:15"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "12:00:00（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact across midnight",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "across midnight",
+          "metadata": {
+            "timestamp": "2026-08-25T00:00:45Z"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_23-59-30"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-25_00-00-30"
+            }
+          ],
+          "timestamp": "2026-08-24_23-59-30"
+        }
+      },
+      "expected": "00:00:45に検知"
+    },
+    {
+      "name": "detectionSentence across midnight",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "across midnight",
+          "metadata": {
+            "timestamp": "2026-08-25T00:00:45Z"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_23-59-30"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-25_00-00-30"
+            }
+          ],
+          "timestamp": "2026-08-24_23-59-30"
+        }
+      },
+      "expected": "00:00:45に検知"
+    },
+    {
+      "name": "playbackStartText across midnight",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "across midnight",
+          "metadata": {
+            "timestamp": "2026-08-25T00:00:45Z"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_23-59-30"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-25_00-00-30"
+            }
+          ],
+          "timestamp": "2026-08-24_23-59-30"
+        }
+      },
+      "expected": "00:00:30（検知の15秒前）"
+    },
+    {
+      "name": "detectionFact outside the event",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "outside the event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSentence outside the event",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "outside the event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "playbackStartText outside the event",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "outside the event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionFact no metadata",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "no metadata",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSentence no metadata",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "no metadata",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "playbackStartText no metadata",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "no metadata",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionFact saved event",
+      "fn": "detectionFact",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "saved event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSentence saved event",
+      "fn": "detectionSentence",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "saved event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "playbackStartText saved event",
+      "fn": "playbackStartText",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "saved event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "locationText sample 0",
+      "fn": "locationText",
+      "input": {
+        "metadata": {
+          "city": " Sample city ",
+          "est_lat": "35.0000",
+          "est_lon": " 139.0000 ",
+          "street": "Sample street",
+          "timestamp": "t"
+        }
+      },
+      "expected": "Sample city Sample street"
+    },
+    {
+      "name": "coordinatesText sample 0",
+      "fn": "coordinatesText",
+      "input": {
+        "metadata": {
+          "city": " Sample city ",
+          "est_lat": "35.0000",
+          "est_lon": " 139.0000 ",
+          "street": "Sample street",
+          "timestamp": "t"
+        }
+      },
+      "expected": "35.0000, 139.0000"
+    },
+    {
+      "name": "locationText sample 1",
+      "fn": "locationText",
+      "input": {
+        "metadata": {
+          "est_lat": "35.0000",
+          "street": "Sample street",
+          "timestamp": "t"
+        }
+      },
+      "expected": "Sample street"
+    },
+    {
+      "name": "coordinatesText sample 1",
+      "fn": "coordinatesText",
+      "input": {
+        "metadata": {
+          "est_lat": "35.0000",
+          "street": "Sample street",
+          "timestamp": "t"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "locationText sample 2",
+      "fn": "locationText",
+      "input": {
+        "metadata": {
+          "city": " ",
+          "est_lat": " ",
+          "est_lon": "139",
+          "street": "",
+          "timestamp": "t"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "coordinatesText sample 2",
+      "fn": "coordinatesText",
+      "input": {
+        "metadata": {
+          "city": " ",
+          "est_lat": " ",
+          "est_lon": "139",
+          "street": "",
+          "timestamp": "t"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "locationText sample 3",
+      "fn": "locationText",
+      "input": {
+        "metadata": {
+          "timestamp": "t"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "coordinatesText sample 3",
+      "fn": "coordinatesText",
+      "input": {
+        "metadata": {
+          "timestamp": "t"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "locationText sample 4",
+      "fn": "locationText",
+      "input": {
+        "metadata": null
+      },
+      "expected": null
+    },
+    {
+      "name": "coordinatesText sample 4",
+      "fn": "coordinatesText",
+      "input": {
+        "metadata": null
+      },
+      "expected": null
+    },
+    {
+      "name": "dayTitle 2026-08-20",
+      "fn": "dayTitle",
+      "input": {
+        "dateKey": "2026-08-20"
+      },
+      "expected": {
+        "date": "8月20日",
+        "weekday": "木曜日"
+      }
+    },
+    {
+      "name": "dayTitle 0001-01-01",
+      "fn": "dayTitle",
+      "input": {
+        "dateKey": "0001-01-01"
+      },
+      "expected": {
+        "date": "1月1日",
+        "weekday": "月曜日"
+      }
+    },
+    {
+      "name": "dayTitle 2026-10-18",
+      "fn": "dayTitle",
+      "input": {
+        "dateKey": "2026-10-18"
+      },
+      "expected": {
+        "date": "10月18日",
+        "weekday": "日曜日"
+      }
+    },
+    {
+      "name": "dayTitle 2028-02-29",
+      "fn": "dayTitle",
+      "input": {
+        "dateKey": "2028-02-29"
+      },
+      "expected": {
+        "date": "2月29日",
+        "weekday": "火曜日"
+      }
+    },
+    {
+      "name": "dayTitle 2026-02-29",
+      "fn": "dayTitle",
+      "input": {
+        "dateKey": "2026-02-29"
+      },
+      "expected": null
+    },
+    {
+      "name": "transportTimeLabel 0",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 0
+      },
+      "expected": "0:00"
+    },
+    {
+      "name": "transportTimeLabel 0.9",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 0.9
+      },
+      "expected": "0:00"
+    },
+    {
+      "name": "transportTimeLabel 15.4",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 15.4
+      },
+      "expected": "0:15"
+    },
+    {
+      "name": "transportTimeLabel 59.99",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 59.99
+      },
+      "expected": "0:59"
+    },
+    {
+      "name": "transportTimeLabel 60",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 60
+      },
+      "expected": "1:00"
+    },
+    {
+      "name": "transportTimeLabel 65",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 65
+      },
+      "expected": "1:05"
+    },
+    {
+      "name": "transportTimeLabel 300",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 300
+      },
+      "expected": "5:00"
+    },
+    {
+      "name": "transportTimeLabel 3599",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 3599
+      },
+      "expected": "59:59"
+    },
+    {
+      "name": "transportTimeLabel 3600",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": 3600
+      },
+      "expected": "60:00"
+    },
+    {
+      "name": "transportTimeLabel -3",
+      "fn": "transportTimeLabel",
+      "input": {
+        "seconds": -3
+      },
+      "expected": "0:00"
+    },
+    {
+      "name": "scrubberValueText 0 of 60",
+      "fn": "scrubberValueText",
+      "input": {
+        "durationSeconds": 60,
+        "elapsedSeconds": 0
+      },
+      "expected": "0分0秒 / 1分"
+    },
+    {
+      "name": "scrubberValueText 15 of 60",
+      "fn": "scrubberValueText",
+      "input": {
+        "durationSeconds": 60,
+        "elapsedSeconds": 15
+      },
+      "expected": "0分15秒 / 1分"
+    },
+    {
+      "name": "scrubberValueText 15.9 of 60",
+      "fn": "scrubberValueText",
+      "input": {
+        "durationSeconds": 60,
+        "elapsedSeconds": 15.9
+      },
+      "expected": "0分15秒 / 1分"
+    },
+    {
+      "name": "scrubberValueText 60 of 120",
+      "fn": "scrubberValueText",
+      "input": {
+        "durationSeconds": 120,
+        "elapsedSeconds": 60
+      },
+      "expected": "1分0秒 / 2分"
+    },
+    {
+      "name": "scrubberValueText 65 of 125",
+      "fn": "scrubberValueText",
+      "input": {
+        "durationSeconds": 125,
+        "elapsedSeconds": 65
+      },
+      "expected": "1分5秒 / 2分5秒"
+    },
+    {
+      "name": "scrubberValueText 0 of 0",
+      "fn": "scrubberValueText",
+      "input": {
+        "durationSeconds": 0,
+        "elapsedSeconds": 0
+      },
+      "expected": "0分0秒 / 0分"
+    },
+    {
+      "name": "scanProgressCopy 0 of 0",
+      "fn": "scanProgressCopy",
+      "input": {
+        "processed": 0,
+        "total": 0
+      },
+      "expected": {
+        "count": null,
+        "label": "フォルダを読み込んでいます。"
+      }
+    },
+    {
+      "name": "scanProgressCopy 250 of 250",
+      "fn": "scanProgressCopy",
+      "input": {
+        "processed": 250,
+        "total": 250
+      },
+      "expected": {
+        "count": "250",
+        "label": "件を確認しました"
+      }
+    },
+    {
+      "name": "scanProgressCopy 1250 of 1250",
+      "fn": "scanProgressCopy",
+      "input": {
+        "processed": 1250,
+        "total": 1250
+      },
+      "expected": {
+        "count": "1,250",
+        "label": "件を確認しました"
+      }
+    },
+    {
+      "name": "scanProgressCopy 250 of 500",
+      "fn": "scanProgressCopy",
+      "input": {
+        "processed": 250,
+        "total": 500
+      },
+      "expected": {
+        "count": "250 / 500",
+        "label": "件を確認しました"
+      }
+    },
+    {
+      "name": "scanProgressCopy 12345 of 100000",
+      "fn": "scanProgressCopy",
+      "input": {
+        "processed": 12345,
+        "total": 100000
+      },
+      "expected": {
+        "count": "12,345 / 100,000",
+        "label": "件を確認しました"
+      }
+    },
+    {
+      "name": "warningText empty-media-file",
+      "fn": "warningText",
+      "input": {
+        "count": 1,
+        "kind": "empty-media-file"
+      },
+      "expected": "空の映像ファイル 1 件を除外しました。"
+    },
+    {
+      "name": "warningText invalid-metadata-file",
+      "fn": "warningText",
+      "input": {
+        "count": 2,
+        "kind": "invalid-metadata-file"
+      },
+      "expected": "読み取れないイベント情報 2 件を除外しました。"
+    },
+    {
+      "name": "warningText unknown-file",
+      "fn": "warningText",
+      "input": {
+        "count": 1234,
+        "kind": "unknown-file"
+      },
+      "expected": "対応外のファイル 1234 件を除外しました。"
+    },
+    {
+      "name": "warningText encrypted-file",
+      "fn": "warningText",
+      "input": {
+        "count": 3,
+        "kind": "encrypted-file"
+      },
+      "expected": "暗号化されたファイル 3 件は読み込みませんでした。"
     }
   ]
 }

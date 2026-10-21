@@ -11,7 +11,8 @@
 //! `（）` and half-width spaces exactly where shown.
 
 use crate::camera::{CameraId, ClipCategory};
-use crate::library::WarningKind;
+use crate::filters::event_clock;
+use crate::library::{ScanProgress, WarningKind};
 use crate::timestamp::{LocalTimestamp, Weekday};
 
 // ---------------------------------------------------------------------------------------------
@@ -87,9 +88,44 @@ pub const SCAN_TITLE: &str = "読み込み中";
 /// Cancels a running scan.
 pub const SCAN_CANCEL: &str = "キャンセル";
 
-/// `{n}件を確認しました` with `ja-JP` digit grouping, e.g. `1,250件を確認しました`.
-pub fn scan_progress_text(processed: u64) -> String {
-    format!("{}件を確認しました", group_digits(processed))
+/// Shown before the first progress report.
+pub const SCAN_STARTING: &str = "フォルダを読み込んでいます。";
+/// Follows the large count numeral.
+pub const SCAN_COUNT_SUFFIX: &str = "件を確認しました";
+
+/// The scanning block: a large numeral (`ja-JP` grouping) and the text after it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ScanProgressCopy {
+    /// `1,250` while walking, `250 / 1,250` while classifying; `None` before the first report.
+    pub count: Option<String>,
+    /// [`SCAN_COUNT_SUFFIX`], or [`SCAN_STARTING`] before the first report.
+    pub label: &'static str,
+}
+
+/// The scanning copy for `progress`.
+pub fn scan_progress_copy(progress: ScanProgress) -> ScanProgressCopy {
+    if progress.processed == 0 {
+        return ScanProgressCopy {
+            count: None,
+            label: SCAN_STARTING,
+        };
+    }
+    let processed = group_digits(progress.processed);
+    let count = if progress.processed == progress.total {
+        processed
+    } else {
+        format!("{processed} / {}", group_digits(progress.total))
+    };
+    ScanProgressCopy {
+        count: Some(count),
+        label: SCAN_COUNT_SUFFIX,
+    }
+}
+
+/// The scanning copy as one line, e.g. `1,250件を確認しました`.
+pub fn scan_progress_text(progress: ScanProgress) -> String {
+    let copy = scan_progress_copy(progress);
+    format!("{}{}", copy.count.unwrap_or_default(), copy.label)
 }
 
 /// Why a folder could not be opened.
@@ -164,14 +200,27 @@ pub const fn weekday_label(weekday: Weekday) -> &'static str {
     }
 }
 
+/// The parts of a day title.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DayTitle {
+    /// `8月20日`
+    pub date: String,
+    /// `木曜日`
+    pub weekday: &'static str,
+}
+
+/// The parts of the day title of `date`.
+pub fn day_title_parts(date: &LocalTimestamp) -> DayTitle {
+    DayTitle {
+        date: format!("{}月{}日", date.month, date.day),
+        weekday: weekday_label(date.weekday()),
+    }
+}
+
 /// The day title, e.g. `8月20日 木曜日`.
 pub fn day_title(date: &LocalTimestamp) -> String {
-    format!(
-        "{}月{}日 {}",
-        date.month,
-        date.day,
-        weekday_label(date.weekday())
-    )
+    let title = day_title_parts(date);
+    format!("{} {}", title.date, title.weekday)
 }
 
 /// Accessible name of a day navigation button with a target day, e.g. `前の記録日 2026-08-19`.
@@ -257,12 +306,22 @@ pub fn detection_summary(reason: Option<&str>, time_label: &str) -> String {
     }
 }
 
-/// Words for a known `event.json` reason.
+/// Words for an `event.json` reason: object detection, a shaken car body or a door handle.
 pub fn reason_words(reason: &str) -> Option<&'static str> {
-    match reason {
-        "sentry_aware_object_detection" => Some("物体の接近"),
-        _ => None,
+    if reason.starts_with("sentry_aware_object_detection") {
+        Some("物体の接近")
+    } else if reason.starts_with("sentry_aware_accel") {
+        Some("車体の揺れ")
+    } else if reason.contains("handle") {
+        Some("ドアハンドルの操作")
+    } else {
+        None
     }
+}
+
+/// The start time of an event, `hh:mm`, e.g. `20:45` for `2026-08-20_20-45-00`.
+pub fn start_clock(timestamp: &str) -> String {
+    event_clock(timestamp).chars().take(5).collect()
 }
 
 /// A scan warning, e.g. `対応外のファイル 3 件を除外しました。` (no digit grouping).
@@ -324,9 +383,18 @@ pub fn coordinates_text(latitude: Option<&str>, longitude: Option<&str>) -> Opti
     Some(format!("{latitude}, {longitude}"))
 }
 
-/// The playback start value, e.g. `2026-08-24 12:01:05（検知の15秒前）`.
-pub fn playback_start_text(date_time_label: &str) -> String {
-    format!("{date_time_label}（{PRE_ROLL_TICK}）")
+/// Where playback started when the detection was earlier than 15 s into the event.
+pub const PLAYBACK_FROM_START: &str = "記録の最初から";
+
+/// The `再生開始` value, e.g. `12:01:05（検知の15秒前）`, or `12:00:00（記録の最初から）` when
+/// there was no pre-roll.
+pub fn playback_start_text(time_label: &str, pre_roll: bool) -> String {
+    let start = if pre_roll {
+        PRE_ROLL_TICK
+    } else {
+        PLAYBACK_FROM_START
+    };
+    format!("{time_label}（{start}）")
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -415,19 +483,20 @@ pub fn clock_duration_text(seconds: f64) -> String {
     format!("/ {}", clock_text(seconds))
 }
 
-/// The scrubber's value text, e.g. `0分15秒 / 1分`.
+/// The scrubber's value text, e.g. `0分15秒 / 1分`: the position always names its seconds, the
+/// duration only when they are not 0.
 pub fn position_value_text(position: f64, duration: f64) -> String {
     format!(
         "{} / {}",
-        minutes_seconds(position),
-        minutes_seconds(duration)
+        minutes_seconds(position, true),
+        minutes_seconds(duration, false)
     )
 }
 
-fn minutes_seconds(seconds: f64) -> String {
+fn minutes_seconds(seconds: f64, always_seconds: bool) -> String {
     let whole = whole_seconds(seconds);
     match whole % 60 {
-        0 => format!("{}分", whole / 60),
+        0 if !always_seconds => format!("{}分", whole / 60),
         rest => format!("{}分{rest}秒", whole / 60),
     }
 }
@@ -593,12 +662,59 @@ pub fn group_digits(value: u64) -> String {
 
 #[cfg(test)]
 mod tests {
-    use serde_json::Value;
+    use serde_json::{Value, json};
 
     use super::*;
-    use crate::contract::{camera_input, category_input, option_json, run_fixture};
+    use crate::contract::{
+        camera_input, category_input, event_input, metadata_input, option_json, run_fixture,
+    };
+    use crate::detection::sentry_detection;
+    use crate::event_timeline::EventTimeline;
     use crate::filters::event_time;
+    use crate::metadata::EventMetadata;
     use crate::timestamp::parse_filename_local_timestamp;
+
+    fn detection_copy(event: &Value, function: &str) -> Value {
+        let event = event_input(event);
+        let timeline = EventTimeline::assuming_full_windows(&event).expect("timeline");
+        let Some(detection) = sentry_detection(&event, &timeline) else {
+            return Value::Null;
+        };
+        let time = detection.moment.time_label();
+        match function {
+            "detectionFact" => detection_time_text(&time).into(),
+            "detectionSentence" => {
+                let reason = event
+                    .metadata
+                    .as_ref()
+                    .and_then(|metadata| metadata.reason.as_deref());
+                detection_summary(reason, &time).into()
+            }
+            _ => detection
+                .playback_start_text(&timeline)
+                .map_or(Value::Null, Value::from),
+        }
+    }
+
+    fn metadata_copy(metadata: &Value, function: &str) -> Value {
+        let metadata = (!metadata.is_null()).then(|| metadata_input(metadata));
+        let field = |pick: fn(&EventMetadata) -> &Option<String>| {
+            metadata
+                .as_ref()
+                .and_then(|metadata| pick(metadata).as_deref())
+        };
+        option_json(if function == "locationText" {
+            location_text(
+                field(|metadata| &metadata.city),
+                field(|metadata| &metadata.street),
+            )
+        } else {
+            coordinates_text(
+                field(|metadata| &metadata.est_lat),
+                field(|metadata| &metadata.est_lon),
+            )
+        })
+    }
 
     fn cameras(value: &Value) -> Vec<CameraId> {
         value
@@ -636,6 +752,58 @@ mod tests {
                 "eventTime" => {
                     event_time(case.input("timestamp").as_str().expect("timestamp")).into()
                 }
+                "shortCategoryLabel" => {
+                    category_short_label(category_input(case.input("category"))).into()
+                }
+                "startClock" => {
+                    start_clock(case.input("timestamp").as_str().expect("timestamp")).into()
+                }
+                "cameraCountText" => {
+                    camera_count_text(CameraId::ALL.len() - cameras(case.input("missing")).len())
+                        .into()
+                }
+                "missingCamerasText" => {
+                    option_json(missing_cameras_text(&cameras(case.input("missing"))))
+                }
+                "detectionFact" | "detectionSentence" | "playbackStartText" => {
+                    detection_copy(case.input("event"), &case.function)
+                }
+                "locationText" | "coordinatesText" => {
+                    metadata_copy(case.input("metadata"), &case.function)
+                }
+                "dayTitle" => {
+                    let date_key = case.input("dateKey").as_str().expect("dateKey");
+                    parse_filename_local_timestamp(&format!("{date_key}_00-00-00")).map_or(
+                        Value::Null,
+                        |date| {
+                            let title = day_title_parts(&date);
+                            json!({"date": title.date, "weekday": title.weekday})
+                        },
+                    )
+                }
+                "transportTimeLabel" => {
+                    clock_text(case.input("seconds").as_f64().expect("seconds")).into()
+                }
+                "scrubberValueText" => position_value_text(
+                    case.input("elapsedSeconds").as_f64().expect("elapsed"),
+                    case.input("durationSeconds").as_f64().expect("duration"),
+                )
+                .into(),
+                "scanProgressCopy" => {
+                    let copy = scan_progress_copy(ScanProgress {
+                        processed: case.input("processed").as_u64().expect("processed"),
+                        total: case.input("total").as_u64().expect("total"),
+                    });
+                    json!({"count": copy.count, "label": copy.label})
+                }
+                "warningText" => {
+                    let id = case.input("kind").as_str().expect("kind");
+                    let kind = WarningKind::ALL
+                        .into_iter()
+                        .find(|kind| kind.id() == id)
+                        .expect("known warning kind");
+                    warning_text(kind, case.input("count").as_u64().expect("count")).into()
+                }
                 _ => return None,
             })
         });
@@ -643,9 +811,19 @@ mod tests {
 
     #[test]
     fn scan_progress_groups_digits() {
-        assert_eq!(scan_progress_text(0), "0件を確認しました");
-        assert_eq!(scan_progress_text(1_250), "1,250件を確認しました");
-        assert_eq!(scan_progress_text(1_234_567), "1,234,567件を確認しました");
+        let progress = |processed, total| ScanProgress { processed, total };
+        assert_eq!(
+            scan_progress_text(progress(0, 0)),
+            "フォルダを読み込んでいます。"
+        );
+        assert_eq!(
+            scan_progress_text(progress(1_250, 1_250)),
+            "1,250件を確認しました"
+        );
+        assert_eq!(
+            scan_progress_text(progress(250, 1_234_567)),
+            "250 / 1,234,567件を確認しました"
+        );
         assert_eq!(group_digits(999), "999");
         assert_eq!(group_digits(100_000), "100,000");
     }
@@ -723,6 +901,11 @@ mod tests {
             "20:35:30に検知"
         );
         assert_eq!(detection_summary(None, "20:35:30"), "20:35:30に検知");
+        assert_eq!(
+            detection_summary(Some("sentry_aware_accel_0.52"), "20:35:30"),
+            "車体の揺れを20:35:30に検知"
+        );
+        assert_eq!(start_clock("2026-08-20_20-45-00"), "20:45");
         assert_eq!(category_short_label(ClipCategory::Recent), "走行");
         assert_eq!(category_short_label(ClipCategory::Saved), "保存");
     }
@@ -744,8 +927,12 @@ mod tests {
         );
         assert_eq!(coordinates_text(Some("35.0000"), None), None);
         assert_eq!(
-            playback_start_text("2026-08-24 12:01:05"),
-            "2026-08-24 12:01:05（検知の15秒前）"
+            playback_start_text("12:01:05", true),
+            "12:01:05（検知の15秒前）"
+        );
+        assert_eq!(
+            playback_start_text("12:00:00", false),
+            "12:00:00（記録の最初から）"
         );
     }
 
@@ -757,7 +944,7 @@ mod tests {
         assert_eq!(clock_text(f64::NAN), "0:00");
         assert_eq!(clock_duration_text(60.0), "/ 1:00");
         assert_eq!(position_value_text(15.0, 60.0), "0分15秒 / 1分");
-        assert_eq!(position_value_text(0.0, 125.0), "0分 / 2分5秒");
+        assert_eq!(position_value_text(0.0, 125.0), "0分0秒 / 2分5秒");
         assert_eq!(rate_label(0.5), "0.5\u{00D7}");
         assert_eq!(rate_label(1.0), "1\u{00D7}");
         assert_eq!(rate_label(1.5), "1.5\u{00D7}");
