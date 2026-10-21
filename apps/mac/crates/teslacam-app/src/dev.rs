@@ -8,7 +8,7 @@
 //! | `TESLACAM_VIEW=vehicle\|grid\|expanded:<camera>\|representative` | the stage view of the session |
 //! | `TESLACAM_PLAY=1\|0` | asks the session to play (1) or pause (0) |
 //! | `TESLACAM_SEEK=<seconds>` | seeks the session |
-//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `exportprogress` (the running export's popover), `rate` (the rate menu), `representativeplay` (presses play on `event.mp4`) |
+//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `exportprogress` (the running export's popover), `rate` (the rate menu), `representativeplay` (presses play on `event.mp4`), `tab:<n>` (presses Tab n times: keyboard focus and its ring) |
 //! | `TESLACAM_WINDOW=<w>x<h>` | window content size in points |
 //! | `TESLACAM_CAPTURE=<png>` | captures the window with `screencapture` after a delay, then quits |
 //! | `TESLACAM_CAPTURE_DELAY_MS=<ms>` | the delay before the capture (default 2500) |
@@ -58,6 +58,8 @@ pub enum DevUi {
     Rate,
     /// Play on the representative video.
     RepresentativePlay,
+    /// Press Tab this many times.
+    Tab(usize),
 }
 
 /// Development switches the views read (a GPUI global; absent in tests).
@@ -124,6 +126,7 @@ fn parse_ui(item: &str) -> Option<DevUi> {
                 "search" => Some(DevUi::Search(value.to_owned())),
                 "cluster" => Some(DevUi::Cluster(value.to_owned())),
                 "category" => ClipCategory::from_id(value).map(DevUi::Category),
+                "tab" => value.parse().ok().map(DevUi::Tab),
                 _ => None,
             }
         }
@@ -258,6 +261,12 @@ mod tests {
     fn play_can_ask_for_a_pause() {
         assert_eq!(options(&[("TESLACAM_PLAY", "0")]).play, Some(false));
         assert_eq!(options(&[("TESLACAM_PLAY", "yes")]).play, None);
+    }
+
+    #[test]
+    fn tab_presses_parse() {
+        assert_eq!(parse_ui("tab:3"), Some(DevUi::Tab(3)));
+        assert_eq!(parse_ui("tab:x"), None);
     }
 
     #[test]

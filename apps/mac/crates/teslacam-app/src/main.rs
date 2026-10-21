@@ -18,8 +18,8 @@ mod ui;
 use std::time::Duration;
 
 use gpui_kit::{
-    AnyWindowHandle, App, AppContext as _, AsyncApp, Bounds, Entity, KeyBinding, Menu, MenuItem,
-    TitlebarOptions, WindowBounds, WindowOptions, px, size,
+    AnyWindowHandle, App, AppContext as _, AsyncApp, Bounds, Entity, InputEvent as _, KeyBinding,
+    Menu, MenuItem, TitlebarOptions, WindowBounds, WindowOptions, px, size,
 };
 use objc2::MainThreadMarker;
 use objc2_app_kit::{NSAppearance, NSAppearanceNameAqua, NSApplication, NSView};
@@ -190,6 +190,22 @@ fn apply_library_options(
                         }
                         DevUi::Rate => {
                             transport.update(cx, |transport, cx| transport.open_rate_menu(cx))
+                        }
+                        DevUi::Tab(presses) => {
+                            // Real key events, so the focus ring (keyboard modality) shows.
+                            let tab = gpui_kit::Keystroke::parse("tab").expect("keystroke");
+                            for _ in 0..*presses {
+                                let down = gpui_kit::KeyDownEvent {
+                                    keystroke: tab.clone(),
+                                    is_held: false,
+                                    prefer_character_input: false,
+                                };
+                                window.dispatch_event(down.to_platform_input(), cx);
+                                let up = gpui_kit::KeyUpEvent {
+                                    keystroke: tab.clone(),
+                                };
+                                window.dispatch_event(up.to_platform_input(), cx);
+                            }
                         }
                         DevUi::Category(_) | DevUi::Export => {}
                     }
