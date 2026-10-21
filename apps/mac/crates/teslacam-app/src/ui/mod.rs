@@ -8,6 +8,8 @@ pub mod rail;
 pub mod root;
 pub mod stage;
 pub mod style;
+#[cfg(test)]
+mod tests;
 pub mod thumbnails;
 pub mod top_row;
 

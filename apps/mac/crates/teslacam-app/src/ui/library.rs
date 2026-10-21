@@ -8,6 +8,7 @@ use std::path::PathBuf;
 use std::rc::Rc;
 use std::time::Duration;
 
+use gpui_kit::TestSupportExt as _;
 use gpui_kit::component::input::{Input, InputEvent, InputState};
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
@@ -790,14 +791,17 @@ impl LibraryPanel {
                     .items_center()
                     .gap(px(4.0))
                     .mx(px(-8.0))
-                    .child(day_button(
-                        "previous-day",
-                        Step::Previous,
-                        Icon::ChevronLeft,
-                        previous_label,
-                        previous_day.is_some(),
-                        cx,
-                    ))
+                    .child(
+                        day_button(
+                            "previous-day",
+                            Step::Previous,
+                            Icon::ChevronLeft,
+                            previous_label,
+                            previous_day.is_some(),
+                            cx,
+                        )
+                        .test_support(),
+                    )
                     .child(
                         div()
                             .relative()
@@ -806,14 +810,17 @@ impl LibraryPanel {
                             .child(title_button)
                             .children(picker),
                     )
-                    .child(day_button(
-                        "next-day",
-                        Step::Next,
-                        Icon::ChevronRight,
-                        next_label,
-                        next_day.is_some(),
-                        cx,
-                    )),
+                    .child(
+                        day_button(
+                            "next-day",
+                            Step::Next,
+                            Icon::ChevronRight,
+                            next_label,
+                            next_day.is_some(),
+                            cx,
+                        )
+                        .test_support(),
+                    ),
             )
             .when(!rail.markers.is_empty(), |day| {
                 let entity = cx.entity().downgrade();

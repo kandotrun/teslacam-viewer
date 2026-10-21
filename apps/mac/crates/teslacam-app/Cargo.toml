@@ -20,5 +20,8 @@ objc2.workspace = true
 objc2-foundation = { workspace = true, features = ["std", "NSString"] }
 objc2-app-kit = { workspace = true, features = ["std", "NSApplication", "NSAppearance", "NSResponder", "NSView", "NSWindow"] }
 
+[dev-dependencies]
+gpui-kit = { workspace = true, features = ["test-support"] }
+
 [lints]
 workspace = true
