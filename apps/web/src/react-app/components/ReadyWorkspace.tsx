@@ -31,6 +31,8 @@ export function ReadyWorkspace({ state, dispatch, band, onRescan }: ReadyWorkspa
   const [libraryHidden, setLibraryHidden] = useState(false)
   const [phonePane, setPhonePane] = useState<'library' | 'viewer'>('library')
   const [revealEventId, setRevealEventId] = useState<string | null>(null)
+  // Starts at 1 so the rows take focus when the folder has just loaded and the picker button is gone.
+  const [rowFocusRequest, setRowFocusRequest] = useState(1)
   const view = useMemo(() => buildLibraryView(state), [state])
   const selectedEvent = view.selectedEvent
 
@@ -44,6 +46,11 @@ export function ReadyWorkspace({ state, dispatch, band, onRescan }: ReadyWorkspa
     run(selectEventActions(state, eventId))
     setPhonePane('viewer')
   }, [run, state])
+
+  const showLibrary = useCallback((): void => {
+    setPhonePane('library')
+    setRowFocusRequest((request) => request + 1)
+  }, [])
 
   const navigate = useCallback((eventId: string | null): (() => void) | null => (
     eventId === null ? null : () => run(selectEventActions(state, eventId))
@@ -69,6 +76,7 @@ export function ReadyWorkspace({ state, dispatch, band, onRescan }: ReadyWorkspa
       >
         <LibraryBrowser
           filters={state.filters}
+          rowFocusRequest={rowFocusRequest}
           searchOpen={searchOpen}
           selectedEventId={state.selectedEventId}
           view={view}
@@ -88,7 +96,7 @@ export function ReadyWorkspace({ state, dispatch, band, onRescan }: ReadyWorkspa
           libraryToggle={band === 'tablet' ? { hidden: libraryHidden, onToggle: () => setLibraryHidden((hidden) => !hidden) } : undefined}
           reveal={selectedEvent.id === revealEventId}
           viewMode={viewMode}
-          onBack={band === 'phone' ? () => setPhonePane('library') : undefined}
+          onBack={band === 'phone' ? showLibrary : undefined}
           onNewer={navigate(view.newerEventId)}
           onOlder={navigate(view.olderEventId)}
           onViewMode={setViewMode}

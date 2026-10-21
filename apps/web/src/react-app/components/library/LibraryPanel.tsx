@@ -1,5 +1,7 @@
 import { Folder, Search, X } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
+
+import { useFocusHandoff } from '../../hooks/use-focus-handoff'
 
 type LibraryPanelProps = {
   /** Folder name of a loaded library; the header shows search and the folder chip only then. */
@@ -13,6 +15,9 @@ type LibraryPanelProps = {
 
 /** The floating library: wordmark, folder chip and the content of the current app state. */
 export function LibraryPanel({ folderName, searchOpen = false, onToggleSearch, onRescan, hidden = false, children }: LibraryPanelProps) {
+  const searchToggle = useRef<HTMLButtonElement>(null)
+  // Escape in the empty search field removes it; focus returns to the toggle that opened it.
+  useFocusHandoff(searchToggle, !searchOpen)
   return (
     <aside aria-label="ライブラリ" className="library" data-hidden={hidden} hidden={hidden}>
       <header className="library__head">
@@ -23,6 +28,7 @@ export function LibraryPanel({ folderName, searchOpen = false, onToggleSearch, o
               aria-expanded={searchOpen}
               aria-label={searchOpen ? '検索を閉じる' : '検索を開く'}
               className="icon-button"
+              ref={searchToggle}
               type="button"
               onClick={onToggleSearch}
             >

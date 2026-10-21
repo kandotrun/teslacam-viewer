@@ -3,6 +3,7 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 
 import type { TeslaCamEvent } from '../../../teslacam/types'
 import { eventTime } from '../../event-filters'
+import { useFocusHandoff } from '../../hooks/use-focus-handoff'
 import { cameraAvailability, segmentCountLabel } from '../../event-summary'
 import {
   cameraCountText,
@@ -77,9 +78,13 @@ export function EventPill({ event, onBack, libraryToggle }: EventPillProps) {
   const [open, setOpen] = useState(false)
   const pill = useRef<HTMLButtonElement>(null)
   const popover = useRef<HTMLDivElement>(null)
+  const back = useRef<HTMLButtonElement>(null)
   const popoverId = useId()
   const location = locationText(event.metadata)
   const detection = sentryDetection(event)
+
+  // Phone push: the row that opened the viewer is hidden with the list, so focus continues at 一覧へ.
+  useFocusHandoff(back, onBack !== undefined, { onMount: true })
 
   useEffect(() => {
     if (!open) return undefined
@@ -105,7 +110,7 @@ export function EventPill({ event, onBack, libraryToggle }: EventPillProps) {
       }}
     >
       {onBack !== undefined && (
-        <button className="pill back-button" type="button" onClick={onBack}>
+        <button className="pill back-button" ref={back} type="button" onClick={onBack}>
           <ArrowLeft aria-hidden="true" size={18} />
           一覧へ
         </button>

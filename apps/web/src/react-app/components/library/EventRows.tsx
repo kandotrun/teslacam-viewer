@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { TeslaCamEvent } from '../../../teslacam/types'
 import { eventTime } from '../../event-filters'
 import { cameraAvailability, eventDurationLabel } from '../../event-summary'
+import { focusIsLost } from '../../hooks/use-focus-handoff'
 import { useVirtualRows } from '../../hooks/use-virtual-rows'
 import {
   cameraCountText,
@@ -18,6 +19,11 @@ type EventRowsProps = {
   readonly events: readonly TeslaCamEvent[]
   readonly selectedEventId: string | null
   readonly onSelectEvent: (eventId: string) => void
+  /**
+   * Each new value asks for the selected row (or the first) to take focus once it is mounted, when a
+   * screen change left focus nowhere (folder loaded, phone list shown again).
+   */
+  readonly focusRequest?: number | undefined
 }
 
 /** Row height plus gap; rows are fixed-height so the list can be windowed. */
@@ -91,22 +97,37 @@ function EventRow({ event, selected, onSelect }: { readonly event: TeslaCamEvent
 }
 
 /** The day's events, newest first, windowed so only rows near the viewport are mounted. */
-export function EventRows({ events, selectedEventId, onSelectEvent }: EventRowsProps) {
+export function EventRows({ events, selectedEventId, onSelectEvent, focusRequest }: EventRowsProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
   const rows = useVirtualRows(scrollerRef, events.length, EVENT_ROW_STRIDE)
   const selectedIndex = events.findIndex((event) => event.id === selectedEventId)
   const { scrollToIndex } = rows
+  const focusIndex = Math.max(0, selectedIndex)
+  const handledFocusRequest = useRef<number | undefined>(undefined)
 
   // Keyed on the id too: another day's newest event sits at the same index as the previous selection.
   useEffect(() => {
     scrollToIndex(selectedIndex)
   }, [scrollToIndex, selectedEventId, selectedIndex])
 
+  useEffect(() => {
+    if (focusRequest !== handledFocusRequest.current) scrollToIndex(focusIndex)
+  }, [focusIndex, focusRequest, scrollToIndex])
+
+  // Runs after every render: the row to focus may only mount once the scroll above has been applied.
+  useEffect(() => {
+    if (focusRequest === undefined || focusRequest === handledFocusRequest.current) return
+    const row = scrollerRef.current?.querySelector<HTMLElement>(`[data-index="${focusIndex}"] .event-row`)
+    if (row === null || row === undefined) return
+    handledFocusRequest.current = focusRequest
+    if (focusIsLost()) row.focus()
+  })
+
   return (
     <div aria-label="イベント一覧" className="rows" ref={scrollerRef} role="group">
       <div className="rows__spacer" style={{ height: `${rows.totalHeight}px` }}>
         {events.slice(rows.start, rows.end).map((event, offset) => (
-          <div className="rows__item" key={event.id} style={{ transform: `translateY(${(rows.start + offset) * EVENT_ROW_STRIDE}px)` }}>
+          <div className="rows__item" data-index={rows.start + offset} key={event.id} style={{ transform: `translateY(${(rows.start + offset) * EVENT_ROW_STRIDE}px)` }}>
             <EventRow event={event} selected={event.id === selectedEventId} onSelect={() => onSelectEvent(event.id)} />
           </div>
         ))}

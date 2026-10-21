@@ -23,6 +23,8 @@ type LibraryBrowserProps = {
   readonly onSelectEvent: (eventId: string) => void
   readonly onSelectDay: (day: TimelineDay) => void
   readonly onPickDate: (dateKey: string | null) => void
+  /** Passed to the rows: asks the selected row to take focus (see `EventRows`). */
+  readonly rowFocusRequest?: number | undefined
 }
 
 type OpenCluster = {
@@ -176,7 +178,7 @@ export function LibraryBrowser(props: LibraryBrowserProps) {
           {view.markers.length === 0 && filters.dateKey !== null ? 'この日のイベントはありません。' : 'この条件に一致するイベントはありません。'}
         </p>
       ) : (
-        <EventRows events={rows} selectedEventId={selectedEventId} onSelectEvent={props.onSelectEvent} />
+        <EventRows events={rows} focusRequest={props.rowFocusRequest} selectedEventId={selectedEventId} onSelectEvent={props.onSelectEvent} />
       )}
       {warnings.length > 0 && (
         <footer className="library__foot">
