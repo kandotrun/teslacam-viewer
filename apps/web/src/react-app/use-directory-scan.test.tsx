@@ -38,27 +38,31 @@ async function fileList(files: readonly File[]): Promise<FileList> {
 }
 
 afterEach(() => {
-  vi.useRealTimers()
   Reflect.deleteProperty(window, 'showDirectoryPicker')
 })
 
 describe('useDirectoryScan generation', () => {
   it('ignores stale progress and completion from an earlier folder selection', async () => {
-    const slowFiles = await fileList(
-      Array.from({ length: 501 }, (_, index) =>
-        fileWithPath(
-          `unknown-${index}.txt`,
-          `TeslaCam/RecentClips/unknown-${index}.txt`,
-        ),
-      ),
-    )
+    let releaseSlowFile: () => void = () => undefined
+    const slowFile = new Promise<File>((resolve) => {
+      releaseSlowFile = () => resolve(new File(['clip'], '2026-08-20_20-45-00-front.mp4', { type: 'video/mp4' }))
+    })
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => ({
+        kind: 'directory',
+        name: 'Slow',
+        async *values() {
+          yield { kind: 'file', name: '2026-08-20_20-45-00-front.mp4', getFile: () => slowFile }
+        },
+      }),
+    })
     const currentFiles = await fileList([
       fileWithPath(
         '2026-08-21_14-30-45-front.mp4',
         'TeslaCam/RecentClips/2026-08-21_14-30-45-front.mp4',
       ),
     ])
-    vi.useFakeTimers()
     const actions: AppAction[] = []
     const hook = renderHook(() =>
       useDirectoryScan((action) => {
@@ -66,10 +70,12 @@ describe('useDirectoryScan generation', () => {
       }),
     )
 
-    act(() => hook.result.current.handleDirectoryInput(slowFiles))
+    act(() => hook.result.current.requestDirectory())
+    await vi.waitFor(() => expect(actions.map((action) => action.kind)).toContain('scan-progressed'))
     act(() => hook.result.current.handleDirectoryInput(currentFiles))
+    await vi.waitFor(() => expect(actions.at(-1)?.kind).toBe('library-ready'))
+    releaseSlowFile()
     await act(async () => Promise.resolve())
-    await act(async () => vi.runAllTimersAsync())
 
     expect(actions.map((action) => action.kind)).toEqual([
       'scan-started',
@@ -78,11 +84,57 @@ describe('useDirectoryScan generation', () => {
       'scan-progressed',
       'library-ready',
     ])
-    expect(
-      actions.flatMap((action) =>
-        action.kind === 'scan-progressed' ? [action.progress.processed] : [],
-      ),
-    ).toEqual([250, 1])
+    const ready = actions.at(-1)
+    expect(ready?.kind === 'library-ready' ? ready.folderName : null).toBe('TeslaCam')
+  })
+
+  it('keeps the current library while the picker is open and when it is cancelled', async () => {
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => Promise.reject(new DOMException('', 'AbortError')),
+    })
+    const actions: AppAction[] = []
+    const hook = renderHook(() =>
+      useDirectoryScan((action) => {
+        actions.push(action)
+      }),
+    )
+
+    act(() => hook.result.current.requestDirectory())
+    await vi.waitFor(() => expect(actions).toHaveLength(1))
+
+    expect(actions.map((action) => action.kind)).toEqual(['scan-cancelled'])
+  })
+
+  it('cancels a running scan and ignores whatever it finds afterwards', async () => {
+    let releaseFile: () => void = () => undefined
+    const pendingFile = new Promise<File>((resolve) => {
+      releaseFile = () => resolve(new File(['clip'], '2026-08-20_20-45-00-front.mp4', { type: 'video/mp4' }))
+    })
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => ({
+        kind: 'directory',
+        name: 'RecentClips',
+        async *values() {
+          yield { kind: 'file', name: '2026-08-20_20-45-00-front.mp4', getFile: () => pendingFile }
+        },
+      }),
+    })
+    const actions: AppAction[] = []
+    const hook = renderHook(() =>
+      useDirectoryScan((action) => {
+        actions.push(action)
+      }),
+    )
+
+    act(() => hook.result.current.requestDirectory())
+    await vi.waitFor(() => expect(actions.map((action) => action.kind)).toContain('scan-progressed'))
+    act(() => hook.result.current.cancelScan())
+    releaseFile()
+    await act(async () => Promise.resolve())
+
+    expect(actions.map((action) => action.kind)).toEqual(['scan-started', 'scan-progressed', 'scan-cancelled'])
   })
 
   it('surfaces a native scan limit violation through the safe failure action', async () => {

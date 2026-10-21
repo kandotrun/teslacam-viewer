@@ -63,6 +63,23 @@ describe('appReducer', () => {
     )
   })
 
+  it('keeps the loaded library when a re-pick is cancelled', () => {
+    const ready = appReducer(appReducer(initialAppState, { kind: 'scan-started' }), {
+      kind: 'library-ready',
+      folderName: 'TeslaCam',
+      library,
+    })
+    const selected = appReducer(ready, { kind: 'event-selected', eventId: event.id })
+
+    expect(appReducer(selected, { kind: 'scan-cancelled' })).toBe(selected)
+  })
+
+  it('returns a cancelled retry from an error to the welcome state', () => {
+    const failed = appReducer(initialAppState, { kind: 'scan-failed' })
+
+    expect(appReducer(failed, { kind: 'scan-cancelled' })).toEqual(initialAppState)
+  })
+
   it('keeps denied and invalid folders out of the ready state', () => {
     const scanning = appReducer(initialAppState, { kind: 'scan-started' })
     const denied = appReducer(scanning, { kind: 'scan-denied' })

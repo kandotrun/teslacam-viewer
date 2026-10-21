@@ -2,7 +2,7 @@ import { useCallback, useRef, type Dispatch, type RefObject } from 'react'
 
 import { buildTeslaCamLibrary } from '../teslacam/build-library'
 import { filesFromDirectoryInput } from '../teslacam/directory-input'
-import { pickTeslaCamDirectory } from '../teslacam/directory-picker'
+import { requestTeslaCamDirectory, scanTeslaCamDirectory } from '../teslacam/directory-picker'
 import { ScanLimitError } from '../teslacam/scan-limits'
 import type { LocalFileRef } from '../teslacam/types'
 import type { AppAction } from './app-state'
@@ -12,6 +12,8 @@ type DirectoryScan = {
   readonly isNativePickerAvailable: boolean
   readonly requestDirectory: () => void
   readonly handleDirectoryInput: (files: FileList | null) => void
+  /** Stops a running scan; its late progress and result are ignored. */
+  readonly cancelScan: () => void
 }
 
 function folderNameFromFiles(files: readonly LocalFileRef[]): string {
@@ -23,6 +25,7 @@ function folderNameFromFiles(files: readonly LocalFileRef[]): string {
 export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
   const fallbackInputRef = useRef<HTMLInputElement>(null)
   const scanGenerationRef = useRef(0)
+  const scanAbortRef = useRef<AbortController | null>(null)
   const isNativePickerAvailable = globalThis.showDirectoryPicker !== undefined
 
   const buildLibrary = useCallback(
@@ -53,21 +56,21 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
     [dispatch],
   )
 
-  const selectNativeDirectory = useCallback(async (): Promise<void> => {
+  const nextGeneration = useCallback((): number => {
+    scanAbortRef.current?.abort()
+    scanAbortRef.current = null
     scanGenerationRef.current += 1
-    const generation = scanGenerationRef.current
-    dispatch({ kind: 'scan-started' })
+    return scanGenerationRef.current
+  }, [])
+
+  const selectNativeDirectory = useCallback(async (): Promise<void> => {
+    const generation = nextGeneration()
+    const isCurrent = (): boolean => scanGenerationRef.current === generation
     try {
-      const selection = await pickTeslaCamDirectory((progress) => {
-        if (scanGenerationRef.current === generation) {
-          dispatch({ kind: 'scan-progressed', progress })
-        }
-      })
-      if (scanGenerationRef.current !== generation) return
-      switch (selection.status) {
-        case 'selected':
-          await buildLibrary(selection.files, selection.folderName, generation)
-          return
+      // The loaded library stays on screen while the picker is open; a cancelled re-pick keeps it.
+      const request = await requestTeslaCamDirectory()
+      if (!isCurrent()) return
+      switch (request.status) {
         case 'cancelled':
           dispatch({ kind: 'scan-cancelled' })
           return
@@ -75,16 +78,28 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
           dispatch({ kind: 'scan-denied' })
           return
         case 'unsupported':
-          dispatch({ kind: 'scan-cancelled' })
           fallbackInputRef.current?.click()
           return
+        case 'picked':
+          break
       }
+      const controller = new AbortController()
+      scanAbortRef.current = controller
+      dispatch({ kind: 'scan-started' })
+      const selection = await scanTeslaCamDirectory(request.root, (progress) => {
+        if (isCurrent()) dispatch({ kind: 'scan-progressed', progress })
+      }, { signal: controller.signal })
+      if (!isCurrent()) return
+      await buildLibrary(selection.files, selection.folderName, generation)
     } catch {
-      if (scanGenerationRef.current === generation) {
-        dispatch({ kind: 'scan-failed' })
-      }
+      if (isCurrent()) dispatch({ kind: 'scan-failed' })
     }
-  }, [buildLibrary, dispatch])
+  }, [buildLibrary, dispatch, nextGeneration])
+
+  const cancelScan = useCallback((): void => {
+    nextGeneration()
+    dispatch({ kind: 'scan-cancelled' })
+  }, [dispatch, nextGeneration])
 
   const requestDirectory = useCallback((): void => {
     if (globalThis.showDirectoryPicker === undefined) {
@@ -96,8 +111,7 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
 
   const handleDirectoryInput = useCallback(
     (files: FileList | null): void => {
-      scanGenerationRef.current += 1
-      const generation = scanGenerationRef.current
+      const generation = nextGeneration()
       dispatch({ kind: 'scan-started' })
       let selectedFiles: readonly LocalFileRef[]
       try {
@@ -115,7 +129,7 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
         generation,
       )
     },
-    [buildLibrary, dispatch],
+    [buildLibrary, dispatch, nextGeneration],
   )
 
   return {
@@ -123,5 +137,6 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
     isNativePickerAvailable,
     requestDirectory,
     handleDirectoryInput,
+    cancelScan,
   }
 }

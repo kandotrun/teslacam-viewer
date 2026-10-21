@@ -107,7 +107,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           return assertNever(state)
       }
     case 'scan-cancelled':
-      return initialAppState
+      // Cancelling a re-pick keeps the library that is already loaded.
+      return state.kind === 'ready' ? state : initialAppState
     case 'scan-denied':
       return { kind: 'error', reason: 'denied', filters: initialFilters }
     case 'scan-invalid':
