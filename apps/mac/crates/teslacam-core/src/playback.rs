@@ -463,7 +463,7 @@ impl PlaybackMachine {
                 .iter()
                 .rev()
                 .copied()
-                .find(|start| *start <= self.position)
+                .find(|start| *start < self.duration)
                 .unwrap_or(0.0);
             effects.extend(self.seek(last_start));
         }
@@ -854,6 +854,25 @@ mod tests {
                 Media(Seek(120.0)),
                 Media(Play {
                     from: 120.0,
+                    rate: 1.0
+                })
+            ]
+        );
+    }
+
+    #[test]
+    fn play_at_the_end_replays_the_last_playable_segment_when_the_last_one_is_empty() {
+        // Two segments, but the probe found nothing playable in the second: the event ends at 60.
+        let mut machine = playing(120.0);
+        machine.handle(PlaybackInput::Loaded { duration: 60.0 });
+        machine.handle(PlaybackInput::ReachedEnd);
+        assert_eq!(machine.position(), 60.0);
+        assert_eq!(
+            machine.handle(PlaybackInput::Play),
+            vec![
+                Media(Seek(0.0)),
+                Media(Play {
+                    from: 0.0,
                     rate: 1.0
                 })
             ]

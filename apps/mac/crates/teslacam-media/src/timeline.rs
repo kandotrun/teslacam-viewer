@@ -561,6 +561,9 @@ mod tests {
                 ],
             ),
         ]);
+        // A last segment without any playable clip adds no length.
+        agree(&[(0, [Some(59.97); 6]), (60, [None; 6])]);
+        agree(&[(0, [Some(30.0); 6]), (60, [None; 6])]);
         // Real gaps between segments and a short last segment.
         agree(&[
             (0, full),

@@ -118,21 +118,33 @@ impl EventTimeline {
             return Err(TimelineError::UnorderedSegments);
         }
         let last = segments.len() - 1;
+        let has_media = segments.iter().any(|segment| {
+            segment
+                .durations
+                .iter()
+                .any(|(_, duration)| usable_length(*duration).is_some())
+        });
+        // The last window lasts as long as its longest clip; one without any playable clip adds no
+        // length (unless nothing is known yet, then it is nominal).
         let last_length = segments[last]
             .durations
             .iter()
             .filter_map(|(_, duration)| usable_length(*duration))
             .reduce(f64::max)
-            .unwrap_or(NOMINAL_SEGMENT_SECONDS);
-        let duration = starts[last] + last_length;
-        let timeline_segments = segments
+            .unwrap_or(if has_media {
+                0.0
+            } else {
+                NOMINAL_SEGMENT_SECONDS
+            });
+        let window_end = starts[last] + last_length;
+        let mut timeline_segments = segments
             .iter()
             .zip(&starts)
             .enumerate()
             .map(|(index, (segment, start))| TimelineSegment {
                 timestamp: segment.timestamp,
                 start: *start,
-                end: starts.get(index + 1).copied().unwrap_or(duration),
+                end: starts.get(index + 1).copied().unwrap_or(window_end),
             })
             .collect::<Vec<_>>();
         let placements = CameraMap::from_fn(|camera| {
@@ -157,6 +169,19 @@ impl EventTimeline {
                 })
                 .collect()
         });
+        // The event ends where its latest video ends (as the media timeline and the export do).
+        let duration = if has_media {
+            placements
+                .iter()
+                .filter_map(|(_, placements): (CameraId, &Vec<Placement>)| placements.last())
+                .map(|placement| placement.start + placement.duration + placement.hold)
+                .fold(0.0, f64::max)
+        } else {
+            window_end
+        };
+        for segment in &mut timeline_segments {
+            segment.end = segment.end.min(duration).max(segment.start);
+        }
         Ok(EventTimeline {
             segments: timeline_segments,
             placements,
@@ -500,6 +525,32 @@ mod tests {
         let unknown = EventTimeline::new(&[segment("2026-08-21_12-00-00", &[])]).expect("timeline");
         assert_eq!(unknown.duration(), NOMINAL_SEGMENT_SECONDS);
         assert!(!unknown.has_media());
+    }
+
+    #[test]
+    fn a_last_segment_without_playable_clips_adds_no_length() {
+        // Truncated files after a power cut: the probe found nothing in the last segment.
+        let timeline = EventTimeline::new(&[
+            segment("2026-08-21_12-00-00", &[(CameraId::Front, 59.97)]),
+            segment("2026-08-21_12-01-00", &[]),
+        ])
+        .expect("timeline");
+        assert!(
+            (timeline.duration() - 60.0).abs() < 1e-9,
+            "{}",
+            timeline.duration()
+        );
+        // Short clips end the event where their video ends.
+        let short = EventTimeline::new(&[
+            segment("2026-08-21_12-00-00", &[(CameraId::Front, 30.0)]),
+            segment("2026-08-21_12-01-00", &[]),
+        ])
+        .expect("timeline");
+        assert!(
+            (short.duration() - 30.0).abs() < 1e-9,
+            "{}",
+            short.duration()
+        );
     }
 
     #[test]
