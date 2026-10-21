@@ -8,14 +8,19 @@ permissions:
   contents: read
 
 jobs:
-  quality:
+  web:
+    name: web (apps/web)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 24
           cache: npm
+          cache-dependency-path: apps/web/package-lock.json
       - run: npm ci
       - run: npm run cf-typegen
       - run: git diff --exit-code -- worker-configuration.d.ts
