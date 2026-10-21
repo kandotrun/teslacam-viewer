@@ -17,6 +17,7 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+pub mod app_state;
 pub mod camera;
 pub mod copy;
 pub mod day_timeline;
