@@ -144,8 +144,12 @@ pub const EVENT_LIST_TITLE: &str = "イベント";
 pub const EVENT_LIST_EMPTY: &str = "この条件に一致するイベントはありません。";
 /// The shown day has no events.
 pub const DAY_EMPTY: &str = "この日のイベントはありません。";
+/// Accessible name of the day rail.
+pub const DAY_RAIL_REGION: &str = "日内イベントタイムライン";
 /// Accessible name of the day rail's marker group.
 pub const DAY_MARKERS: &str = "この日の記録";
+/// Shown instead of a day title when no day can be shown.
+pub const DAY_NONE: &str = "日付を選択してください";
 
 /// The weekday name, e.g. `木曜日`.
 pub const fn weekday_label(weekday: Weekday) -> &'static str {
