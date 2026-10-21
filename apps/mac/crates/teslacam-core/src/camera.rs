@@ -151,6 +151,16 @@ impl<T> CameraMap<T> {
         }
     }
 
+    /// The value of `camera`.
+    pub fn get(&self, camera: CameraId) -> &T {
+        &self.values[camera.index()]
+    }
+
+    /// The value of `camera`, mutably.
+    pub fn get_mut(&mut self, camera: CameraId) -> &mut T {
+        &mut self.values[camera.index()]
+    }
+
     /// Iterates `(camera, value)` in canonical order.
     pub fn iter(&self) -> impl Iterator<Item = (CameraId, &T)> {
         CameraId::ALL.into_iter().zip(self.values.iter())
@@ -177,17 +187,27 @@ impl<T> CameraMap<Option<T>> {
     }
 }
 
+impl<T> IntoIterator for CameraMap<T> {
+    type Item = (CameraId, T);
+    type IntoIter = std::iter::Zip<std::array::IntoIter<CameraId, 6>, std::array::IntoIter<T, 6>>;
+
+    /// `(camera, value)` pairs in canonical order.
+    fn into_iter(self) -> Self::IntoIter {
+        CameraId::ALL.into_iter().zip(self.values)
+    }
+}
+
 impl<T> Index<CameraId> for CameraMap<T> {
     type Output = T;
 
     fn index(&self, camera: CameraId) -> &T {
-        &self.values[camera.index()]
+        self.get(camera)
     }
 }
 
 impl<T> IndexMut<CameraId> for CameraMap<T> {
     fn index_mut(&mut self, camera: CameraId) -> &mut T {
-        &mut self.values[camera.index()]
+        self.get_mut(camera)
     }
 }
 
@@ -255,5 +275,18 @@ mod tests {
             CameraMap::from_fn(CameraId::index)[CameraId::RightPillar],
             4
         );
+    }
+
+    #[test]
+    fn camera_map_accessors_and_owned_iteration() {
+        let mut map = CameraMap::from_fn(|camera| camera.index() * 10);
+        *map.get_mut(CameraId::Back) = 7;
+        assert_eq!(*map.get(CameraId::Back), 7);
+        assert_eq!(*map.get(CameraId::LeftRepeater), 30);
+        let owned: Vec<(CameraId, String)> =
+            map.map(|_, value| value.to_string()).into_iter().collect();
+        assert_eq!(owned.len(), 6);
+        assert_eq!(owned[0], (CameraId::Front, "0".to_owned()));
+        assert_eq!(owned[5], (CameraId::RightRepeater, "50".to_owned()));
     }
 }
