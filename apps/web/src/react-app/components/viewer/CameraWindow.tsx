@@ -1,5 +1,5 @@
 import { LoaderCircle, VideoOff } from 'lucide-react'
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useId, useRef, useState } from 'react'
 
 import type { CameraId, LocalFileRef } from '../../../teslacam/types'
 import type { ObjectUrlRegistry } from '../../playback/object-url-registry'
@@ -45,6 +45,7 @@ export const CameraWindow = memo(function CameraWindow({
   const videoRef = useRef<HTMLVideoElement>(null)
   const replacingRef = useRef(false)
   const [status, setStatus] = useState<CameraStatus>(fileRef === undefined ? 'missing' : 'loading')
+  const stateTextId = useId()
   const reportStatus = useCallback((nextStatus: CameraStatus): void => {
     setStatus(nextStatus)
     onStatus(cameraId, nextStatus)
@@ -102,6 +103,7 @@ export const CameraWindow = memo(function CameraWindow({
   return (
     <div className="camera-slot" data-area={area} data-camera={cameraId} style={area === 'hidden' ? undefined : { gridArea: area }}>
       <button
+        aria-describedby={status === 'ready' ? undefined : stateTextId}
         aria-label={`${label}カメラを${expanded ? 'グリッドへ戻す' : '拡大'}`}
         aria-pressed={expanded}
         className="camera-window"
@@ -137,7 +139,7 @@ export const CameraWindow = memo(function CameraWindow({
             {status === 'loading'
               ? <LoaderCircle aria-hidden="true" className="spinner" size={20} />
               : <VideoOff aria-hidden="true" size={22} />}
-            <span className="camera-window__state-text">{cameraStatusLabel(status)}</span>
+            <span className="camera-window__state-text" id={stateTextId}>{cameraStatusLabel(status)}</span>
           </span>
         )}
         <span className="camera-window__label">{label}</span>

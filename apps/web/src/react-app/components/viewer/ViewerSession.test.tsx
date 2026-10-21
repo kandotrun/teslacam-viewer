@@ -91,7 +91,9 @@ describe('stage', () => {
     render(<Viewer event={event} />)
 
     expect(screen.getAllByText('記録がありません')).toHaveLength(5)
+    expect(screen.getByRole('button', { name: 'リアカメラを拡大' })).toHaveAccessibleDescription('記録がありません')
     await waitFor(() => expect(screen.getByText('映像を読み込めません')).toBeVisible())
+    expect(screen.getByRole('button', { name: 'フロントカメラを拡大' })).toHaveAccessibleDescription('映像を読み込めません')
     expect(screen.getByRole('main', { name: '6台のカメラ' })).toHaveAttribute('data-mode', 'representative')
     expect(screen.getByRole('radio', { name: '代表映像' })).toBeChecked()
     expect(screen.getByRole('radio', { name: '車両配置' })).toBeDisabled()
