@@ -140,7 +140,7 @@ export function EventPill({ event, onBack, libraryToggle }: EventPillProps) {
         {location !== null && (
           <span className="event-pill__where">
             <MapPin aria-hidden="true" size={15} />
-            {location}
+            <span className="event-pill__where-text">{location}</span>
           </span>
         )}
         {detection !== null && (

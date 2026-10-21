@@ -57,8 +57,20 @@
 
 .event-pill__where {
   overflow: hidden;
-  text-overflow: ellipsis;
   flex-shrink: 1;
+}
+
+.event-pill__where svg {
+  flex: none;
+}
+
+/* A flex item's text cannot take an ellipsis, so the place name sits in its own block. */
+.event-pill__where-text {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .event-pill__detect {
