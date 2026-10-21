@@ -1,0 +1,3815 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "directory-walk",
+  "source": [
+    "apps/web/src/teslacam/directory-picker.ts",
+    "apps/web/src/teslacam/scan-limits.ts"
+  ],
+  "cases": [
+    {
+      "name": "nested TeslaCam root with hidden entries",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "TeslaCam",
+          "entries": [
+            {
+              "name": "SavedClips",
+              "entries": [
+                {
+                  "name": "saved-a",
+                  "entries": [
+                    {
+                      "name": "2026-08-21_14-30-45-front.mp4",
+                      "kind": "file",
+                      "size": 4
+                    },
+                    {
+                      "name": ".DS_Store",
+                      "kind": "file",
+                      "size": 6
+                    }
+                  ],
+                  "kind": "directory"
+                },
+                {
+                  "name": ".ignored",
+                  "entries": [
+                    {
+                      "name": "2026-08-21_14-30-45-back.mp4",
+                      "kind": "file",
+                      "size": 1
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            },
+            {
+              "name": "._2026-08-21_14-30-45-front.mp4",
+              "kind": "file",
+              "size": 2
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "TeslaCam/SavedClips/saved-a/2026-08-21_14-30-45-front.mp4",
+            "size": 4
+          }
+        ],
+        "folderName": "TeslaCam",
+        "progress": [
+          {
+            "processed": 6,
+            "total": 6
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "root named RecentClips",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "RecentClips",
+          "entries": [
+            {
+              "name": "2026-08-21_14-30-45-front.mp4",
+              "kind": "file",
+              "size": 1
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "RecentClips/2026-08-21_14-30-45-front.mp4",
+            "size": 1
+          }
+        ],
+        "folderName": "RecentClips",
+        "progress": [
+          {
+            "processed": 1,
+            "total": 1
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "root named SavedClips",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "SavedClips",
+          "entries": [
+            {
+              "name": "2026-08-21_14-30-45-front.mp4",
+              "kind": "file",
+              "size": 1
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "SavedClips/2026-08-21_14-30-45-front.mp4",
+            "size": 1
+          }
+        ],
+        "folderName": "SavedClips",
+        "progress": [
+          {
+            "processed": 1,
+            "total": 1
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "root named SentryClips",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "SentryClips",
+          "entries": [
+            {
+              "name": "2026-08-21_14-30-45-front.mp4",
+              "kind": "file",
+              "size": 1
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "SentryClips/2026-08-21_14-30-45-front.mp4",
+            "size": 1
+          }
+        ],
+        "folderName": "SentryClips",
+        "progress": [
+          {
+            "processed": 1,
+            "total": 1
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "zero-byte file kept",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "RecentClips",
+          "entries": [
+            {
+              "name": "2026-08-21_14-30-45-front.mp4",
+              "kind": "file",
+              "size": 0
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "RecentClips/2026-08-21_14-30-45-front.mp4",
+            "size": 0
+          }
+        ],
+        "folderName": "RecentClips",
+        "progress": [
+          {
+            "processed": 1,
+            "total": 1
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "empty root",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "TeslaCam",
+          "entries": [],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [],
+        "folderName": "TeslaCam",
+        "progress": [
+          {
+            "processed": 0,
+            "total": 0
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "entries keep enumeration order",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "TeslaCam",
+          "entries": [
+            {
+              "name": "SentryClips",
+              "entries": [
+                {
+                  "name": "b",
+                  "entries": [
+                    {
+                      "name": "2",
+                      "kind": "file",
+                      "size": 2
+                    }
+                  ],
+                  "kind": "directory"
+                },
+                {
+                  "name": "a",
+                  "entries": [
+                    {
+                      "name": "1",
+                      "kind": "file",
+                      "size": 1
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            },
+            {
+              "name": "z.txt",
+              "kind": "file",
+              "size": 3
+            },
+            {
+              "name": "RecentClips",
+              "entries": [
+                {
+                  "name": "y",
+                  "kind": "file",
+                  "size": 1
+                },
+                {
+                  "name": "x",
+                  "kind": "file",
+                  "size": 1
+                }
+              ],
+              "kind": "directory"
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2",
+            "relativePath": "TeslaCam/SentryClips/b/2",
+            "size": 2
+          },
+          {
+            "name": "1",
+            "relativePath": "TeslaCam/SentryClips/a/1",
+            "size": 1
+          },
+          {
+            "name": "z.txt",
+            "relativePath": "TeslaCam/z.txt",
+            "size": 3
+          },
+          {
+            "name": "y",
+            "relativePath": "TeslaCam/RecentClips/y",
+            "size": 1
+          },
+          {
+            "name": "x",
+            "relativePath": "TeslaCam/RecentClips/x",
+            "size": 1
+          }
+        ],
+        "folderName": "TeslaCam",
+        "progress": [
+          {
+            "processed": 9,
+            "total": 9
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "names with spaces and Japanese",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "TeslaCam 2026",
+          "entries": [
+            {
+              "name": "保存 フォルダ",
+              "entries": [
+                {
+                  "name": "メモ.txt",
+                  "kind": "file",
+                  "size": 9
+                }
+              ],
+              "kind": "directory"
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "メモ.txt",
+            "relativePath": "TeslaCam 2026/保存 フォルダ/メモ.txt",
+            "size": 9
+          }
+        ],
+        "folderName": "TeslaCam 2026",
+        "progress": [
+          {
+            "processed": 2,
+            "total": 2
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "250 entries report the boundary twice",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "RecentClips",
+          "generate": {
+            "count": 250,
+            "namePattern": ".entry-{i}"
+          },
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [],
+        "folderName": "RecentClips",
+        "progress": [
+          {
+            "processed": 250,
+            "total": 250
+          },
+          {
+            "processed": 250,
+            "total": 250
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "251 entries",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "RecentClips",
+          "generate": {
+            "count": 251,
+            "namePattern": ".entry-{i}"
+          },
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [],
+        "folderName": "RecentClips",
+        "progress": [
+          {
+            "processed": 250,
+            "total": 250
+          },
+          {
+            "processed": 251,
+            "total": 251
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "visible generated files",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "RecentClips",
+          "entries": [
+            {
+              "name": "first.mp4",
+              "kind": "file",
+              "size": 7
+            }
+          ],
+          "generate": {
+            "count": 3,
+            "namePattern": "2026-08-21_14-3{i}-45-front.mp4",
+            "size": 5
+          },
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "first.mp4",
+            "relativePath": "RecentClips/first.mp4",
+            "size": 7
+          },
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "RecentClips/2026-08-21_14-30-45-front.mp4",
+            "size": 5
+          },
+          {
+            "name": "2026-08-21_14-31-45-front.mp4",
+            "relativePath": "RecentClips/2026-08-21_14-31-45-front.mp4",
+            "size": 5
+          },
+          {
+            "name": "2026-08-21_14-32-45-front.mp4",
+            "relativePath": "RecentClips/2026-08-21_14-32-45-front.mp4",
+            "size": 5
+          }
+        ],
+        "folderName": "RecentClips",
+        "progress": [
+          {
+            "processed": 4,
+            "total": 4
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "hidden and directory entries are counted",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "TeslaCam",
+          "entries": [
+            {
+              "name": ".hidden",
+              "entries": [
+                {
+                  "name": "never-counted",
+                  "kind": "file",
+                  "size": 1
+                }
+              ],
+              "kind": "directory"
+            },
+            {
+              "name": "Noise",
+              "entries": [],
+              "kind": "directory"
+            }
+          ],
+          "generate": {
+            "count": 248,
+            "namePattern": ".hidden-{i}"
+          },
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [],
+        "folderName": "TeslaCam",
+        "progress": [
+          {
+            "processed": 250,
+            "total": 250
+          },
+          {
+            "processed": 250,
+            "total": 250
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "e2e full tree",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "TeslaCam",
+          "entries": [
+            {
+              "name": "Noise",
+              "generate": {
+                "count": 253,
+                "namePattern": "synthetic-{i}.txt"
+              },
+              "kind": "directory"
+            },
+            {
+              "name": "RecentClips",
+              "entries": [
+                {
+                  "name": "2026-08-20_20-45-00-front.mp4",
+                  "kind": "file",
+                  "size": 2048
+                },
+                {
+                  "name": "2026-08-20_20-45-00-back.mp4",
+                  "kind": "file",
+                  "size": 2048
+                },
+                {
+                  "name": "2026-08-20_20-45-00-left_pillar.mp4",
+                  "kind": "file",
+                  "size": 2048
+                },
+                {
+                  "name": "2026-08-20_20-45-00-left_repeater.mp4",
+                  "kind": "file",
+                  "size": 2048
+                },
+                {
+                  "name": "2026-08-20_20-45-00-right_pillar.mp4",
+                  "kind": "file",
+                  "size": 2048
+                },
+                {
+                  "name": "2026-08-20_20-45-00-right_repeater.mp4",
+                  "kind": "file",
+                  "size": 2048
+                }
+              ],
+              "kind": "directory"
+            },
+            {
+              "name": "SavedClips",
+              "entries": [
+                {
+                  "name": "event-saved",
+                  "entries": [
+                    {
+                      "name": "2026-08-20_20-40-00-front.mp4",
+                      "kind": "file",
+                      "size": 2048
+                    },
+                    {
+                      "name": "event.mp4",
+                      "kind": "file",
+                      "size": 2048
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            },
+            {
+              "name": "SentryClips",
+              "entries": [
+                {
+                  "name": "event-sentry",
+                  "entries": [
+                    {
+                      "name": "2026-08-20_20-35-00-front.mp4",
+                      "kind": "file",
+                      "size": 2048
+                    },
+                    {
+                      "name": "event.json",
+                      "kind": "file",
+                      "size": 224
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "synthetic-0.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-0.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-1.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-1.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-2.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-2.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-3.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-3.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-4.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-4.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-5.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-5.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-6.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-6.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-7.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-7.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-8.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-8.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-9.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-9.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-10.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-10.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-11.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-11.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-12.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-12.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-13.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-13.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-14.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-14.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-15.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-15.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-16.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-16.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-17.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-17.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-18.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-18.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-19.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-19.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-20.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-20.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-21.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-21.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-22.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-22.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-23.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-23.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-24.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-24.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-25.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-25.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-26.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-26.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-27.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-27.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-28.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-28.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-29.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-29.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-30.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-30.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-31.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-31.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-32.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-32.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-33.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-33.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-34.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-34.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-35.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-35.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-36.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-36.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-37.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-37.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-38.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-38.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-39.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-39.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-40.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-40.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-41.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-41.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-42.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-42.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-43.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-43.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-44.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-44.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-45.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-45.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-46.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-46.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-47.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-47.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-48.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-48.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-49.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-49.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-50.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-50.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-51.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-51.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-52.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-52.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-53.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-53.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-54.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-54.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-55.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-55.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-56.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-56.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-57.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-57.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-58.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-58.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-59.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-59.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-60.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-60.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-61.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-61.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-62.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-62.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-63.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-63.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-64.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-64.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-65.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-65.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-66.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-66.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-67.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-67.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-68.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-68.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-69.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-69.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-70.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-70.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-71.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-71.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-72.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-72.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-73.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-73.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-74.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-74.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-75.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-75.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-76.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-76.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-77.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-77.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-78.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-78.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-79.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-79.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-80.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-80.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-81.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-81.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-82.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-82.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-83.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-83.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-84.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-84.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-85.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-85.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-86.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-86.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-87.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-87.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-88.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-88.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-89.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-89.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-90.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-90.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-91.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-91.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-92.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-92.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-93.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-93.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-94.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-94.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-95.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-95.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-96.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-96.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-97.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-97.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-98.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-98.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-99.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-99.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-100.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-100.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-101.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-101.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-102.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-102.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-103.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-103.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-104.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-104.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-105.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-105.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-106.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-106.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-107.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-107.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-108.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-108.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-109.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-109.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-110.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-110.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-111.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-111.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-112.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-112.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-113.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-113.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-114.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-114.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-115.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-115.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-116.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-116.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-117.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-117.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-118.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-118.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-119.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-119.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-120.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-120.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-121.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-121.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-122.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-122.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-123.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-123.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-124.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-124.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-125.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-125.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-126.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-126.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-127.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-127.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-128.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-128.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-129.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-129.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-130.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-130.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-131.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-131.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-132.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-132.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-133.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-133.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-134.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-134.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-135.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-135.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-136.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-136.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-137.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-137.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-138.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-138.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-139.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-139.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-140.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-140.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-141.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-141.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-142.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-142.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-143.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-143.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-144.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-144.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-145.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-145.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-146.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-146.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-147.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-147.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-148.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-148.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-149.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-149.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-150.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-150.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-151.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-151.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-152.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-152.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-153.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-153.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-154.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-154.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-155.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-155.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-156.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-156.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-157.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-157.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-158.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-158.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-159.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-159.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-160.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-160.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-161.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-161.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-162.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-162.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-163.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-163.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-164.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-164.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-165.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-165.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-166.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-166.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-167.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-167.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-168.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-168.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-169.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-169.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-170.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-170.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-171.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-171.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-172.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-172.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-173.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-173.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-174.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-174.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-175.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-175.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-176.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-176.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-177.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-177.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-178.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-178.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-179.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-179.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-180.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-180.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-181.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-181.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-182.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-182.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-183.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-183.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-184.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-184.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-185.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-185.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-186.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-186.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-187.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-187.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-188.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-188.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-189.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-189.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-190.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-190.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-191.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-191.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-192.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-192.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-193.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-193.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-194.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-194.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-195.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-195.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-196.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-196.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-197.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-197.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-198.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-198.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-199.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-199.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-200.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-200.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-201.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-201.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-202.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-202.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-203.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-203.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-204.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-204.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-205.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-205.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-206.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-206.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-207.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-207.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-208.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-208.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-209.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-209.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-210.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-210.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-211.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-211.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-212.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-212.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-213.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-213.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-214.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-214.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-215.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-215.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-216.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-216.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-217.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-217.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-218.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-218.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-219.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-219.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-220.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-220.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-221.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-221.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-222.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-222.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-223.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-223.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-224.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-224.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-225.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-225.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-226.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-226.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-227.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-227.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-228.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-228.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-229.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-229.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-230.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-230.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-231.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-231.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-232.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-232.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-233.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-233.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-234.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-234.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-235.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-235.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-236.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-236.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-237.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-237.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-238.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-238.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-239.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-239.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-240.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-240.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-241.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-241.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-242.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-242.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-243.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-243.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-244.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-244.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-245.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-245.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-246.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-246.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-247.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-247.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-248.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-248.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-249.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-249.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-250.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-250.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-251.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-251.txt",
+            "size": 1
+          },
+          {
+            "name": "synthetic-252.txt",
+            "relativePath": "TeslaCam/Noise/synthetic-252.txt",
+            "size": 1
+          },
+          {
+            "name": "2026-08-20_20-45-00-front.mp4",
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-45-00-back.mp4",
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-back.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-45-00-left_pillar.mp4",
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_pillar.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-45-00-left_repeater.mp4",
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-left_repeater.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-45-00-right_pillar.mp4",
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_pillar.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-45-00-right_repeater.mp4",
+            "relativePath": "TeslaCam/RecentClips/2026-08-20_20-45-00-right_repeater.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-40-00-front.mp4",
+            "relativePath": "TeslaCam/SavedClips/event-saved/2026-08-20_20-40-00-front.mp4",
+            "size": 2048
+          },
+          {
+            "name": "event.mp4",
+            "relativePath": "TeslaCam/SavedClips/event-saved/event.mp4",
+            "size": 2048
+          },
+          {
+            "name": "2026-08-20_20-35-00-front.mp4",
+            "relativePath": "TeslaCam/SentryClips/event-sentry/2026-08-20_20-35-00-front.mp4",
+            "size": 2048
+          },
+          {
+            "name": "event.json",
+            "relativePath": "TeslaCam/SentryClips/event-sentry/event.json",
+            "size": 224
+          }
+        ],
+        "folderName": "TeslaCam",
+        "progress": [
+          {
+            "processed": 250,
+            "total": 250
+          },
+          {
+            "processed": 269,
+            "total": 269
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "depth 8 is allowed",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "depth-0",
+          "entries": [
+            {
+              "name": "depth-1",
+              "entries": [
+                {
+                  "name": "depth-2",
+                  "entries": [
+                    {
+                      "name": "depth-3",
+                      "entries": [
+                        {
+                          "name": "depth-4",
+                          "entries": [
+                            {
+                              "name": "depth-5",
+                              "entries": [
+                                {
+                                  "name": "depth-6",
+                                  "entries": [
+                                    {
+                                      "name": "depth-7",
+                                      "entries": [
+                                        {
+                                          "name": "depth-8",
+                                          "entries": [
+                                            {
+                                              "name": "2026-08-21_14-30-45-front.mp4",
+                                              "kind": "file",
+                                              "size": 1
+                                            }
+                                          ],
+                                          "kind": "directory"
+                                        }
+                                      ],
+                                      "kind": "directory"
+                                    }
+                                  ],
+                                  "kind": "directory"
+                                }
+                              ],
+                              "kind": "directory"
+                            }
+                          ],
+                          "kind": "directory"
+                        }
+                      ],
+                      "kind": "directory"
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-front.mp4",
+            "relativePath": "depth-0/depth-1/depth-2/depth-3/depth-4/depth-5/depth-6/depth-7/depth-8/2026-08-21_14-30-45-front.mp4",
+            "size": 1
+          }
+        ],
+        "folderName": "depth-0",
+        "progress": [
+          {
+            "processed": 9,
+            "total": 9
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "depth 9 fails",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "depth-0",
+          "entries": [
+            {
+              "name": "depth-1",
+              "entries": [
+                {
+                  "name": "depth-2",
+                  "entries": [
+                    {
+                      "name": "depth-3",
+                      "entries": [
+                        {
+                          "name": "depth-4",
+                          "entries": [
+                            {
+                              "name": "depth-5",
+                              "entries": [
+                                {
+                                  "name": "depth-6",
+                                  "entries": [
+                                    {
+                                      "name": "depth-7",
+                                      "entries": [
+                                        {
+                                          "name": "depth-8",
+                                          "entries": [
+                                            {
+                                              "name": "depth-9",
+                                              "entries": [],
+                                              "kind": "directory"
+                                            }
+                                          ],
+                                          "kind": "directory"
+                                        }
+                                      ],
+                                      "kind": "directory"
+                                    }
+                                  ],
+                                  "kind": "directory"
+                                }
+                              ],
+                              "kind": "directory"
+                            }
+                          ],
+                          "kind": "directory"
+                        }
+                      ],
+                      "kind": "directory"
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "kind": "directory-depth",
+        "status": "scan-limit"
+      }
+    },
+    {
+      "name": "entry count 100000 is allowed",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "Noise",
+          "generate": {
+            "count": 100000,
+            "namePattern": ".n{i}"
+          },
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [],
+        "folderName": "Noise",
+        "progress": [
+          {
+            "processed": 250,
+            "total": 250
+          },
+          {
+            "processed": 500,
+            "total": 500
+          },
+          {
+            "processed": 750,
+            "total": 750
+          },
+          {
+            "processed": 1000,
+            "total": 1000
+          },
+          {
+            "processed": 1250,
+            "total": 1250
+          },
+          {
+            "processed": 1500,
+            "total": 1500
+          },
+          {
+            "processed": 1750,
+            "total": 1750
+          },
+          {
+            "processed": 2000,
+            "total": 2000
+          },
+          {
+            "processed": 2250,
+            "total": 2250
+          },
+          {
+            "processed": 2500,
+            "total": 2500
+          },
+          {
+            "processed": 2750,
+            "total": 2750
+          },
+          {
+            "processed": 3000,
+            "total": 3000
+          },
+          {
+            "processed": 3250,
+            "total": 3250
+          },
+          {
+            "processed": 3500,
+            "total": 3500
+          },
+          {
+            "processed": 3750,
+            "total": 3750
+          },
+          {
+            "processed": 4000,
+            "total": 4000
+          },
+          {
+            "processed": 4250,
+            "total": 4250
+          },
+          {
+            "processed": 4500,
+            "total": 4500
+          },
+          {
+            "processed": 4750,
+            "total": 4750
+          },
+          {
+            "processed": 5000,
+            "total": 5000
+          },
+          {
+            "processed": 5250,
+            "total": 5250
+          },
+          {
+            "processed": 5500,
+            "total": 5500
+          },
+          {
+            "processed": 5750,
+            "total": 5750
+          },
+          {
+            "processed": 6000,
+            "total": 6000
+          },
+          {
+            "processed": 6250,
+            "total": 6250
+          },
+          {
+            "processed": 6500,
+            "total": 6500
+          },
+          {
+            "processed": 6750,
+            "total": 6750
+          },
+          {
+            "processed": 7000,
+            "total": 7000
+          },
+          {
+            "processed": 7250,
+            "total": 7250
+          },
+          {
+            "processed": 7500,
+            "total": 7500
+          },
+          {
+            "processed": 7750,
+            "total": 7750
+          },
+          {
+            "processed": 8000,
+            "total": 8000
+          },
+          {
+            "processed": 8250,
+            "total": 8250
+          },
+          {
+            "processed": 8500,
+            "total": 8500
+          },
+          {
+            "processed": 8750,
+            "total": 8750
+          },
+          {
+            "processed": 9000,
+            "total": 9000
+          },
+          {
+            "processed": 9250,
+            "total": 9250
+          },
+          {
+            "processed": 9500,
+            "total": 9500
+          },
+          {
+            "processed": 9750,
+            "total": 9750
+          },
+          {
+            "processed": 10000,
+            "total": 10000
+          },
+          {
+            "processed": 10250,
+            "total": 10250
+          },
+          {
+            "processed": 10500,
+            "total": 10500
+          },
+          {
+            "processed": 10750,
+            "total": 10750
+          },
+          {
+            "processed": 11000,
+            "total": 11000
+          },
+          {
+            "processed": 11250,
+            "total": 11250
+          },
+          {
+            "processed": 11500,
+            "total": 11500
+          },
+          {
+            "processed": 11750,
+            "total": 11750
+          },
+          {
+            "processed": 12000,
+            "total": 12000
+          },
+          {
+            "processed": 12250,
+            "total": 12250
+          },
+          {
+            "processed": 12500,
+            "total": 12500
+          },
+          {
+            "processed": 12750,
+            "total": 12750
+          },
+          {
+            "processed": 13000,
+            "total": 13000
+          },
+          {
+            "processed": 13250,
+            "total": 13250
+          },
+          {
+            "processed": 13500,
+            "total": 13500
+          },
+          {
+            "processed": 13750,
+            "total": 13750
+          },
+          {
+            "processed": 14000,
+            "total": 14000
+          },
+          {
+            "processed": 14250,
+            "total": 14250
+          },
+          {
+            "processed": 14500,
+            "total": 14500
+          },
+          {
+            "processed": 14750,
+            "total": 14750
+          },
+          {
+            "processed": 15000,
+            "total": 15000
+          },
+          {
+            "processed": 15250,
+            "total": 15250
+          },
+          {
+            "processed": 15500,
+            "total": 15500
+          },
+          {
+            "processed": 15750,
+            "total": 15750
+          },
+          {
+            "processed": 16000,
+            "total": 16000
+          },
+          {
+            "processed": 16250,
+            "total": 16250
+          },
+          {
+            "processed": 16500,
+            "total": 16500
+          },
+          {
+            "processed": 16750,
+            "total": 16750
+          },
+          {
+            "processed": 17000,
+            "total": 17000
+          },
+          {
+            "processed": 17250,
+            "total": 17250
+          },
+          {
+            "processed": 17500,
+            "total": 17500
+          },
+          {
+            "processed": 17750,
+            "total": 17750
+          },
+          {
+            "processed": 18000,
+            "total": 18000
+          },
+          {
+            "processed": 18250,
+            "total": 18250
+          },
+          {
+            "processed": 18500,
+            "total": 18500
+          },
+          {
+            "processed": 18750,
+            "total": 18750
+          },
+          {
+            "processed": 19000,
+            "total": 19000
+          },
+          {
+            "processed": 19250,
+            "total": 19250
+          },
+          {
+            "processed": 19500,
+            "total": 19500
+          },
+          {
+            "processed": 19750,
+            "total": 19750
+          },
+          {
+            "processed": 20000,
+            "total": 20000
+          },
+          {
+            "processed": 20250,
+            "total": 20250
+          },
+          {
+            "processed": 20500,
+            "total": 20500
+          },
+          {
+            "processed": 20750,
+            "total": 20750
+          },
+          {
+            "processed": 21000,
+            "total": 21000
+          },
+          {
+            "processed": 21250,
+            "total": 21250
+          },
+          {
+            "processed": 21500,
+            "total": 21500
+          },
+          {
+            "processed": 21750,
+            "total": 21750
+          },
+          {
+            "processed": 22000,
+            "total": 22000
+          },
+          {
+            "processed": 22250,
+            "total": 22250
+          },
+          {
+            "processed": 22500,
+            "total": 22500
+          },
+          {
+            "processed": 22750,
+            "total": 22750
+          },
+          {
+            "processed": 23000,
+            "total": 23000
+          },
+          {
+            "processed": 23250,
+            "total": 23250
+          },
+          {
+            "processed": 23500,
+            "total": 23500
+          },
+          {
+            "processed": 23750,
+            "total": 23750
+          },
+          {
+            "processed": 24000,
+            "total": 24000
+          },
+          {
+            "processed": 24250,
+            "total": 24250
+          },
+          {
+            "processed": 24500,
+            "total": 24500
+          },
+          {
+            "processed": 24750,
+            "total": 24750
+          },
+          {
+            "processed": 25000,
+            "total": 25000
+          },
+          {
+            "processed": 25250,
+            "total": 25250
+          },
+          {
+            "processed": 25500,
+            "total": 25500
+          },
+          {
+            "processed": 25750,
+            "total": 25750
+          },
+          {
+            "processed": 26000,
+            "total": 26000
+          },
+          {
+            "processed": 26250,
+            "total": 26250
+          },
+          {
+            "processed": 26500,
+            "total": 26500
+          },
+          {
+            "processed": 26750,
+            "total": 26750
+          },
+          {
+            "processed": 27000,
+            "total": 27000
+          },
+          {
+            "processed": 27250,
+            "total": 27250
+          },
+          {
+            "processed": 27500,
+            "total": 27500
+          },
+          {
+            "processed": 27750,
+            "total": 27750
+          },
+          {
+            "processed": 28000,
+            "total": 28000
+          },
+          {
+            "processed": 28250,
+            "total": 28250
+          },
+          {
+            "processed": 28500,
+            "total": 28500
+          },
+          {
+            "processed": 28750,
+            "total": 28750
+          },
+          {
+            "processed": 29000,
+            "total": 29000
+          },
+          {
+            "processed": 29250,
+            "total": 29250
+          },
+          {
+            "processed": 29500,
+            "total": 29500
+          },
+          {
+            "processed": 29750,
+            "total": 29750
+          },
+          {
+            "processed": 30000,
+            "total": 30000
+          },
+          {
+            "processed": 30250,
+            "total": 30250
+          },
+          {
+            "processed": 30500,
+            "total": 30500
+          },
+          {
+            "processed": 30750,
+            "total": 30750
+          },
+          {
+            "processed": 31000,
+            "total": 31000
+          },
+          {
+            "processed": 31250,
+            "total": 31250
+          },
+          {
+            "processed": 31500,
+            "total": 31500
+          },
+          {
+            "processed": 31750,
+            "total": 31750
+          },
+          {
+            "processed": 32000,
+            "total": 32000
+          },
+          {
+            "processed": 32250,
+            "total": 32250
+          },
+          {
+            "processed": 32500,
+            "total": 32500
+          },
+          {
+            "processed": 32750,
+            "total": 32750
+          },
+          {
+            "processed": 33000,
+            "total": 33000
+          },
+          {
+            "processed": 33250,
+            "total": 33250
+          },
+          {
+            "processed": 33500,
+            "total": 33500
+          },
+          {
+            "processed": 33750,
+            "total": 33750
+          },
+          {
+            "processed": 34000,
+            "total": 34000
+          },
+          {
+            "processed": 34250,
+            "total": 34250
+          },
+          {
+            "processed": 34500,
+            "total": 34500
+          },
+          {
+            "processed": 34750,
+            "total": 34750
+          },
+          {
+            "processed": 35000,
+            "total": 35000
+          },
+          {
+            "processed": 35250,
+            "total": 35250
+          },
+          {
+            "processed": 35500,
+            "total": 35500
+          },
+          {
+            "processed": 35750,
+            "total": 35750
+          },
+          {
+            "processed": 36000,
+            "total": 36000
+          },
+          {
+            "processed": 36250,
+            "total": 36250
+          },
+          {
+            "processed": 36500,
+            "total": 36500
+          },
+          {
+            "processed": 36750,
+            "total": 36750
+          },
+          {
+            "processed": 37000,
+            "total": 37000
+          },
+          {
+            "processed": 37250,
+            "total": 37250
+          },
+          {
+            "processed": 37500,
+            "total": 37500
+          },
+          {
+            "processed": 37750,
+            "total": 37750
+          },
+          {
+            "processed": 38000,
+            "total": 38000
+          },
+          {
+            "processed": 38250,
+            "total": 38250
+          },
+          {
+            "processed": 38500,
+            "total": 38500
+          },
+          {
+            "processed": 38750,
+            "total": 38750
+          },
+          {
+            "processed": 39000,
+            "total": 39000
+          },
+          {
+            "processed": 39250,
+            "total": 39250
+          },
+          {
+            "processed": 39500,
+            "total": 39500
+          },
+          {
+            "processed": 39750,
+            "total": 39750
+          },
+          {
+            "processed": 40000,
+            "total": 40000
+          },
+          {
+            "processed": 40250,
+            "total": 40250
+          },
+          {
+            "processed": 40500,
+            "total": 40500
+          },
+          {
+            "processed": 40750,
+            "total": 40750
+          },
+          {
+            "processed": 41000,
+            "total": 41000
+          },
+          {
+            "processed": 41250,
+            "total": 41250
+          },
+          {
+            "processed": 41500,
+            "total": 41500
+          },
+          {
+            "processed": 41750,
+            "total": 41750
+          },
+          {
+            "processed": 42000,
+            "total": 42000
+          },
+          {
+            "processed": 42250,
+            "total": 42250
+          },
+          {
+            "processed": 42500,
+            "total": 42500
+          },
+          {
+            "processed": 42750,
+            "total": 42750
+          },
+          {
+            "processed": 43000,
+            "total": 43000
+          },
+          {
+            "processed": 43250,
+            "total": 43250
+          },
+          {
+            "processed": 43500,
+            "total": 43500
+          },
+          {
+            "processed": 43750,
+            "total": 43750
+          },
+          {
+            "processed": 44000,
+            "total": 44000
+          },
+          {
+            "processed": 44250,
+            "total": 44250
+          },
+          {
+            "processed": 44500,
+            "total": 44500
+          },
+          {
+            "processed": 44750,
+            "total": 44750
+          },
+          {
+            "processed": 45000,
+            "total": 45000
+          },
+          {
+            "processed": 45250,
+            "total": 45250
+          },
+          {
+            "processed": 45500,
+            "total": 45500
+          },
+          {
+            "processed": 45750,
+            "total": 45750
+          },
+          {
+            "processed": 46000,
+            "total": 46000
+          },
+          {
+            "processed": 46250,
+            "total": 46250
+          },
+          {
+            "processed": 46500,
+            "total": 46500
+          },
+          {
+            "processed": 46750,
+            "total": 46750
+          },
+          {
+            "processed": 47000,
+            "total": 47000
+          },
+          {
+            "processed": 47250,
+            "total": 47250
+          },
+          {
+            "processed": 47500,
+            "total": 47500
+          },
+          {
+            "processed": 47750,
+            "total": 47750
+          },
+          {
+            "processed": 48000,
+            "total": 48000
+          },
+          {
+            "processed": 48250,
+            "total": 48250
+          },
+          {
+            "processed": 48500,
+            "total": 48500
+          },
+          {
+            "processed": 48750,
+            "total": 48750
+          },
+          {
+            "processed": 49000,
+            "total": 49000
+          },
+          {
+            "processed": 49250,
+            "total": 49250
+          },
+          {
+            "processed": 49500,
+            "total": 49500
+          },
+          {
+            "processed": 49750,
+            "total": 49750
+          },
+          {
+            "processed": 50000,
+            "total": 50000
+          },
+          {
+            "processed": 50250,
+            "total": 50250
+          },
+          {
+            "processed": 50500,
+            "total": 50500
+          },
+          {
+            "processed": 50750,
+            "total": 50750
+          },
+          {
+            "processed": 51000,
+            "total": 51000
+          },
+          {
+            "processed": 51250,
+            "total": 51250
+          },
+          {
+            "processed": 51500,
+            "total": 51500
+          },
+          {
+            "processed": 51750,
+            "total": 51750
+          },
+          {
+            "processed": 52000,
+            "total": 52000
+          },
+          {
+            "processed": 52250,
+            "total": 52250
+          },
+          {
+            "processed": 52500,
+            "total": 52500
+          },
+          {
+            "processed": 52750,
+            "total": 52750
+          },
+          {
+            "processed": 53000,
+            "total": 53000
+          },
+          {
+            "processed": 53250,
+            "total": 53250
+          },
+          {
+            "processed": 53500,
+            "total": 53500
+          },
+          {
+            "processed": 53750,
+            "total": 53750
+          },
+          {
+            "processed": 54000,
+            "total": 54000
+          },
+          {
+            "processed": 54250,
+            "total": 54250
+          },
+          {
+            "processed": 54500,
+            "total": 54500
+          },
+          {
+            "processed": 54750,
+            "total": 54750
+          },
+          {
+            "processed": 55000,
+            "total": 55000
+          },
+          {
+            "processed": 55250,
+            "total": 55250
+          },
+          {
+            "processed": 55500,
+            "total": 55500
+          },
+          {
+            "processed": 55750,
+            "total": 55750
+          },
+          {
+            "processed": 56000,
+            "total": 56000
+          },
+          {
+            "processed": 56250,
+            "total": 56250
+          },
+          {
+            "processed": 56500,
+            "total": 56500
+          },
+          {
+            "processed": 56750,
+            "total": 56750
+          },
+          {
+            "processed": 57000,
+            "total": 57000
+          },
+          {
+            "processed": 57250,
+            "total": 57250
+          },
+          {
+            "processed": 57500,
+            "total": 57500
+          },
+          {
+            "processed": 57750,
+            "total": 57750
+          },
+          {
+            "processed": 58000,
+            "total": 58000
+          },
+          {
+            "processed": 58250,
+            "total": 58250
+          },
+          {
+            "processed": 58500,
+            "total": 58500
+          },
+          {
+            "processed": 58750,
+            "total": 58750
+          },
+          {
+            "processed": 59000,
+            "total": 59000
+          },
+          {
+            "processed": 59250,
+            "total": 59250
+          },
+          {
+            "processed": 59500,
+            "total": 59500
+          },
+          {
+            "processed": 59750,
+            "total": 59750
+          },
+          {
+            "processed": 60000,
+            "total": 60000
+          },
+          {
+            "processed": 60250,
+            "total": 60250
+          },
+          {
+            "processed": 60500,
+            "total": 60500
+          },
+          {
+            "processed": 60750,
+            "total": 60750
+          },
+          {
+            "processed": 61000,
+            "total": 61000
+          },
+          {
+            "processed": 61250,
+            "total": 61250
+          },
+          {
+            "processed": 61500,
+            "total": 61500
+          },
+          {
+            "processed": 61750,
+            "total": 61750
+          },
+          {
+            "processed": 62000,
+            "total": 62000
+          },
+          {
+            "processed": 62250,
+            "total": 62250
+          },
+          {
+            "processed": 62500,
+            "total": 62500
+          },
+          {
+            "processed": 62750,
+            "total": 62750
+          },
+          {
+            "processed": 63000,
+            "total": 63000
+          },
+          {
+            "processed": 63250,
+            "total": 63250
+          },
+          {
+            "processed": 63500,
+            "total": 63500
+          },
+          {
+            "processed": 63750,
+            "total": 63750
+          },
+          {
+            "processed": 64000,
+            "total": 64000
+          },
+          {
+            "processed": 64250,
+            "total": 64250
+          },
+          {
+            "processed": 64500,
+            "total": 64500
+          },
+          {
+            "processed": 64750,
+            "total": 64750
+          },
+          {
+            "processed": 65000,
+            "total": 65000
+          },
+          {
+            "processed": 65250,
+            "total": 65250
+          },
+          {
+            "processed": 65500,
+            "total": 65500
+          },
+          {
+            "processed": 65750,
+            "total": 65750
+          },
+          {
+            "processed": 66000,
+            "total": 66000
+          },
+          {
+            "processed": 66250,
+            "total": 66250
+          },
+          {
+            "processed": 66500,
+            "total": 66500
+          },
+          {
+            "processed": 66750,
+            "total": 66750
+          },
+          {
+            "processed": 67000,
+            "total": 67000
+          },
+          {
+            "processed": 67250,
+            "total": 67250
+          },
+          {
+            "processed": 67500,
+            "total": 67500
+          },
+          {
+            "processed": 67750,
+            "total": 67750
+          },
+          {
+            "processed": 68000,
+            "total": 68000
+          },
+          {
+            "processed": 68250,
+            "total": 68250
+          },
+          {
+            "processed": 68500,
+            "total": 68500
+          },
+          {
+            "processed": 68750,
+            "total": 68750
+          },
+          {
+            "processed": 69000,
+            "total": 69000
+          },
+          {
+            "processed": 69250,
+            "total": 69250
+          },
+          {
+            "processed": 69500,
+            "total": 69500
+          },
+          {
+            "processed": 69750,
+            "total": 69750
+          },
+          {
+            "processed": 70000,
+            "total": 70000
+          },
+          {
+            "processed": 70250,
+            "total": 70250
+          },
+          {
+            "processed": 70500,
+            "total": 70500
+          },
+          {
+            "processed": 70750,
+            "total": 70750
+          },
+          {
+            "processed": 71000,
+            "total": 71000
+          },
+          {
+            "processed": 71250,
+            "total": 71250
+          },
+          {
+            "processed": 71500,
+            "total": 71500
+          },
+          {
+            "processed": 71750,
+            "total": 71750
+          },
+          {
+            "processed": 72000,
+            "total": 72000
+          },
+          {
+            "processed": 72250,
+            "total": 72250
+          },
+          {
+            "processed": 72500,
+            "total": 72500
+          },
+          {
+            "processed": 72750,
+            "total": 72750
+          },
+          {
+            "processed": 73000,
+            "total": 73000
+          },
+          {
+            "processed": 73250,
+            "total": 73250
+          },
+          {
+            "processed": 73500,
+            "total": 73500
+          },
+          {
+            "processed": 73750,
+            "total": 73750
+          },
+          {
+            "processed": 74000,
+            "total": 74000
+          },
+          {
+            "processed": 74250,
+            "total": 74250
+          },
+          {
+            "processed": 74500,
+            "total": 74500
+          },
+          {
+            "processed": 74750,
+            "total": 74750
+          },
+          {
+            "processed": 75000,
+            "total": 75000
+          },
+          {
+            "processed": 75250,
+            "total": 75250
+          },
+          {
+            "processed": 75500,
+            "total": 75500
+          },
+          {
+            "processed": 75750,
+            "total": 75750
+          },
+          {
+            "processed": 76000,
+            "total": 76000
+          },
+          {
+            "processed": 76250,
+            "total": 76250
+          },
+          {
+            "processed": 76500,
+            "total": 76500
+          },
+          {
+            "processed": 76750,
+            "total": 76750
+          },
+          {
+            "processed": 77000,
+            "total": 77000
+          },
+          {
+            "processed": 77250,
+            "total": 77250
+          },
+          {
+            "processed": 77500,
+            "total": 77500
+          },
+          {
+            "processed": 77750,
+            "total": 77750
+          },
+          {
+            "processed": 78000,
+            "total": 78000
+          },
+          {
+            "processed": 78250,
+            "total": 78250
+          },
+          {
+            "processed": 78500,
+            "total": 78500
+          },
+          {
+            "processed": 78750,
+            "total": 78750
+          },
+          {
+            "processed": 79000,
+            "total": 79000
+          },
+          {
+            "processed": 79250,
+            "total": 79250
+          },
+          {
+            "processed": 79500,
+            "total": 79500
+          },
+          {
+            "processed": 79750,
+            "total": 79750
+          },
+          {
+            "processed": 80000,
+            "total": 80000
+          },
+          {
+            "processed": 80250,
+            "total": 80250
+          },
+          {
+            "processed": 80500,
+            "total": 80500
+          },
+          {
+            "processed": 80750,
+            "total": 80750
+          },
+          {
+            "processed": 81000,
+            "total": 81000
+          },
+          {
+            "processed": 81250,
+            "total": 81250
+          },
+          {
+            "processed": 81500,
+            "total": 81500
+          },
+          {
+            "processed": 81750,
+            "total": 81750
+          },
+          {
+            "processed": 82000,
+            "total": 82000
+          },
+          {
+            "processed": 82250,
+            "total": 82250
+          },
+          {
+            "processed": 82500,
+            "total": 82500
+          },
+          {
+            "processed": 82750,
+            "total": 82750
+          },
+          {
+            "processed": 83000,
+            "total": 83000
+          },
+          {
+            "processed": 83250,
+            "total": 83250
+          },
+          {
+            "processed": 83500,
+            "total": 83500
+          },
+          {
+            "processed": 83750,
+            "total": 83750
+          },
+          {
+            "processed": 84000,
+            "total": 84000
+          },
+          {
+            "processed": 84250,
+            "total": 84250
+          },
+          {
+            "processed": 84500,
+            "total": 84500
+          },
+          {
+            "processed": 84750,
+            "total": 84750
+          },
+          {
+            "processed": 85000,
+            "total": 85000
+          },
+          {
+            "processed": 85250,
+            "total": 85250
+          },
+          {
+            "processed": 85500,
+            "total": 85500
+          },
+          {
+            "processed": 85750,
+            "total": 85750
+          },
+          {
+            "processed": 86000,
+            "total": 86000
+          },
+          {
+            "processed": 86250,
+            "total": 86250
+          },
+          {
+            "processed": 86500,
+            "total": 86500
+          },
+          {
+            "processed": 86750,
+            "total": 86750
+          },
+          {
+            "processed": 87000,
+            "total": 87000
+          },
+          {
+            "processed": 87250,
+            "total": 87250
+          },
+          {
+            "processed": 87500,
+            "total": 87500
+          },
+          {
+            "processed": 87750,
+            "total": 87750
+          },
+          {
+            "processed": 88000,
+            "total": 88000
+          },
+          {
+            "processed": 88250,
+            "total": 88250
+          },
+          {
+            "processed": 88500,
+            "total": 88500
+          },
+          {
+            "processed": 88750,
+            "total": 88750
+          },
+          {
+            "processed": 89000,
+            "total": 89000
+          },
+          {
+            "processed": 89250,
+            "total": 89250
+          },
+          {
+            "processed": 89500,
+            "total": 89500
+          },
+          {
+            "processed": 89750,
+            "total": 89750
+          },
+          {
+            "processed": 90000,
+            "total": 90000
+          },
+          {
+            "processed": 90250,
+            "total": 90250
+          },
+          {
+            "processed": 90500,
+            "total": 90500
+          },
+          {
+            "processed": 90750,
+            "total": 90750
+          },
+          {
+            "processed": 91000,
+            "total": 91000
+          },
+          {
+            "processed": 91250,
+            "total": 91250
+          },
+          {
+            "processed": 91500,
+            "total": 91500
+          },
+          {
+            "processed": 91750,
+            "total": 91750
+          },
+          {
+            "processed": 92000,
+            "total": 92000
+          },
+          {
+            "processed": 92250,
+            "total": 92250
+          },
+          {
+            "processed": 92500,
+            "total": 92500
+          },
+          {
+            "processed": 92750,
+            "total": 92750
+          },
+          {
+            "processed": 93000,
+            "total": 93000
+          },
+          {
+            "processed": 93250,
+            "total": 93250
+          },
+          {
+            "processed": 93500,
+            "total": 93500
+          },
+          {
+            "processed": 93750,
+            "total": 93750
+          },
+          {
+            "processed": 94000,
+            "total": 94000
+          },
+          {
+            "processed": 94250,
+            "total": 94250
+          },
+          {
+            "processed": 94500,
+            "total": 94500
+          },
+          {
+            "processed": 94750,
+            "total": 94750
+          },
+          {
+            "processed": 95000,
+            "total": 95000
+          },
+          {
+            "processed": 95250,
+            "total": 95250
+          },
+          {
+            "processed": 95500,
+            "total": 95500
+          },
+          {
+            "processed": 95750,
+            "total": 95750
+          },
+          {
+            "processed": 96000,
+            "total": 96000
+          },
+          {
+            "processed": 96250,
+            "total": 96250
+          },
+          {
+            "processed": 96500,
+            "total": 96500
+          },
+          {
+            "processed": 96750,
+            "total": 96750
+          },
+          {
+            "processed": 97000,
+            "total": 97000
+          },
+          {
+            "processed": 97250,
+            "total": 97250
+          },
+          {
+            "processed": 97500,
+            "total": 97500
+          },
+          {
+            "processed": 97750,
+            "total": 97750
+          },
+          {
+            "processed": 98000,
+            "total": 98000
+          },
+          {
+            "processed": 98250,
+            "total": 98250
+          },
+          {
+            "processed": 98500,
+            "total": 98500
+          },
+          {
+            "processed": 98750,
+            "total": 98750
+          },
+          {
+            "processed": 99000,
+            "total": 99000
+          },
+          {
+            "processed": 99250,
+            "total": 99250
+          },
+          {
+            "processed": 99500,
+            "total": 99500
+          },
+          {
+            "processed": 99750,
+            "total": 99750
+          },
+          {
+            "processed": 100000,
+            "total": 100000
+          },
+          {
+            "processed": 100000,
+            "total": 100000
+          }
+        ],
+        "status": "selected"
+      }
+    },
+    {
+      "name": "entry count 100001 fails",
+      "fn": "walkDirectory",
+      "input": {
+        "root": {
+          "name": "Noise",
+          "generate": {
+            "count": 100001,
+            "namePattern": ".n{i}"
+          },
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "kind": "entry-count",
+        "status": "scan-limit"
+      }
+    },
+    {
+      "name": "symbolic links are counted but not followed",
+      "fn": "walkDirectory",
+      "platforms": [
+        "mac"
+      ],
+      "input": {
+        "root": {
+          "name": "TeslaCam",
+          "entries": [
+            {
+              "name": "RecentClips",
+              "kind": "symlink"
+            },
+            {
+              "name": "SavedClips",
+              "entries": [
+                {
+                  "name": "a",
+                  "entries": [
+                    {
+                      "name": "2026-08-21_14-30-45-front.mp4",
+                      "kind": "symlink"
+                    },
+                    {
+                      "name": "2026-08-21_14-30-45-back.mp4",
+                      "kind": "file",
+                      "size": 1
+                    }
+                  ],
+                  "kind": "directory"
+                }
+              ],
+              "kind": "directory"
+            }
+          ],
+          "kind": "directory"
+        }
+      },
+      "expected": {
+        "files": [
+          {
+            "name": "2026-08-21_14-30-45-back.mp4",
+            "relativePath": "TeslaCam/SavedClips/a/2026-08-21_14-30-45-back.mp4",
+            "size": 1
+          }
+        ],
+        "folderName": "TeslaCam",
+        "progress": [
+          {
+            "processed": 5,
+            "total": 5
+          }
+        ],
+        "status": "selected"
+      }
+    }
+  ]
+}

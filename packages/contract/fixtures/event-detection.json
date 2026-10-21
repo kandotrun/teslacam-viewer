@@ -1,0 +1,2081 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "event-detection",
+  "source": [
+    "apps/web/src/react-app/event-detection.ts",
+    "apps/web/src/react-app/local-timestamp.ts"
+  ],
+  "cases": [
+    {
+      "name": "detectionSeconds first ten seconds",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 5
+    },
+    {
+      "name": "sentryInitialElapsedSeconds first ten seconds",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel first ten seconds",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds second segment",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:20"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 80
+    },
+    {
+      "name": "sentryInitialElapsedSeconds second segment",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:20"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 65
+    },
+    {
+      "name": "sentryPlaybackStartLabel second segment",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:20"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:01:05"
+    },
+    {
+      "name": "detectionSeconds gap between segments",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:05"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-11"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds gap between segments",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:05"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-11"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel gap between segments",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:05"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-11"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds overlapping segments pick the earliest",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:55"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-50"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 55
+    },
+    {
+      "name": "sentryInitialElapsedSeconds overlapping segments pick the earliest",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:55"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-50"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 40
+    },
+    {
+      "name": "sentryPlaybackStartLabel overlapping segments pick the earliest",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:55"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-50"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:40"
+    },
+    {
+      "name": "detectionSeconds exact non-final boundary",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "sentryInitialElapsedSeconds exact non-final boundary",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 45
+    },
+    {
+      "name": "sentryPlaybackStartLabel exact non-final boundary",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:45"
+    },
+    {
+      "name": "detectionSeconds final segment endpoint",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 120
+    },
+    {
+      "name": "sentryInitialElapsedSeconds final segment endpoint",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 105
+    },
+    {
+      "name": "sentryPlaybackStartLabel final segment endpoint",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:01:45"
+    },
+    {
+      "name": "detectionSeconds after the final endpoint",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds after the final endpoint",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel after the final endpoint",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds before the first segment",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T11:59:59"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds before the first segment",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T11:59:59"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel before the first segment",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T11:59:59"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds local midnight with Z",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-25T00:00:45Z"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_23-59-30"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-25_00-00-30"
+            }
+          ],
+          "timestamp": "2026-08-24_23-59-30"
+        }
+      },
+      "expected": 75
+    },
+    {
+      "name": "sentryInitialElapsedSeconds local midnight with Z",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-25T00:00:45Z"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_23-59-30"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-25_00-00-30"
+            }
+          ],
+          "timestamp": "2026-08-24_23-59-30"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "sentryPlaybackStartLabel local midnight with Z",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-25T00:00:45Z"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_23-59-30"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-25_00-00-30"
+            }
+          ],
+          "timestamp": "2026-08-24_23-59-30"
+        }
+      },
+      "expected": "2026-08-25 00:00:30"
+    },
+    {
+      "name": "detectionSeconds malformed",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "invalid"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds malformed",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "invalid"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel malformed",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "invalid"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds offset suffix",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30+09:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds offset suffix",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30+09:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel offset suffix",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30+09:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds out of range single segment",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds out of range single segment",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel out of range single segment",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:01"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds milliseconds are dropped",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05.900"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 5
+    },
+    {
+      "name": "sentryInitialElapsedSeconds milliseconds are dropped",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05.900"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel milliseconds are dropped",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05.900"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds detection at 14 seconds",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:14"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 14
+    },
+    {
+      "name": "sentryInitialElapsedSeconds detection at 14 seconds",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:14"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel detection at 14 seconds",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:14"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds detection at 15 seconds",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:15"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 15
+    },
+    {
+      "name": "sentryInitialElapsedSeconds detection at 15 seconds",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:15"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel detection at 15 seconds",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:15"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds detection at 16 seconds",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:16"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 16
+    },
+    {
+      "name": "sentryInitialElapsedSeconds detection at 16 seconds",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:16"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 1
+    },
+    {
+      "name": "sentryPlaybackStartLabel detection at 16 seconds",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:16"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:01"
+    },
+    {
+      "name": "detectionSeconds detection at the start",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryInitialElapsedSeconds detection at the start",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel detection at the start",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds pre-roll crosses into the previous segment",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:10"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 70
+    },
+    {
+      "name": "sentryInitialElapsedSeconds pre-roll crosses into the previous segment",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:10"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 55
+    },
+    {
+      "name": "sentryPlaybackStartLabel pre-roll crosses into the previous segment",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:10"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:55"
+    },
+    {
+      "name": "detectionSeconds e2e sentry fixture",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": 30
+    },
+    {
+      "name": "sentryInitialElapsedSeconds e2e sentry fixture",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": 15
+    },
+    {
+      "name": "sentryPlaybackStartLabel e2e sentry fixture",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-20T20:35:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-35-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-35-00"
+        }
+      },
+      "expected": "2026-08-20 20:35:15"
+    },
+    {
+      "name": "detectionSeconds saved with valid detection",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 30
+    },
+    {
+      "name": "sentryInitialElapsedSeconds saved with valid detection",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel saved with valid detection",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSeconds recent with valid detection",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "recent",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 30
+    },
+    {
+      "name": "sentryInitialElapsedSeconds recent with valid detection",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "recent",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel recent with valid detection",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "recent",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:30"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSeconds no metadata",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds no metadata",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel no metadata",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds metadata without a usable timestamp",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "reason": "manual_save",
+            "timestamp": ""
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds metadata without a usable timestamp",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "reason": "manual_save",
+            "timestamp": ""
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel metadata without a usable timestamp",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "reason": "manual_save",
+            "timestamp": ""
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    },
+    {
+      "name": "detectionSeconds no segments",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05"
+          },
+          "segments": [],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds no segments",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05"
+          },
+          "segments": [],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel no segments",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:05"
+          },
+          "segments": [],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSeconds invalid segment timestamp is skipped",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:10"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-02-30_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-02-30_12-00-00"
+        }
+      },
+      "expected": 70
+    },
+    {
+      "name": "sentryInitialElapsedSeconds invalid segment timestamp is skipped",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:10"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-02-30_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-02-30_12-00-00"
+        }
+      },
+      "expected": 55
+    },
+    {
+      "name": "sentryPlaybackStartLabel invalid segment timestamp is skipped",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:00:10"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-02-30_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            }
+          ],
+          "timestamp": "2026-02-30_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "detectionSeconds three segments, last one",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:40"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-02-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 160
+    },
+    {
+      "name": "sentryInitialElapsedSeconds three segments, last one",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:40"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-02-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 145
+    },
+    {
+      "name": "sentryPlaybackStartLabel three segments, last one",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:02:40"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-02-00"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:02:25"
+    },
+    {
+      "name": "detectionSeconds real cadence 61 seconds",
+      "fn": "detectionSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-01"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "sentryInitialElapsedSeconds real cadence 61 seconds",
+      "fn": "sentryInitialElapsedSeconds",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-01"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "sentryPlaybackStartLabel real cadence 61 seconds",
+      "fn": "sentryPlaybackStartLabel",
+      "input": {
+        "event": {
+          "category": "sentry",
+          "id": "detection-event",
+          "metadata": {
+            "timestamp": "2026-08-24T12:01:00"
+          },
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-00-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-24_12-01-01"
+            }
+          ],
+          "timestamp": "2026-08-24_12-00-00"
+        }
+      },
+      "expected": "2026-08-24 12:00:00"
+    }
+  ]
+}

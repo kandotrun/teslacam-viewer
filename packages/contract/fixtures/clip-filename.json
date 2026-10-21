@@ -1,0 +1,387 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "filename",
+  "source": [
+    "apps/web/src/teslacam/filename.ts"
+  ],
+  "cases": [
+    {
+      "name": "camera front",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-front.mp4"
+      },
+      "expected": {
+        "camera": "front",
+        "timestamp": "2026-08-21_14-30-45"
+      }
+    },
+    {
+      "name": "camera back",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-back.mp4"
+      },
+      "expected": {
+        "camera": "back",
+        "timestamp": "2026-08-21_14-30-45"
+      }
+    },
+    {
+      "name": "camera left_pillar",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-left_pillar.mp4"
+      },
+      "expected": {
+        "camera": "left_pillar",
+        "timestamp": "2026-08-21_14-30-45"
+      }
+    },
+    {
+      "name": "camera left_repeater",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-left_repeater.mp4"
+      },
+      "expected": {
+        "camera": "left_repeater",
+        "timestamp": "2026-08-21_14-30-45"
+      }
+    },
+    {
+      "name": "camera right_pillar",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-right_pillar.mp4"
+      },
+      "expected": {
+        "camera": "right_pillar",
+        "timestamp": "2026-08-21_14-30-45"
+      }
+    },
+    {
+      "name": "camera right_repeater",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-right_repeater.mp4"
+      },
+      "expected": {
+        "camera": "right_repeater",
+        "timestamp": "2026-08-21_14-30-45"
+      }
+    },
+    {
+      "name": "representative helper",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "event.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "thumbnail helper",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "thumb.png"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata helper",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "event.json"
+      },
+      "expected": null
+    },
+    {
+      "name": "unknown camera cabin",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-cabin.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "camera with digits",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-front2.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "camera with hyphen",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-left-pillar.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "empty camera",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "upper-case extension",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-front.MP4"
+      },
+      "expected": null
+    },
+    {
+      "name": "upper-case camera",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-Front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "other extension",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-front.mov"
+      },
+      "expected": null
+    },
+    {
+      "name": "double extension",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-front.mp4.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "trailing newline",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-45-front.mp4\n"
+      },
+      "expected": null
+    },
+    {
+      "name": "leading space",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": " 2026-08-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "AppleDouble prefix",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "._2026-08-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "path separator",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "RecentClips/2026-08-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "not a timestamp",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "not-a-timestamp-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "non-leap February 29",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-02-29_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "leap day 2028",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2028-02-29_14-30-45-front.mp4"
+      },
+      "expected": {
+        "camera": "front",
+        "timestamp": "2028-02-29_14-30-45"
+      }
+    },
+    {
+      "name": "century non-leap 2100",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2100-02-29_00-00-00-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "quad-century leap 2000",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2000-02-29_00-00-00-front.mp4"
+      },
+      "expected": {
+        "camera": "front",
+        "timestamp": "2000-02-29_00-00-00"
+      }
+    },
+    {
+      "name": "hour 24",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_24-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "minute 60",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-60-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "second 60",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21_14-30-60-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "month 00",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-00-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "month 13",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-13-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "day 00",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-00_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "day 31 in a 30-day month",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-09-31_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "day 31 in a 31-day month",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-31_23-59-59-back.mp4"
+      },
+      "expected": {
+        "camera": "back",
+        "timestamp": "2026-08-31_23-59-59"
+      }
+    },
+    {
+      "name": "year 0000",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "0000-01-01_00-00-00-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "year 0001",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "0001-01-01_00-00-00-front.mp4"
+      },
+      "expected": {
+        "camera": "front",
+        "timestamp": "0001-01-01_00-00-00"
+      }
+    },
+    {
+      "name": "year 9999",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "9999-12-31_23-59-59-right_repeater.mp4"
+      },
+      "expected": {
+        "camera": "right_repeater",
+        "timestamp": "9999-12-31_23-59-59"
+      }
+    },
+    {
+      "name": "five-digit year",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "12026-08-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "single-digit month",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-8-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "metadata separators",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "2026-08-21T14:30:45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "full-width digits",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "２０２６-08-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "Arabic-Indic digits",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": "٢٠٢٦-08-21_14-30-45-front.mp4"
+      },
+      "expected": null
+    },
+    {
+      "name": "empty name",
+      "fn": "parseClipFileName",
+      "input": {
+        "name": ""
+      },
+      "expected": null
+    }
+  ]
+}

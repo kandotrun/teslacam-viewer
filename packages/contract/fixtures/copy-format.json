@@ -1,0 +1,345 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "copy",
+  "source": [
+    "apps/web/src/react-app/event-summary.ts",
+    "apps/web/src/react-app/event-filters.ts"
+  ],
+  "cases": [
+    {
+      "name": "cameraLabel front",
+      "fn": "cameraLabel",
+      "input": {
+        "camera": "front"
+      },
+      "expected": "フロント"
+    },
+    {
+      "name": "cameraLabel back",
+      "fn": "cameraLabel",
+      "input": {
+        "camera": "back"
+      },
+      "expected": "リア"
+    },
+    {
+      "name": "cameraLabel left_pillar",
+      "fn": "cameraLabel",
+      "input": {
+        "camera": "left_pillar"
+      },
+      "expected": "左ピラー"
+    },
+    {
+      "name": "cameraLabel left_repeater",
+      "fn": "cameraLabel",
+      "input": {
+        "camera": "left_repeater"
+      },
+      "expected": "左リピーター"
+    },
+    {
+      "name": "cameraLabel right_pillar",
+      "fn": "cameraLabel",
+      "input": {
+        "camera": "right_pillar"
+      },
+      "expected": "右ピラー"
+    },
+    {
+      "name": "cameraLabel right_repeater",
+      "fn": "cameraLabel",
+      "input": {
+        "camera": "right_repeater"
+      },
+      "expected": "右リピーター"
+    },
+    {
+      "name": "categoryLabel recent",
+      "fn": "categoryLabel",
+      "input": {
+        "category": "recent"
+      },
+      "expected": "最近の走行"
+    },
+    {
+      "name": "categoryLabel saved",
+      "fn": "categoryLabel",
+      "input": {
+        "category": "saved"
+      },
+      "expected": "保存済み"
+    },
+    {
+      "name": "categoryLabel sentry",
+      "fn": "categoryLabel",
+      "input": {
+        "category": "sentry"
+      },
+      "expected": "セントリー"
+    },
+    {
+      "name": "formatDuration 0",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 0
+      },
+      "expected": "0秒"
+    },
+    {
+      "name": "formatDuration 1",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 1
+      },
+      "expected": "1秒"
+    },
+    {
+      "name": "formatDuration 15",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 15
+      },
+      "expected": "15秒"
+    },
+    {
+      "name": "formatDuration 59",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 59
+      },
+      "expected": "59秒"
+    },
+    {
+      "name": "formatDuration 60",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 60
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "formatDuration 61",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 61
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "formatDuration 119",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 119
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "formatDuration 120",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 120
+      },
+      "expected": "2分"
+    },
+    {
+      "name": "formatDuration 660",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 660
+      },
+      "expected": "11分"
+    },
+    {
+      "name": "formatDuration 3599",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 3599
+      },
+      "expected": "59分"
+    },
+    {
+      "name": "formatDuration 3600",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 3600
+      },
+      "expected": "1時間"
+    },
+    {
+      "name": "formatDuration 3660",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 3660
+      },
+      "expected": "1時間1分"
+    },
+    {
+      "name": "formatDuration 7200",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 7200
+      },
+      "expected": "2時間"
+    },
+    {
+      "name": "formatDuration 7260",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 7260
+      },
+      "expected": "2時間1分"
+    },
+    {
+      "name": "formatDuration 86400",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 86400
+      },
+      "expected": "24時間"
+    },
+    {
+      "name": "formatDuration 90061",
+      "fn": "formatDuration",
+      "input": {
+        "seconds": 90061
+      },
+      "expected": "25時間1分"
+    },
+    {
+      "name": "cameraAvailabilityLabel 6 available",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "missing": []
+      },
+      "expected": "6/6 カメラ"
+    },
+    {
+      "name": "cameraAvailabilityLabel 5 available",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "missing": [
+          "right_repeater"
+        ]
+      },
+      "expected": "5/6 カメラ"
+    },
+    {
+      "name": "cameraAvailabilityLabel 1 available",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "missing": [
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "1/6 カメラ"
+    },
+    {
+      "name": "cameraAvailabilityLabel 0 available",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "0/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel 0 missing",
+      "fn": "missingCameraLabel",
+      "input": {
+        "missing": []
+      },
+      "expected": null
+    },
+    {
+      "name": "missingCameraLabel 1 missing",
+      "fn": "missingCameraLabel",
+      "input": {
+        "missing": [
+          "right_repeater"
+        ]
+      },
+      "expected": "右リピーターなし"
+    },
+    {
+      "name": "missingCameraLabel 5 missing",
+      "fn": "missingCameraLabel",
+      "input": {
+        "missing": [
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "missingCameraLabel 6 missing",
+      "fn": "missingCameraLabel",
+      "input": {
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ]
+      },
+      "expected": "フロント、リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "segmentCountLabel 0",
+      "fn": "segmentCountLabel",
+      "input": {
+        "segmentCount": 0
+      },
+      "expected": "0セグメント"
+    },
+    {
+      "name": "segmentCountLabel 1",
+      "fn": "segmentCountLabel",
+      "input": {
+        "segmentCount": 1
+      },
+      "expected": "1セグメント"
+    },
+    {
+      "name": "segmentCountLabel 11",
+      "fn": "segmentCountLabel",
+      "input": {
+        "segmentCount": 11
+      },
+      "expected": "11セグメント"
+    },
+    {
+      "name": "eventTime 2026-08-20_20-45-00",
+      "fn": "eventTime",
+      "input": {
+        "timestamp": "2026-08-20_20-45-00"
+      },
+      "expected": "2026-08-20 20:45:00"
+    },
+    {
+      "name": "eventTime 2027-01-01_00-00-00",
+      "fn": "eventTime",
+      "input": {
+        "timestamp": "2027-01-01_00-00-00"
+      },
+      "expected": "2027-01-01 00:00:00"
+    }
+  ]
+}

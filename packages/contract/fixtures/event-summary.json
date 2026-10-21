@@ -1,0 +1,3006 @@
+{
+  "contract": "teslacam-viewer",
+  "schemaVersion": 1,
+  "module": "event-summary",
+  "source": [
+    "apps/web/src/react-app/event-summary.ts",
+    "apps/web/src/react-app/playback/timeline.ts"
+  ],
+  "cases": [
+    {
+      "name": "cameraAvailability six cameras",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "six cameras",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 6,
+        "missing": [],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel six cameras",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "six cameras",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "6/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel six cameras",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "six cameras",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "eventDuration six cameras",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "six cameras",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "eventDurationLabel six cameras",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "six cameras",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "segmentCountLabel six cameras",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "six cameras",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1セグメント"
+    },
+    {
+      "name": "cameraAvailability front only",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "front only",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 1,
+        "missing": [
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel front only",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "front only",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel front only",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "front only",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "eventDuration front only",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "front only",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "eventDurationLabel front only",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "front only",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "segmentCountLabel front only",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "front only",
+          "segments": [
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1セグメント"
+    },
+    {
+      "name": "cameraAvailability right repeater missing",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "right repeater missing",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 5,
+        "missing": [
+          "right_repeater"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel right repeater missing",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "right repeater missing",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "5/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel right repeater missing",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "right repeater missing",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "右リピーターなし"
+    },
+    {
+      "name": "eventDuration right repeater missing",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "right repeater missing",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "eventDurationLabel right repeater missing",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "right repeater missing",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "segmentCountLabel right repeater missing",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "right repeater missing",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1セグメント"
+    },
+    {
+      "name": "cameraAvailability no cameras",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no cameras",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 0,
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel no cameras",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no cameras",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "0/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel no cameras",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no cameras",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "フロント、リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "eventDuration no cameras",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no cameras",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "eventDurationLabel no cameras",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no cameras",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "segmentCountLabel no cameras",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no cameras",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1セグメント"
+    },
+    {
+      "name": "cameraAvailability no segments",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no segments",
+          "segments": [],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 0,
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel no segments",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no segments",
+          "segments": [],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "0/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel no segments",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no segments",
+          "segments": [],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "フロント、リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "eventDuration no segments",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no segments",
+          "segments": [],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 0
+    },
+    {
+      "name": "eventDurationLabel no segments",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no segments",
+          "segments": [],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "0秒"
+    },
+    {
+      "name": "segmentCountLabel no segments",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "no segments",
+          "segments": [],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "0セグメント"
+    },
+    {
+      "name": "cameraAvailability full then front only",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "full then front only",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 1,
+        "missing": [
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel full then front only",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "full then front only",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel full then front only",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "full then front only",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "eventDuration full then front only",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "full then front only",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 120
+    },
+    {
+      "name": "eventDurationLabel full then front only",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "full then front only",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "2分"
+    },
+    {
+      "name": "segmentCountLabel full then front only",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "full then front only",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "2セグメント"
+    },
+    {
+      "name": "cameraAvailability different cameras per segment",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "different cameras per segment",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "left_pillar",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 0,
+        "missing": [
+          "front",
+          "back",
+          "left_pillar",
+          "left_repeater",
+          "right_pillar",
+          "right_repeater"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel different cameras per segment",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "different cameras per segment",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "left_pillar",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "0/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel different cameras per segment",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "different cameras per segment",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "left_pillar",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "フロント、リア、左ピラー、左リピーター、右ピラー、右リピーターなし"
+    },
+    {
+      "name": "eventDuration different cameras per segment",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "different cameras per segment",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "left_pillar",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 120
+    },
+    {
+      "name": "eventDurationLabel different cameras per segment",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "different cameras per segment",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "left_pillar",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "2分"
+    },
+    {
+      "name": "segmentCountLabel different cameras per segment",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "different cameras per segment",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "left_pillar",
+                "right_pillar"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "2セグメント"
+    },
+    {
+      "name": "cameraAvailability back and repeaters",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "back and repeaters",
+          "segments": [
+            {
+              "cameras": [
+                "back",
+                "left_repeater",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 3,
+        "missing": [
+          "front",
+          "left_pillar",
+          "right_pillar"
+        ],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel back and repeaters",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "back and repeaters",
+          "segments": [
+            {
+              "cameras": [
+                "back",
+                "left_repeater",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "3/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel back and repeaters",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "back and repeaters",
+          "segments": [
+            {
+              "cameras": [
+                "back",
+                "left_repeater",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "フロント、左ピラー、右ピラーなし"
+    },
+    {
+      "name": "eventDuration back and repeaters",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "back and repeaters",
+          "segments": [
+            {
+              "cameras": [
+                "back",
+                "left_repeater",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 60
+    },
+    {
+      "name": "eventDurationLabel back and repeaters",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "back and repeaters",
+          "segments": [
+            {
+              "cameras": [
+                "back",
+                "left_repeater",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1分"
+    },
+    {
+      "name": "segmentCountLabel back and repeaters",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "back and repeaters",
+          "segments": [
+            {
+              "cameras": [
+                "back",
+                "left_repeater",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1セグメント"
+    },
+    {
+      "name": "cameraAvailability eleven segments",
+      "fn": "cameraAvailability",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "eleven segments",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-50-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": {
+        "available": 6,
+        "missing": [],
+        "total": 6
+      }
+    },
+    {
+      "name": "cameraAvailabilityLabel eleven segments",
+      "fn": "cameraAvailabilityLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "eleven segments",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-50-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "6/6 カメラ"
+    },
+    {
+      "name": "missingCameraLabel eleven segments",
+      "fn": "missingCameraLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "eleven segments",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-50-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": null
+    },
+    {
+      "name": "eventDuration eleven segments",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "eleven segments",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-50-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 660
+    },
+    {
+      "name": "eventDurationLabel eleven segments",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "eleven segments",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-50-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "11分"
+    },
+    {
+      "name": "segmentCountLabel eleven segments",
+      "fn": "segmentCountLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "eleven segments",
+          "segments": [
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [
+                "front",
+                "back",
+                "left_pillar",
+                "left_repeater",
+                "right_pillar",
+                "right_repeater"
+              ],
+              "timestamp": "2026-08-20_20-50-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "11セグメント"
+    },
+    {
+      "name": "eventDuration sixty segments",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "sixty segments",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-50-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-51-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-52-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-53-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-54-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-55-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-56-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-57-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-58-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-59-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-60-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-61-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-62-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-63-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-64-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-65-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-66-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-67-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-68-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-69-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-70-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-71-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-72-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-73-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-74-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-75-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-76-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-77-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-78-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-79-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-80-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-81-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-82-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-83-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-84-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-85-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-86-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-87-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-88-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-89-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-90-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-91-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-92-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-93-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-94-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-95-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-96-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-97-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-98-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-99-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 3600
+    },
+    {
+      "name": "eventDurationLabel sixty segments",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "sixty segments",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-50-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-51-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-52-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-53-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-54-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-55-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-56-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-57-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-58-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-59-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-60-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-61-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-62-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-63-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-64-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-65-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-66-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-67-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-68-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-69-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-70-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-71-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-72-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-73-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-74-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-75-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-76-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-77-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-78-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-79-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-80-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-81-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-82-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-83-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-84-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-85-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-86-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-87-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-88-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-89-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-90-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-91-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-92-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-93-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-94-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-95-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-96-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-97-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-98-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-99-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1時間"
+    },
+    {
+      "name": "eventDuration sixty-one segments",
+      "fn": "eventDuration",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "sixty-one segments",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-50-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-51-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-52-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-53-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-54-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-55-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-56-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-57-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-58-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-59-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-60-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-61-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-62-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-63-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-64-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-65-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-66-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-67-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-68-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-69-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-70-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-71-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-72-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-73-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-74-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-75-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-76-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-77-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-78-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-79-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-80-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-81-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-82-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-83-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-84-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-85-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-86-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-87-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-88-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-89-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-90-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-91-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-92-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-93-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-94-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-95-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-96-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-97-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-98-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-99-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-100-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": 3660
+    },
+    {
+      "name": "eventDurationLabel sixty-one segments",
+      "fn": "eventDurationLabel",
+      "input": {
+        "event": {
+          "category": "saved",
+          "id": "sixty-one segments",
+          "segments": [
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-40-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-41-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-42-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-43-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-44-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-45-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-46-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-47-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-48-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-49-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-50-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-51-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-52-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-53-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-54-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-55-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-56-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-57-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-58-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-59-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-60-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-61-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-62-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-63-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-64-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-65-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-66-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-67-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-68-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-69-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-70-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-71-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-72-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-73-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-74-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-75-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-76-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-77-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-78-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-79-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-80-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-81-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-82-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-83-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-84-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-85-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-86-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-87-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-88-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-89-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-90-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-91-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-92-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-93-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-94-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-95-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-96-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-97-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-98-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-99-00"
+            },
+            {
+              "cameras": [],
+              "timestamp": "2026-08-20_20-100-00"
+            }
+          ],
+          "timestamp": "2026-08-20_20-40-00"
+        }
+      },
+      "expected": "1時間1分"
+    }
+  ]
+}
