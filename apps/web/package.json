@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@babel/core": "7.29.7",
-    "@cloudflare/vite-plugin": "^1.53.1",
+    "@cloudflare/vite-plugin": "^1.64.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@testing-library/dom": "^10.4.1",
@@ -50,6 +50,6 @@
     "typescript-eslint": "^8.67.0",
     "vite": "^8.2.2",
     "vitest": "^4.1.11",
-    "wrangler": "^4.125.0"
+    "wrangler": "^4.151.0"
   }
 }
