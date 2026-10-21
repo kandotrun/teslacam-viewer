@@ -49,6 +49,8 @@ pub(crate) struct Tile {
     current: Option<CFRetained<CVPixelBuffer>>,
     keepalive: VecDeque<CFRetained<CVPixelBuffer>>,
     still_pending: bool,
+    /// Event time of the still frame in `current` (`None` while running or after a seek).
+    still_at: Option<f64>,
     failure: Option<FileFault>,
 }
 
@@ -95,6 +97,7 @@ impl Tile {
             current: None,
             keepalive: VecDeque::new(),
             still_pending: true,
+            still_at: None,
             failure: None,
         }
     }
@@ -141,6 +144,7 @@ impl Tile {
             }
         {
             self.show(av::into_cf(buffer));
+            self.still_at = None;
         }
     }
 
@@ -155,6 +159,7 @@ impl Tile {
         } {
             self.show(av::into_cf(buffer));
             self.still_pending = false;
+            self.still_at = Some(t);
         }
     }
 
@@ -162,8 +167,13 @@ impl Tile {
         self.current.as_ref()
     }
 
+    /// Whether the frame for event time `t` can be shown: a new buffer is due, or the still frame
+    /// already on screen is the one at `t` (`hasNewPixelBufferForItemTime` reports only buffers
+    /// that were not copied yet, so it stays false for that frame).
     fn has_frame_for(&self, t: f64) -> bool {
-        unsafe { self.output.hasNewPixelBufferForItemTime(av::cm(t)) }
+        self.still_at
+            .is_some_and(|still| (still - t).abs() < STILL_TOLERANCE_SECONDS)
+            || unsafe { self.output.hasNewPixelBufferForItemTime(av::cm(t)) }
     }
 }
 
@@ -182,6 +192,9 @@ enum Completion {
     Seek(u64),
     Preroll(u64),
 }
+
+/// How close a shown still frame's event time must be to a start target to count as its frame.
+const STILL_TOLERANCE_SECONDS: f64 = 1e-6;
 
 /// How long the engine waits for slow players before starting with the ready ones. A player that
 /// becomes ready later joins with a re-sync of every player.
@@ -329,6 +342,7 @@ impl Engine {
                     }
                     for tile in tiles {
                         tile.still_pending = true;
+                        tile.still_at = None;
                         let (pending, inbox) = (pending.clone(), inbox.clone());
                         let block = RcBlock::new(move |_finished: Bool| {
                             if pending.fetch_sub(1, Ordering::SeqCst) == 1 {

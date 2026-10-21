@@ -59,6 +59,10 @@ pub const TESTS: &[crate::Test] = &[
         "short_tails_hold_the_last_frame",
         short_tails_hold_the_last_frame,
     ),
+    (
+        "resuming_after_a_pause_does_not_wait_for_the_frame_timeout",
+        resuming_after_a_pause_does_not_wait_for_the_frame_timeout,
+    ),
 ];
 
 const LOAD_TIMEOUT: Duration = Duration::from_secs(15);
@@ -592,4 +596,52 @@ fn short_tails_hold_the_last_frame(mtm: MainThreadMarker) {
     assert!(after.min_frame >= frame_at(20.0), "{after:?}");
     assert_eq!(after.spread_max, 0, "{after:?}");
     playback.pause(host_now());
+}
+
+/// The stage draws the still frame of every camera after a pause; that frame already is the frame
+/// at the resume target, so play must not wait for the 0.3 s frame timeout.
+fn resuming_after_a_pause_does_not_wait_for_the_frame_timeout(mtm: MainThreadMarker) {
+    let mut playback = open_ready(&fixtures::full_event(), mtm);
+    play_from(&mut playback, 10.0);
+    let mut latencies = Vec::new();
+    for _ in 0..3 {
+        // Play a little, drawing every camera like the stage does.
+        let until = Instant::now() + Duration::from_millis(400);
+        pump_until(Duration::from_secs(2), || {
+            let now = host_now();
+            playback.tick(now);
+            let _ = stamps(&mut playback, &CameraId::ALL, now);
+            Instant::now() >= until
+        });
+        playback.pause(host_now());
+        let shown = pump_until(Duration::from_secs(5), || {
+            let now = host_now();
+            playback.tick(now);
+            let still = stamps(&mut playback, &CameraId::ALL, now);
+            playback.is_settled() && still.iter().all(Option::is_some)
+        });
+        assert!(shown, "the still frames did not appear after the pause");
+        // A few more frames of the paused stage.
+        for _ in 0..3 {
+            let now = host_now();
+            playback.tick(now);
+            let _ = stamps(&mut playback, &CameraId::ALL, now);
+        }
+        let started = Instant::now();
+        playback.play(host_now());
+        let running = pump_until(Duration::from_secs(5), || {
+            let now = host_now();
+            playback.tick(now);
+            let _ = stamps(&mut playback, &CameraId::ALL, now);
+            playback.is_running()
+        });
+        assert!(running, "playback did not resume");
+        latencies.push(started.elapsed().as_secs_f64() * 1000.0);
+    }
+    println!("  resume latencies: {latencies:.0?} ms");
+    let best = latencies.iter().copied().fold(f64::INFINITY, f64::min);
+    assert!(
+        best < 200.0,
+        "every resume waited for the frame timeout: {latencies:.0?} ms"
+    );
 }
