@@ -17,7 +17,8 @@ type DayRailProps = {
 }
 
 const markerHitWidth = 44
-const fullPillWidth = 104
+/** Fits the dots, `20:35–20:45` and the count (113 px measured) so the pill stays inside its hit area. */
+const fullPillWidth = 116
 const compactPillWidth = 44
 
 function centerPercent(cluster: DayTimelineCluster): number {
