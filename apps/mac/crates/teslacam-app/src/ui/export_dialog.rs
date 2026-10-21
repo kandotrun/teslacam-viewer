@@ -2,7 +2,7 @@
 //! full range, a thumbnail of the 1280 × 720 export frame, the resolution and the format, then
 //! `書き出しを開始`, which asks for the destination with the save panel.
 //!
-//! The thumbnail is the export's own overlay (`teslacam_media::overlay::render_overlay`: floor,
+//! The thumbnail is the export's own overlay (`teslacam_media::overlay::render_preview`: floor,
 //! wedges, car and labels with holes where the videos go) over the video colour, drawn once per
 //! session on a background thread.
 
@@ -21,7 +21,7 @@ use teslacam_core::copy;
 use teslacam_core::export_state::ExportAction;
 use teslacam_core::filters::event_time;
 use teslacam_media::layout::ExportLayout;
-use teslacam_media::overlay::{VEHICLE_PNG, render_overlay};
+use teslacam_media::overlay::{VEHICLE_PNG, render_preview};
 
 use super::components::{glass, hairline, icon_button, primary_button, text_button};
 use super::style::{AppTheme, TypeExt as _, numeral_text};
@@ -90,11 +90,20 @@ impl ExportDialog {
                 CameraMap::from_fn(|camera| media.display_size(camera))
             })
             .unwrap_or_else(|| CameraMap::from_fn(|_| None));
+        // A camera without footage in the whole event shows `記録なし`, as in the exported video.
+        let missing = self
+            .store
+            .read(cx)
+            .session()
+            .map(|session| {
+                CameraMap::from_fn(|camera| session.timeline.placements(camera).is_empty())
+            })
+            .unwrap_or_else(|| CameraMap::from_fn(|_| false));
         let video = AppTheme::get(cx).tokens.colors.video;
         let background = cx.background_spawn(async move {
             let layout = ExportLayout::contract();
             let holes = CameraMap::from_fn(|camera| layout.video_rect(camera, sizes[camera]));
-            let bitmap = render_overlay(&layout, &holes, VEHICLE_PNG).ok()?;
+            let bitmap = render_preview(&layout, &holes, &missing, VEHICLE_PNG).ok()?;
             Some(opaque_bmp(
                 bitmap.width,
                 bitmap.height,

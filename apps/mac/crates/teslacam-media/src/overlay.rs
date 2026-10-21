@@ -86,6 +86,56 @@ pub fn render_overlay(
     draw_overlay(layout, holes, vehicle_png).map(|drawn| drawn.bitmap)
 }
 
+/// The export frame as a preview (the export dialog's layout thumbnail): the overlay with the
+/// missing tile (`記録なし`) under the holes of the `missing` cameras, so it shows what the export
+/// draws for a camera without footage in the whole event. Other holes stay transparent.
+pub fn render_preview(
+    layout: &ExportLayout,
+    holes: &CameraMap<Rect>,
+    missing: &CameraMap<bool>,
+    vehicle_png: &[u8],
+) -> Result<Bitmap, OverlayError> {
+    let mut preview = render_overlay(layout, holes, vehicle_png)?;
+    for camera in CameraId::ALL {
+        if !missing[camera] {
+            continue;
+        }
+        let hole = holes[camera];
+        let tile = draw_missing_tile(layout, (hole.width, hole.height))?.bitmap;
+        composite_under(
+            &mut preview,
+            &tile,
+            hole.x.round() as i64,
+            hole.y.round() as i64,
+        );
+    }
+    Ok(preview)
+}
+
+/// Draws `tile` (premultiplied) under `top` at `(x, y)`: `top + tile × (1 − top.alpha)`.
+fn composite_under(top: &mut Bitmap, tile: &Bitmap, x: i64, y: i64) {
+    for row in 0..tile.height {
+        let ty = y + row as i64;
+        if ty < 0 || ty >= top.height as i64 {
+            continue;
+        }
+        for column in 0..tile.width {
+            let tx = x + column as i64;
+            if tx < 0 || tx >= top.width as i64 {
+                continue;
+            }
+            let dst = (ty as usize * top.width + tx as usize) * 4;
+            let src = (row * tile.width + column) * 4;
+            let cover = 255 - u32::from(top.rgba[dst + 3]);
+            for channel in 0..4 {
+                let under = u32::from(tile.rgba[src + channel]) * cover / 255;
+                top.rgba[dst + channel] =
+                    (u32::from(top.rgba[dst + channel]) + under).min(255) as u8;
+            }
+        }
+    }
+}
+
 pub(crate) fn draw_overlay(
     layout: &ExportLayout,
     holes: &CameraMap<Rect>,
@@ -595,6 +645,33 @@ mod tests {
             render_overlay(&layout, &holes(&layout), b"not a png"),
             Err(OverlayError::VehicleImage)
         );
+    }
+
+    #[test]
+    fn the_preview_shows_the_missing_tile_for_cameras_without_footage() {
+        let layout = ExportLayout::contract();
+        let missing = CameraMap::from_fn(|camera| camera == CameraId::RightRepeater);
+        let preview =
+            render_preview(&layout, &holes(&layout), &missing, VEHICLE_PNG).expect("preview");
+        let slot = layout.slots[CameraId::RightRepeater];
+        assert_eq!(
+            preview.pixel(slot.x as usize + 8, slot.y as usize + 20),
+            [0x15, 0x18, 0x1D, 255],
+            "the missing camera's window is the missing tile"
+        );
+        let (cx, cy) = layout.slots[CameraId::Front].center();
+        assert_eq!(
+            preview.pixel(cx as usize, cy as usize)[3],
+            0,
+            "video holes stay open"
+        );
+        // The label pill stays on top of the tile.
+        let overlay = render_overlay(&layout, &holes(&layout), VEHICLE_PNG).unwrap();
+        let label = layout.slots[CameraId::RightRepeater];
+        let (lx, ly) = (label.x as usize + 14, label.bottom() as usize - 22);
+        if overlay.pixel(lx, ly)[3] == 255 {
+            assert_eq!(preview.pixel(lx, ly), overlay.pixel(lx, ly));
+        }
     }
 
     #[test]
