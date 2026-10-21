@@ -45,7 +45,7 @@ export function App() {
           {band !== 'phone' && <EmptyStage />}
         </div>
       )}
-      <DirectoryInput inputRef={fallbackInputRef} onDirectoryChange={handleDirectoryInput} />
+      <DirectoryInput inputRef={fallbackInputRef} nativePickerAvailable={isNativePickerAvailable} onDirectoryChange={handleDirectoryInput} />
     </>
   )
 }
