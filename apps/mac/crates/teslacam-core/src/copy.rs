@@ -505,6 +505,14 @@ pub fn camera_collapse_label(camera: CameraId) -> String {
     format!("{}カメラをグリッドへ戻す", camera_label(camera))
 }
 
+/// Accessible name of the mini car (the camera switcher next to the strip of an expanded camera).
+pub const CAMERA_SWITCHER: &str = "表示するカメラ";
+
+/// Accessible name of a mount dot of the mini car, e.g. `左ピラーを表示`.
+pub fn camera_show_label(camera: CameraId) -> String {
+    format!("{}を表示", camera_label(camera))
+}
+
 /// Camera window: the file is being opened.
 pub const TILE_LOADING: &str = "読み込み中";
 /// Camera window: no footage for this camera at this time.
@@ -549,6 +557,8 @@ pub const PLAYBACK_POSITION: &str = "再生位置";
 pub const DETECTION_TICK: &str = "検知";
 /// The pre-roll start tick on the scrubber.
 pub const PRE_ROLL_TICK: &str = "検知の15秒前";
+/// The numeral drawn inside the skip buttons.
+pub const SKIP_NUMERAL: &str = "10";
 
 /// A rate value, e.g. `1.5×` (U+00D7).
 pub fn rate_label(rate: f64) -> String {
@@ -632,6 +642,10 @@ pub const EXPORT_ABORT: &str = "中止";
 pub const EXPORT_ABORTED: &str = "書き出しを中止しました。";
 /// Completion status.
 pub const EXPORT_DONE: &str = "書き出し完了";
+/// Shows the finished file in Finder (the Mac replaces the web's `MP4を保存`).
+pub const EXPORT_REVEAL: &str = "Finderで表示";
+/// Accessible name of the export progress bar.
+pub const EXPORT_PROGRESS_LABEL: &str = "書き出しの進行状況";
 /// Closes the completion state.
 pub const EXPORT_CLOSE: &str = "閉じる";
 /// Retries after an error.
@@ -654,6 +668,11 @@ pub const EXPORT_MISSING_CAMERA: &str = "記録なし";
 /// The range value, e.g. `イベント全体・1分` (U+30FB).
 pub fn export_range_text(duration_seconds: u64) -> String {
     format!("イベント全体\u{30FB}{}", format_duration(duration_seconds))
+}
+
+/// The dialog's `記録` value: the event time and the category, e.g. `2026-08-20 20:45:00 最近の走行`.
+pub fn export_record_text(event_time: &str, category: ClipCategory) -> String {
+    format!("{event_time} {}", category_label(category))
 }
 
 /// The running export, e.g. `書き出し中 42%` (floor of the percentage).
@@ -1049,6 +1068,19 @@ mod tests {
         assert_eq!(export_progress_clock(1.0, 3_600.0), "60:00 / 60:00");
         assert_eq!(export_range_text(60), "イベント全体\u{30FB}1分");
         assert_eq!(EXPORT_RESOLUTION_VALUE, "1280 \u{00D7} 720");
+        assert_eq!(
+            export_record_text("2026-08-20 20:45:00", ClipCategory::Recent),
+            "2026-08-20 20:45:00 最近の走行"
+        );
+        assert_eq!(EXPORT_REVEAL, "Finderで表示");
+        assert_eq!(EXPORT_PROGRESS_LABEL, "書き出しの進行状況");
+    }
+
+    #[test]
+    fn stage_copy() {
+        assert_eq!(camera_show_label(CameraId::LeftPillar), "左ピラーを表示");
+        assert_eq!(CAMERA_SWITCHER, "表示するカメラ");
+        assert_eq!(SKIP_NUMERAL, "10");
     }
 
     #[test]
