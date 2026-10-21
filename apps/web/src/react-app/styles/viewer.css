@@ -264,6 +264,13 @@
   overflow-y: auto;
 }
 
+/* DESIGN.md §6: centred on the stage, not on the window behind the library. */
+@media (min-width: 1101px) {
+  .export-dialog {
+    inset-inline: var(--stage-left) var(--gutter);
+  }
+}
+
 .export-dialog::backdrop {
   background: var(--scrim);
 }
@@ -327,6 +334,7 @@
 
 .export-dialog__actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 18px;
