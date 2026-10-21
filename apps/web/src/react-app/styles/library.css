@@ -177,14 +177,14 @@
 
 .rail__track {
   position: relative;
-  height: 36px;
+  height: var(--hit);
 }
 
 .rail__line {
   position: absolute;
   left: 0;
   right: 0;
-  top: 16px;
+  top: calc(50% - 2px);
   height: 4px;
   border-radius: 2px;
   background: var(--fill);
@@ -192,7 +192,7 @@
 
 .rail__mark {
   position: absolute;
-  top: 10px;
+  top: calc(50% - 8px);
   width: 8px;
   height: 16px;
   margin-left: -4px;
@@ -213,7 +213,7 @@
 }
 
 .rail__mark[data-current="true"] {
-  top: 6px;
+  top: calc(50% - 12px);
   width: 10px;
   height: 24px;
   margin-left: -5px;
@@ -221,20 +221,25 @@
   box-shadow: 0 0 0 2px var(--surface), var(--shadow-control);
 }
 
-.rail__hit {
+.rail__hit,
+.rail__cluster {
   position: absolute;
   top: 0;
-  height: 36px;
-  border-radius: 10px;
+  height: var(--hit);
+  border-radius: 12px;
 }
 
 .rail__cluster {
-  position: absolute;
-  top: 6px;
+  display: grid;
+  place-items: center;
+}
+
+.rail__cluster-pill {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
+  width: 100%;
   height: 24px;
   padding: 0 4px 0 7px;
   border-radius: var(--radius-pill);
@@ -245,14 +250,8 @@
   white-space: nowrap;
 }
 
-.rail__cluster::before {
-  content: "";
-  position: absolute;
-  inset: -6px 0;
-}
-
-.rail__cluster[data-current="true"],
-.rail__cluster[aria-expanded="true"] {
+.rail__cluster[data-current="true"] .rail__cluster-pill,
+.rail__cluster[aria-expanded="true"] .rail__cluster-pill {
   box-shadow: 0 0 0 2px var(--drive), var(--shadow-control);
 }
 
@@ -289,7 +288,7 @@
   background: var(--fill);
 }
 
-.rail__cluster[data-compact="true"] {
+.rail__cluster[data-compact="true"] .rail__cluster-pill {
   padding: 0 4px;
 }
 

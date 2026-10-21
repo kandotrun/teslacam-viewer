@@ -9,9 +9,10 @@ export const sentryMediaPath = fileURLToPath(new URL('../fixtures/TeslaCam/Sentr
 export const evidenceRoot = '.omo/evidence/teslacam-viewer/screenshots'
 const cameras = ['front', 'back', 'left_pillar', 'left_repeater', 'right_pillar', 'right_repeater'] as const
 export const viewports = [
-  { name: '1280', mode: 'desktop', width: 1280, height: 1000 },
-  { name: '768', mode: 'tablet', width: 768, height: 1024 },
-  { name: '375', mode: 'mobile', width: 375, height: 844 },
+  { name: '1440x900', mode: 'desktop', width: 1440, height: 900 },
+  { name: '1280x800', mode: 'desktop', width: 1280, height: 800 },
+  { name: '768x1024', mode: 'tablet', width: 768, height: 1024 },
+  { name: '375x812', mode: 'phone', width: 375, height: 812 },
 ] as const
 
 type PickerVariant = 'full' | 'history' | 'export' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
@@ -160,8 +161,29 @@ export function captureRuntimeErrors(page: Page): readonly string[] {
 }
 
 export async function selectFolder(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'TeslaCamフォルダを選ぶ', exact: true }).click()
+  await page.getByRole('button', { name: 'フォルダを選ぶ', exact: true }).click()
   await expect(page.getByRole('button', { name: '別のフォルダを選ぶ' })).toBeVisible()
+}
+
+/** An event row of the library list, named by its start (`2026-08-20 20:45:00`). */
+export function eventRow(page: Page, name: string): Locator {
+  return page.getByRole('group', { name: 'イベント一覧' }).getByRole('button', { name, exact: true })
+}
+
+export async function playbackPosition(page: Page): Promise<number> {
+  return Number(await page.getByLabel('再生位置').inputValue())
+}
+
+export async function hasNoHorizontalScroll(page: Page): Promise<boolean> {
+  return page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)
+}
+
+export function sameOriginRequests(page: Page): { readonly requests: string[] } {
+  const requests: string[] = []
+  page.on('request', (request) => {
+    if (/^https?:/u.test(request.url())) requests.push(`${request.url()} ${request.postData() ?? ''}`)
+  })
+  return { requests }
 }
 
 export async function textSpansSingleLine(locator: Locator, phrase: string): Promise<boolean> {

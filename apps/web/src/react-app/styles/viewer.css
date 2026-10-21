@@ -71,6 +71,7 @@
 }
 
 .back-button {
+  flex: none;
   gap: 6px;
   padding: 0 14px 0 10px;
   font-size: 14px;
@@ -79,8 +80,9 @@
 }
 
 .pill--icon {
+  flex: none;
   justify-content: center;
-  width: var(--size-topbar-height);
+  aspect-ratio: 1 / 1;
   padding: 0;
   color: var(--ink-2);
 }
@@ -158,7 +160,9 @@
 .action-button {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-width: var(--hit);
   height: var(--hit);
   padding: 0 14px;
   border-radius: var(--radius-pill);

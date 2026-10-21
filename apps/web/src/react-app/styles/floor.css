@@ -57,6 +57,10 @@
   right: var(--gutter);
 }
 
+.stage[data-message="true"] {
+  bottom: calc(var(--transport-room) + 40px);
+}
+
 .floor[data-phase="welcome"] .stage {
   top: var(--gutter);
   bottom: var(--gutter);

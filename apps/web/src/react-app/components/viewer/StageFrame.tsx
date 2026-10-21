@@ -12,6 +12,8 @@ type StageFrameProps = {
   /** Camera whose wedge and mount dot are drawn in `drive`; null draws every wedge neutral. */
   readonly activeCamera: CameraId | null
   readonly reveal?: boolean
+  /** The transport shows a message line, so the stage leaves room for it. */
+  readonly roomForMessage?: boolean
   /** Camera windows: elements with the `camera-window` class and a `data-camera` id. */
   readonly children: ReactNode
   readonly extra?: ReactNode
@@ -76,7 +78,7 @@ function useWedges(
  * The garage floor stage: the car in the middle row with soft field-of-view wedges drawn under the
  * camera windows (recomputed whenever the stage resizes).
  */
-export function StageFrame({ mode, activeCamera, reveal = false, children, extra }: StageFrameProps) {
+export function StageFrame({ mode, activeCamera, reveal = false, roomForMessage = false, children, extra }: StageFrameProps) {
   const stageRef = useRef<HTMLElement>(null)
   const carRef = useRef<HTMLDivElement>(null)
   const gradientPrefix = useId()
@@ -86,7 +88,7 @@ export function StageFrame({ mode, activeCamera, reveal = false, children, extra
   const active = colorToken('wedge-active')
 
   return (
-    <main aria-label="6台のカメラ" className="stage" data-mode={mode} data-reveal={reveal} ref={stageRef}>
+    <main aria-label="6台のカメラ" className="stage" data-message={roomForMessage} data-mode={mode} data-reveal={reveal} ref={stageRef}>
       {showCar && wedges.length > 0 && (
         <svg aria-hidden="true" className="stage__wedges" viewBox={`0 0 ${size.width} ${size.height}`}>
           <defs>

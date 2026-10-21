@@ -2,118 +2,142 @@ import { readFile } from 'node:fs/promises'
 
 import { expect, test } from '@playwright/test'
 
-import { captureRuntimeErrors, fixturePath, installPicker, selectFolder, textSpansSingleLine } from './support/viewer-fixtures'
+import {
+  captureRuntimeErrors,
+  eventRow,
+  fixturePath,
+  installPicker,
+  playbackPosition,
+  sameOriginRequests,
+  selectFolder,
+} from './support/viewer-fixtures'
 
-test('drives categories, playback, camera and event keyboard controls without an HTTP leak', async ({ context, page }) => {
+const privateValues = [
+  'SYNTHETIC_PRIVATE_CITY',
+  'SYNTHETIC_PRIVATE_STREET',
+  'SYNTHETIC_PRIVATE_LAT',
+  'SYNTHETIC_PRIVATE_LON',
+  '2026-08-20_20',
+  'sentry-autoplay-20s.mp4',
+  'event.json',
+  'synthetic-',
+  'ftyp',
+]
+
+test('drives categories, autoplay, the transport and keyboard shortcuts without an HTTP leak', async ({ context, page }) => {
   const media = [...await readFile(fixturePath)]
   await installPicker(context, media, 'full')
   const runtimeErrors = captureRuntimeErrors(page)
-  const requests: Array<{ readonly url: string; readonly body: string }> = []
-  page.on('request', (request) => {
-    if (/^https?:/u.test(request.url())) {
-      requests.push({ url: request.url(), body: request.postData() ?? '' })
-    }
-  })
+  const network = sameOriginRequests(page)
   await page.goto('/')
   await selectFolder(page)
-  const categories = [
-    { name: /^すべて\s*3$/u, count: '3件' },
-    { name: /^最近の走行\s*1$/u, count: '1件' },
-    { name: /^保存済み\s*1$/u, count: '1件' },
-    { name: /^セントリー\s*1$/u, count: '1件' },
-  ] as const
-  const eventListPanel = page.getByRole('region', { name: 'イベント', exact: true })
-  for (const category of categories) {
-    await page.getByRole('button', { name: category.name }).click()
-    await expect(eventListPanel.getByText(category.count, { exact: true })).toBeVisible()
+
+  const rows = page.getByRole('group', { name: 'イベント一覧' }).getByRole('button')
+  for (const [name, count] of [['すべて 3件', 3], ['最近の走行 1件', 1], ['保存済み 1件', 1], ['セントリー 1件', 1]] as const) {
+    await page.getByRole('radio', { name }).click()
+    await expect(page.getByRole('radio', { name })).toBeChecked()
+    await expect(rows).toHaveCount(count)
   }
-  await page.getByRole('button', { name: /^すべて\s*3$/u }).click()
-  await page.getByRole('button', { name: /2026-08-20 20:45:00/ }).click()
-  await expect(page.locator('video')).toHaveCount(6)
-  await expect(page.locator('.camera-tile[data-status="ready"]')).toHaveCount(6)
-  await page.getByRole('button', { name: '再生' }).click()
+  await page.getByRole('radio', { name: 'すべて 3件' }).click()
+
+  await eventRow(page, '2026-08-20 20:45:00').click()
+  await expect(page.locator('.camera-window[data-status="ready"]')).toHaveCount(6)
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
-  await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeGreaterThan(0)
+  await expect.poll(() => playbackPosition(page)).toBeGreaterThan(0)
+
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur()
   })
   await page.keyboard.press('Space')
   await expect(page.getByRole('button', { name: '再生' })).toBeVisible()
   await page.keyboard.press('ArrowRight')
-  expect(Number(await page.getByLabel('再生位置').inputValue())).toBeGreaterThan(1)
+  expect(await playbackPosition(page)).toBeGreaterThan(1)
   await page.keyboard.press('Digit6')
-  await expect(page.getByRole('button', { name: '右リピーターカメラをグリッドへ戻す' })).toBeVisible()
+  await expect(page.getByRole('button', { name: '右リピーターカメラを縮小' })).toBeVisible()
+  await expect(page.locator('.stage')).toHaveAttribute('data-mode', 'expanded')
   await page.keyboard.press('Escape')
   await expect(page.getByRole('button', { name: '右リピーターカメラを拡大' })).toBeVisible()
+  await page.keyboard.press('BracketLeft')
+  await expect(eventRow(page, '2026-08-20 20:40:00')).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('BracketRight')
+  await expect(eventRow(page, '2026-08-20 20:45:00')).toHaveAttribute('aria-pressed', 'true')
+
   await page.getByRole('button', { name: '過去の記録' }).click()
-  await expect(page.getByRole('button', { name: '2026-08-20 20:40:00', exact: true })).toHaveAttribute('aria-pressed', 'true')
+  await expect(eventRow(page, '2026-08-20 20:40:00')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: '10秒戻る' }).click()
+  await page.getByRole('combobox', { name: '再生速度' }).selectOption('1.5')
+  await expect(page.getByRole('combobox', { name: '再生速度' })).toHaveValue('1.5')
   await page.getByRole('button', { name: '新しい記録' }).click()
-  const visibleControls = page.locator('button:visible')
-  const sizes = await visibleControls.evaluateAll((elements) => elements.map((element) => {
-    const bounds = element.getBoundingClientRect()
-    return { width: bounds.width, height: bounds.height }
-  }))
-  expect(sizes.every((size) => size.width >= 44 && size.height >= 44)).toBe(true)
+  await expect(page.getByRole('combobox', { name: '再生速度' })).toHaveValue('1')
+  await expect(page.getByRole('button', { name: '新しい記録' })).toBeDisabled()
+
   const pageOrigin = new URL(page.url()).origin
-  expect(requests.every((request) => new URL(request.url).origin === pageOrigin)).toBe(true)
-  expect(requests.some((request) => {
-    const requestText = `${request.url} ${request.body}`
-    return requestText.includes('2026-08-20_20') || requestText.includes('synthetic-') || requestText.includes('ftyp')
-  })).toBe(false)
+  expect(network.requests.every((request) => request.startsWith(pageOrigin))).toBe(true)
+  expect(network.requests.filter((request) => privateValues.some((value) => request.includes(value)))).toEqual([])
   expect(runtimeErrors).toEqual([])
 })
 
-test('autoplays each selected event at its local offset while keeping displayed Sentry location metadata local', async ({ context, page }) => {
+test('starts a Sentry event 15 s before the detection and keeps its location on the device', async ({ context, page }) => {
   const media = [...await readFile(fixturePath)]
   await installPicker(context, media, 'full')
-  const requests: Array<{ readonly url: string; readonly body: string }> = []
-  page.on('request', (request) => {
-    if (/^https?:/u.test(request.url())) requests.push({ url: request.url(), body: request.postData() ?? '' })
-  })
+  const network = sameOriginRequests(page)
   await page.goto('/')
   await selectFolder(page)
 
-  await page.locator('.event-list').getByRole('button', { name: '2026-08-20 20:35:00', exact: true }).click()
+  await eventRow(page, '2026-08-20 20:35:00').click()
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
-  await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeGreaterThanOrEqual(15)
-  await expect(page.getByText('検知の15秒前から開始', { exact: true })).toBeVisible()
-  const detectionReason = page.getByText('sentry_aware_object_detection', { exact: true })
-  await expect(detectionReason).not.toBeVisible()
-  await page.getByText('技術情報', { exact: true }).click()
-  await expect(detectionReason).toBeVisible()
-  await expect(page.getByText('2026-08-20T20:35:30', { exact: true })).toBeVisible()
-  expect(await textSpansSingleLine(page.locator('.event-card[data-selected="true"]'), 'セントリー')).toBe(true)
-  await expect(page.getByText('場所（Teslaの推定値）', { exact: true })).toBeVisible()
-  await expect(page.getByText('SYNTHETIC_PRIVATE_CITY SYNTHETIC_PRIVATE_STREET', { exact: true })).toBeVisible()
-  await expect(page.getByText('推定座標', { exact: true })).toBeVisible()
-  await expect(page.getByText('SYNTHETIC_PRIVATE_LAT, SYNTHETIC_PRIVATE_LON', { exact: true })).toBeVisible()
+  await expect.poll(() => playbackPosition(page)).toBeGreaterThanOrEqual(15)
+  await expect(page.getByText('検知の15秒前', { exact: true })).toBeVisible()
+  await expect(page.getByRole('img', { name: '検知位置' })).toBeVisible()
+  await expect(eventRow(page, '2026-08-20 20:35:00')).toContainText('20:35:30に検知')
+  await expect(page.locator('.event-pill')).toContainText('物体の接近を20:35:30に検知')
 
-  await page.getByRole('button', { name: '一時停止' }).click()
+  await page.locator('.event-pill').click()
+  const details = page.getByRole('dialog', { name: 'イベント詳細' })
+  await expect(details.getByText('SYNTHETIC_PRIVATE_CITY SYNTHETIC_PRIVATE_STREET', { exact: true })).toBeVisible()
+  await expect(details.getByText('SYNTHETIC_PRIVATE_LAT, SYNTHETIC_PRIVATE_LON', { exact: true })).toBeVisible()
+  await expect(details.getByText('20:35:15（検知の15秒前）', { exact: true })).toBeVisible()
+  const reason = details.getByText('sentry_aware_object_detection', { exact: true })
+  await expect(reason).toBeHidden()
+  await details.getByText('技術情報', { exact: true }).click()
+  await expect(reason).toBeVisible()
+  await expect(details.getByRole('link')).toHaveCount(0)
+  await page.keyboard.press('Escape')
+  await expect(details).toBeHidden()
+
   await page.getByRole('button', { name: '新しい記録' }).click()
+  await expect(eventRow(page, '2026-08-20 20:40:00')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
-  await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeLessThan(1)
+  await expect.poll(() => playbackPosition(page)).toBeLessThan(1)
+  await expect(page.getByText('検知の15秒前', { exact: true })).toHaveCount(0)
+  await expect(page.getByRole('img', { name: '検知位置' })).toHaveCount(0)
 
-  await page.getByRole('button', { name: '一時停止' }).click()
   await page.getByRole('button', { name: '過去の記録' }).click()
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
-  await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeGreaterThanOrEqual(15)
+  await expect.poll(() => playbackPosition(page)).toBeGreaterThanOrEqual(15)
 
-  await page.getByRole('button', { name: '一時停止' }).click()
   await page.getByRole('button', { name: '20:35–20:45・3件を開く' }).click()
-  await page.getByRole('button', { name: '2026-08-20 20:45:00 最近の走行', exact: true }).click()
+  await expect(page.getByRole('group', { name: '20:35–20:45・3件' })).toBeVisible()
+  await eventRow(page, '2026-08-20 20:45:00').click()
   await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
-  await expect.poll(async () => Number(await page.getByLabel('再生位置').inputValue())).toBeLessThan(1)
+  await expect.poll(() => playbackPosition(page)).toBeLessThan(1)
 
-  const privateValues = [
-    'SYNTHETIC_PRIVATE_CITY',
-    'SYNTHETIC_PRIVATE_STREET',
-    'SYNTHETIC_PRIVATE_LAT',
-    'SYNTHETIC_PRIVATE_LON',
-    '2026-08-20_20-35-00',
-    'sentry-autoplay-20s.mp4',
-    'event.json',
-  ]
   const pageOrigin = new URL(page.url()).origin
-  expect(requests.every((request) => new URL(request.url).origin === pageOrigin)).toBe(true)
-  expect(requests.every((request) => privateValues.every((value) => !`${request.url} ${request.body}`.includes(value)))).toBe(true)
+  expect(network.requests.every((request) => request.startsWith(pageOrigin))).toBe(true)
+  expect(network.requests.filter((request) => privateValues.some((value) => request.includes(value)))).toEqual([])
+})
+
+test('replays the last segment when play is pressed at the end', async ({ context, page }) => {
+  const media = [...await readFile(fixturePath)]
+  await installPicker(context, media, 'full')
+  await page.goto('/')
+  await selectFolder(page)
+  await eventRow(page, '2026-08-20 20:45:00').click()
+  await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
+
+  await expect(page.getByRole('button', { name: '再生' })).toBeVisible({ timeout: 10_000 })
+  const ended = await playbackPosition(page)
+  await page.getByRole('button', { name: '再生' }).click()
+  await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
+  await expect.poll(() => playbackPosition(page)).not.toBe(ended)
 })

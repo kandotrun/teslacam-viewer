@@ -38,3 +38,24 @@ test('defaults browser, PWA and workspace surfaces to light', async ({ page }) =
   expect(relativeLuminance(theme.pwaBackground)).toBeGreaterThan(0.8)
   expect(relativeLuminance(theme.pwaTheme)).toBeGreaterThan(0.8)
 })
+
+test('loads Barlow from this origin and requests nothing from another origin', async ({ page }) => {
+  const requests: string[] = []
+  page.on('request', (request) => {
+    if (/^https?:/u.test(request.url())) requests.push(request.url())
+  })
+  await page.goto('/')
+  await page.evaluate(() => document.fonts.ready)
+
+  const fonts = await page.evaluate(async () => {
+    await document.fonts.load('600 24px Barlow')
+    await document.fonts.load('500 13px Barlow')
+    return { semibold: document.fonts.check('600 24px Barlow'), medium: document.fonts.check('500 13px Barlow') }
+  })
+  expect(fonts).toEqual({ semibold: true, medium: true })
+  const fontRequests = requests.filter((url) => url.endsWith('.ttf'))
+  expect(fontRequests.length).toBeGreaterThan(0)
+  const pageOrigin = new URL(page.url()).origin
+  expect(requests.every((url) => url.startsWith(pageOrigin))).toBe(true)
+})
+

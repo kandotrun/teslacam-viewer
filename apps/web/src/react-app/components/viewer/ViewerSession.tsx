@@ -155,6 +155,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
         )}
         mode={mode}
         reveal={reveal}
+        roomForMessage={playback.message !== null}
       >
         {cameraIds.map((cameraId) => (
           <CameraWindow

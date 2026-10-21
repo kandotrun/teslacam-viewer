@@ -115,13 +115,15 @@ export function DayRail({ events, dayKey, markers, selectedEventId, expandedClus
               onClick={() => onToggleCluster(cluster)}
               onKeyDown={(event) => moveFocus(event, index)}
             >
-              <span aria-hidden="true" className="rail__cluster-dots">
-                {cluster.markers.slice(0, 3).map((candidate) => (
-                  <span data-category={candidate.category} key={candidate.eventId} />
-                ))}
+              <span className="rail__cluster-pill">
+                <span aria-hidden="true" className="rail__cluster-dots">
+                  {cluster.markers.slice(0, 3).map((candidate) => (
+                    <span data-category={candidate.category} key={candidate.eventId} />
+                  ))}
+                </span>
+                {fullPills && <span className="num rail__cluster-range">{range}</span>}
+                <span className="num rail__cluster-count">{cluster.count}</span>
               </span>
-              {fullPills && <span className="num rail__cluster-range">{range}</span>}
-              <span className="num rail__cluster-count">{cluster.count}</span>
             </button>
           )
         })}
