@@ -257,6 +257,29 @@ describe('pickTeslaCamDirectory', () => {
       .rejects.toMatchObject({ name: 'AbortError' })
   })
 
+  it('stops the queued size reads when aborted after the walk has finished', async () => {
+    const controller = new AbortController()
+    const fileCount = DIRECTORY_SNAPSHOT_CONCURRENCY * 3
+    let started = 0
+    const never = new Promise<File>(() => undefined)
+    const entries = Array.from({ length: fileCount }, (_, index): FakeFileHandle => ({
+      kind: 'file',
+      name: `2026-08-21_14-${String(index).padStart(2, '0')}-00-front.mp4`,
+      getFile: () => {
+        started += 1
+        return never
+      },
+    }))
+
+    const scan = scanTeslaCamDirectory(directoryHandle('RecentClips', entries), (progress) => {
+      // The final report is sent once the walk is done and only the size reads remain.
+      if (progress.processed === fileCount) controller.abort()
+    }, { signal: controller.signal })
+
+    await expect(scan).rejects.toMatchObject({ name: 'AbortError' })
+    expect(started).toBe(DIRECTORY_SNAPSHOT_CONCURRENCY)
+  })
+
   it.each([
     ['AbortError', 'cancelled'],
     ['NotAllowedError', 'denied'],

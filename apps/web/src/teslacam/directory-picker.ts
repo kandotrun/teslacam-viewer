@@ -57,8 +57,32 @@ function isDirectoryHandle(entry: HandleLike): entry is ScanDirectoryHandle {
   return entry.kind === 'directory' && 'values' in entry && typeof entry.values === 'function'
 }
 
+function abortError(): DOMException {
+  return new DOMException('Scan aborted', 'AbortError')
+}
+
 function throwIfAborted(signal: AbortSignal | undefined): void {
-  if (signal?.aborted === true) throw new DOMException('Scan aborted', 'AbortError')
+  if (signal?.aborted === true) throw abortError()
+}
+
+/**
+ * Settles with `work`, or rejects with an AbortError as soon as the signal aborts. `onAbort` runs first so
+ * queued work can be dropped instead of finishing in the background.
+ */
+function abortable<T>(work: Promise<T>, signal: AbortSignal | undefined, onAbort: () => void): Promise<T> {
+  if (signal === undefined) return work
+  return new Promise<T>((resolve, reject) => {
+    const abort = (): void => {
+      onAbort()
+      reject(abortError())
+    }
+    if (signal.aborted) {
+      abort()
+      return
+    }
+    signal.addEventListener('abort', abort, { once: true })
+    work.then(resolve, reject).finally(() => signal.removeEventListener('abort', abort))
+  })
 }
 
 async function countEntry(state: ScanState): Promise<void> {
@@ -171,7 +195,7 @@ export async function scanTeslaCamDirectory(
     throwIfAborted(options.signal)
     await scanDirectory(root, [root.name], state, 0)
     report({ processed: state.processed, total: state.processed })
-    const files = await resolveFiles(state.files)
+    const files = await abortable(resolveFiles(state.files), options.signal, state.snapshots.cancel)
     throwIfAborted(options.signal)
     return { status: 'selected', files, folderName: root.name }
   } finally {
