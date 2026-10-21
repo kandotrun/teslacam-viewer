@@ -1,13 +1,20 @@
-//! The composite export control of one theater session (spec §2.11, `DESIGN.md` actions pill).
+//! The composite export control of one theater session (spec §2.11, `DESIGN.md` actions pill), in
+//! its Mac form: the destination is chosen with the save panel before the export starts, and the
+//! finished file is shown in Finder instead of being saved afterwards.
 //!
 //! ```text
-//! Idle ──Open──▶ Confirm ──Start──▶ Running{progress} ──Completed──▶ Done{output} ──Close──▶ Idle
-//!   ▲              │                   │  └──Failed──▶ Failed{message} ──Open──▶ Confirm
-//!   └──Dismiss─────┘                   └──Abort──▶ Cancelled ──Open──▶ Confirm
+//! Idle ──Open──▶ Confirm ──Start──▶ ChoosingDestination ──DestinationChosen──▶ Running{progress}
+//!   ▲              │  ▲                    │                                    │
+//!   └──Dismiss─────┘  └─DestinationCancelled┘   Done{output} ◀──Completed────────┤
+//!                                               │  ▲ Reveal                       ├──Failed──▶ Failed
+//!   Idle ◀──Close───────────────────────────────┘  └─┘                            └──Abort───▶ Cancelled
+//! Failed / Cancelled ──Open──▶ Confirm
 //! ```
 //!
-//! The machine owns no media: it emits [`ExportEffect`]s for the media layer. Ending the session
-//! (another event selected, a rescan) aborts a running export silently and discards a finished one.
+//! The machine owns no media: it emits [`ExportEffect`]s for the app. Ending the session (another
+//! event selected, a rescan) aborts a running export silently; a finished file is the user's and is
+//! never deleted. A file that completes after an abort is discarded (an aborted export never leaves
+//! a file behind).
 
 use std::path::PathBuf;
 
@@ -27,12 +34,14 @@ pub enum ExportState {
     Idle,
     /// The dialog is open.
     Confirm,
+    /// `書き出しを開始` was pressed; the save panel asks where the file goes (the dialog stays).
+    ChoosingDestination,
     /// Exporting; progress 0–1, never decreasing.
     Running {
         /// Fraction done.
         progress: f64,
     },
-    /// A finished file waits to be saved (repeatedly) until closed.
+    /// The file is complete at the chosen destination (`書き出し完了`, `Finderで表示`).
     Done {
         /// The finished file.
         output: PathBuf,
@@ -55,6 +64,10 @@ pub enum ExportAction {
     Dismiss,
     /// `書き出しを開始`.
     Start,
+    /// The save panel returned a destination.
+    DestinationChosen(PathBuf),
+    /// The save panel was cancelled.
+    DestinationCancelled,
     /// Progress from the media layer.
     Progressed(f64),
     /// `中止`.
@@ -63,24 +76,26 @@ pub enum ExportAction {
     Completed(PathBuf),
     /// The media layer failed; `None` shows the generic message.
     Failed(Option<String>),
-    /// `MP4を保存`.
-    Save,
+    /// `Finderで表示`.
+    Reveal,
     /// `閉じる` after completion.
     Close,
     /// The theater session ended.
     SessionEnded,
 }
 
-/// Work for the media layer.
+/// Work for the app and the media layer.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ExportEffect {
-    /// Start exporting the session's event.
-    StartExport,
+    /// Show the save panel named [`copy::export_file_name`].
+    ChooseDestination,
+    /// Start exporting the session's event to this file.
+    StartExport(PathBuf),
     /// Stop the running export and delete partial output.
     CancelExport,
-    /// Offer `output` in a save panel named [`copy::export_file_name`].
-    SaveOutput(PathBuf),
-    /// Delete a finished file that is no longer offered.
+    /// Show the finished file in Finder.
+    RevealOutput(PathBuf),
+    /// Delete a file that completed after the export was aborted.
     DiscardOutput(PathBuf),
 }
 
@@ -105,9 +120,21 @@ impl ExportMachine {
         &self.state
     }
 
-    /// Whether the dialog is shown (theater shortcuts are suspended then).
+    /// Whether the dialog is shown (theater shortcuts are suspended then), including while the save
+    /// panel is up.
     pub fn dialog_open(&self) -> bool {
-        self.state == ExportState::Confirm
+        matches!(
+            self.state,
+            ExportState::Confirm | ExportState::ChoosingDestination
+        )
+    }
+
+    /// The running export's progress.
+    pub fn progress(&self) -> Option<f64> {
+        match self.state {
+            ExportState::Running { progress } => Some(progress),
+            _ => None,
+        }
     }
 
     /// Why the export cannot start, shown next to the disabled action.
@@ -115,26 +142,25 @@ impl ExportMachine {
         (!self.available).then_some(copy::EXPORT_UNAVAILABLE)
     }
 
-    /// The action's text: `書き出す`, `書き出し中 42%` or `MP4を保存`.
+    /// The action's text: `書き出す`, `書き出し中 42%` or `書き出し完了`.
     pub fn action_label(&self) -> String {
         match &self.state {
             ExportState::Running { progress } => copy::export_running_text(*progress),
-            ExportState::Done { .. } => copy::export_save_label("mp4"),
+            ExportState::Done { .. } => copy::EXPORT_DONE.to_owned(),
             _ => copy::EXPORT.to_owned(),
         }
     }
 
-    /// The status text next to the action.
+    /// The status text shown under the action (abort notice or error message).
     pub fn notice(&self) -> Option<&str> {
         match &self.state {
             ExportState::Cancelled => Some(copy::EXPORT_ABORTED),
             ExportState::Failed { message } => Some(message),
-            ExportState::Done { .. } => Some(copy::EXPORT_DONE),
             _ => None,
         }
     }
 
-    /// Applies `action` and returns the effects for the media layer.
+    /// Applies `action` and returns the effects.
     pub fn dispatch(&mut self, action: ExportAction) -> Vec<ExportEffect> {
         use ExportAction as Action;
         use ExportState as State;
@@ -146,8 +172,13 @@ impl ExportMachine {
             }
             (State::Confirm, Action::Dismiss) => (State::Idle, vec![]),
             (State::Confirm, Action::Start) => (
+                State::ChoosingDestination,
+                vec![ExportEffect::ChooseDestination],
+            ),
+            (State::ChoosingDestination, Action::DestinationCancelled) => (State::Confirm, vec![]),
+            (State::ChoosingDestination, Action::DestinationChosen(output)) => (
                 State::Running { progress: 0.0 },
-                vec![ExportEffect::StartExport],
+                vec![ExportEffect::StartExport(output)],
             ),
             (State::Running { progress }, Action::Progressed(update)) => {
                 let progress = if update.is_nan() {
@@ -167,21 +198,16 @@ impl ExportMachine {
                 },
                 vec![],
             ),
-            (State::Done { output }, Action::Save) => (
+            (State::Done { output }, Action::Reveal) => (
                 self.state.clone(),
-                vec![ExportEffect::SaveOutput(output.clone())],
+                vec![ExportEffect::RevealOutput(output.clone())],
             ),
-            (State::Done { output }, Action::Close) => (
-                State::Idle,
-                vec![ExportEffect::DiscardOutput(output.clone())],
-            ),
+            (State::Done { .. }, Action::Close) => (State::Idle, vec![]),
+            // A repeated completion must never discard the user's finished file.
+            (State::Done { .. }, Action::Completed(_)) => (self.state.clone(), vec![]),
             (State::Running { .. }, Action::SessionEnded) => {
                 (State::Idle, vec![ExportEffect::CancelExport])
             }
-            (State::Done { output }, Action::SessionEnded) => (
-                State::Idle,
-                vec![ExportEffect::DiscardOutput(output.clone())],
-            ),
             (_, Action::SessionEnded) => (State::Idle, vec![]),
             (_, Action::Completed(output)) => (
                 self.state.clone(),
@@ -198,11 +224,19 @@ impl ExportMachine {
 mod tests {
     use super::*;
 
+    fn destination() -> PathBuf {
+        PathBuf::from("/Users/me/Movies/TeslaCam-2026-08-20_20-45-00-vehicle.mp4")
+    }
+
     fn running(machine: &mut ExportMachine) {
         machine.dispatch(ExportAction::Open);
         assert_eq!(
             machine.dispatch(ExportAction::Start),
-            vec![ExportEffect::StartExport]
+            vec![ExportEffect::ChooseDestination]
+        );
+        assert_eq!(
+            machine.dispatch(ExportAction::DestinationChosen(destination())),
+            vec![ExportEffect::StartExport(destination())]
         );
     }
 
@@ -238,6 +272,35 @@ mod tests {
     }
 
     #[test]
+    fn starting_asks_for_the_destination_first() {
+        let mut machine = ExportMachine::new(true);
+        machine.dispatch(ExportAction::Open);
+        assert_eq!(
+            machine.dispatch(ExportAction::Start),
+            vec![ExportEffect::ChooseDestination]
+        );
+        assert_eq!(machine.state(), &ExportState::ChoosingDestination);
+        // The dialog stays up (and the shortcuts suspended) while the save panel is shown.
+        assert!(machine.dialog_open());
+        assert!(machine.dispatch(ExportAction::Start).is_empty());
+        assert!(machine.dispatch(ExportAction::Dismiss).is_empty());
+        // Cancelling the save panel returns to the dialog.
+        assert!(
+            machine
+                .dispatch(ExportAction::DestinationCancelled)
+                .is_empty()
+        );
+        assert_eq!(machine.state(), &ExportState::Confirm);
+        machine.dispatch(ExportAction::Start);
+        assert_eq!(
+            machine.dispatch(ExportAction::DestinationChosen(destination())),
+            vec![ExportEffect::StartExport(destination())]
+        );
+        assert_eq!(machine.state(), &ExportState::Running { progress: 0.0 });
+        assert!(!machine.dialog_open());
+    }
+
+    #[test]
     fn an_unavailable_export_never_opens() {
         let mut machine = ExportMachine::new(false);
         machine.dispatch(ExportAction::Open);
@@ -253,41 +316,45 @@ mod tests {
     fn progress_is_clamped_and_never_decreases() {
         let mut machine = ExportMachine::new(true);
         running(&mut machine);
-        assert_eq!(machine.state(), &ExportState::Running { progress: 0.0 });
         machine.dispatch(ExportAction::Progressed(0.42));
         assert_eq!(machine.action_label(), "書き出し中 42%");
+        assert_eq!(machine.progress(), Some(0.42));
         machine.dispatch(ExportAction::Progressed(0.3));
         machine.dispatch(ExportAction::Progressed(f64::NAN));
         assert_eq!(machine.state(), &ExportState::Running { progress: 0.42 });
         machine.dispatch(ExportAction::Progressed(7.0));
         assert_eq!(machine.state(), &ExportState::Running { progress: 1.0 });
+        assert_eq!(ExportMachine::new(true).progress(), None);
     }
 
     #[test]
-    fn completion_offers_the_file_until_closed() {
+    fn completion_offers_the_file_in_finder_until_closed() {
         let mut machine = ExportMachine::new(true);
         running(&mut machine);
-        let output = PathBuf::from("/tmp/export.mp4");
-        machine.dispatch(ExportAction::Completed(output.clone()));
-        assert_eq!(machine.action_label(), "MP4を保存");
-        assert_eq!(machine.notice(), Some("書き出し完了"));
-        assert_eq!(
-            machine.dispatch(ExportAction::Save),
-            vec![ExportEffect::SaveOutput(output.clone())]
+        machine.dispatch(ExportAction::Completed(destination()));
+        assert_eq!(machine.action_label(), "書き出し完了");
+        assert_eq!(machine.notice(), None);
+        assert!(
+            machine
+                .dispatch(ExportAction::Completed(destination()))
+                .is_empty()
         );
         assert_eq!(
-            machine.dispatch(ExportAction::Save),
-            vec![ExportEffect::SaveOutput(output.clone())]
+            machine.dispatch(ExportAction::Reveal),
+            vec![ExportEffect::RevealOutput(destination())]
         );
         assert_eq!(
-            machine.dispatch(ExportAction::Close),
-            vec![ExportEffect::DiscardOutput(output)]
+            machine.dispatch(ExportAction::Reveal),
+            vec![ExportEffect::RevealOutput(destination())]
         );
+        // The file is the user's: closing never deletes it.
+        assert!(machine.dispatch(ExportAction::Close).is_empty());
         assert_eq!(machine.state(), &ExportState::Idle);
+        assert!(machine.dispatch(ExportAction::Reveal).is_empty());
     }
 
     #[test]
-    fn aborting_shows_a_notice_and_never_offers_a_file() {
+    fn aborting_shows_a_notice_and_never_keeps_a_file() {
         let mut machine = ExportMachine::new(true);
         running(&mut machine);
         assert_eq!(
@@ -315,9 +382,11 @@ mod tests {
             copy::EXPORT_ERROR_NO_MEDIA.to_owned(),
         )));
         assert_eq!(machine.notice(), Some("再生可能な動画がありません。"));
+        assert_eq!(machine.action_label(), "書き出す");
         machine.dispatch(ExportAction::Open);
         assert_eq!(machine.state(), &ExportState::Confirm);
         machine.dispatch(ExportAction::Start);
+        machine.dispatch(ExportAction::DestinationChosen(destination()));
         machine.dispatch(ExportAction::Failed(None));
         assert_eq!(
             machine.notice(),
@@ -326,7 +395,7 @@ mod tests {
     }
 
     #[test]
-    fn ending_the_session_aborts_silently() {
+    fn ending_the_session_aborts_silently_and_keeps_finished_files() {
         let mut machine = ExportMachine::new(true);
         running(&mut machine);
         assert_eq!(
@@ -338,11 +407,20 @@ mod tests {
 
         let mut finished = ExportMachine::new(true);
         running(&mut finished);
-        let output = PathBuf::from("/tmp/done.mp4");
-        finished.dispatch(ExportAction::Completed(output.clone()));
-        assert_eq!(
-            finished.dispatch(ExportAction::SessionEnded),
-            vec![ExportEffect::DiscardOutput(output)]
+        finished.dispatch(ExportAction::Completed(destination()));
+        assert!(finished.dispatch(ExportAction::SessionEnded).is_empty());
+        assert_eq!(finished.state(), &ExportState::Idle);
+
+        let mut choosing = ExportMachine::new(true);
+        choosing.dispatch(ExportAction::Open);
+        choosing.dispatch(ExportAction::Start);
+        assert!(choosing.dispatch(ExportAction::SessionEnded).is_empty());
+        assert_eq!(choosing.state(), &ExportState::Idle);
+        // A destination that arrives after the session ended starts nothing.
+        assert!(
+            choosing
+                .dispatch(ExportAction::DestinationChosen(destination()))
+                .is_empty()
         );
         assert!(
             ExportMachine::new(true)
@@ -357,9 +435,11 @@ mod tests {
         for action in [
             ExportAction::Start,
             ExportAction::Abort,
-            ExportAction::Save,
+            ExportAction::Reveal,
             ExportAction::Close,
             ExportAction::Progressed(0.5),
+            ExportAction::DestinationCancelled,
+            ExportAction::DestinationChosen(destination()),
         ] {
             assert!(machine.dispatch(action).is_empty());
             assert_eq!(machine.state(), &ExportState::Idle);
