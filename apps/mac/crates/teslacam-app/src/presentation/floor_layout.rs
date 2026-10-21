@@ -16,6 +16,12 @@ pub const TOP_ROW_GAP: f32 = 14.0;
 pub const TRANSPORT_INSET: f32 = 24.0;
 /// Height of the transport (14 + 58 + 14).
 pub const TRANSPORT_HEIGHT: f32 = 86.0;
+/// Extra room the stage leaves while the transport shows a playback message.
+pub const MESSAGE_ROOM: f32 = 40.0;
+/// The message row: 10 pt (a 14 pt gap less 4) plus 18 pt per line (12 pt text, line height 1.5).
+pub const MESSAGE_GAP: f32 = 10.0;
+/// Height of one message line.
+pub const MESSAGE_LINE: f32 = 18.0;
 
 /// What the floor shows.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -26,6 +32,8 @@ pub enum FloorPhase {
     Ready {
         /// Whether an event is selected.
         session: bool,
+        /// Lines of the playback message under the transport (0 without one).
+        message_lines: usize,
     },
 }
 
@@ -63,14 +71,24 @@ pub fn floor_layout(width: f32, height: f32, phase: FloorPhase, theme: &Theme) -
     );
     let stage_left = library_width + 2.0 * gutter;
     let stage_width = (width - stage_left - gutter).max(0.0);
-    let session = matches!(phase, FloorPhase::Ready { session: true });
+    let (session, message_lines) = match phase {
+        FloorPhase::Ready {
+            session,
+            message_lines,
+        } => (session, if session { message_lines } else { 0 }),
+        FloorPhase::Welcome => (false, 0),
+    };
     let top_row = matches!(phase, FloorPhase::Ready { .. })
         .then(|| Rect::new(stage_left, gutter, stage_width, theme.sizes.topbar_height));
     let stage = match phase {
         FloorPhase::Welcome => Rect::new(stage_left, gutter, stage_width, library.height),
-        FloorPhase::Ready { session } => {
+        FloorPhase::Ready { .. } => {
             let top = gutter + theme.sizes.topbar_height + TOP_ROW_GAP;
-            let bottom = if session { TRANSPORT_ROOM } else { gutter };
+            let bottom = match (session, message_lines) {
+                (false, _) => gutter,
+                (true, 0) => TRANSPORT_ROOM,
+                (true, _) => TRANSPORT_ROOM + MESSAGE_ROOM,
+            };
             Rect::new(
                 stage_left,
                 top,
@@ -82,11 +100,16 @@ pub fn floor_layout(width: f32, height: f32, phase: FloorPhase, theme: &Theme) -
     let transport = session.then(|| {
         let available = (stage_width - 2.0 * TRANSPORT_INSET).max(0.0);
         let transport_width = available.min(theme.sizes.transport_max_width);
+        let transport_height = if message_lines == 0 {
+            TRANSPORT_HEIGHT
+        } else {
+            TRANSPORT_HEIGHT + MESSAGE_GAP + MESSAGE_LINE * message_lines as f32
+        };
         Rect::new(
             stage_left + TRANSPORT_INSET + (available - transport_width) / 2.0,
-            height - gutter - TRANSPORT_HEIGHT,
+            height - gutter - transport_height,
             transport_width,
-            TRANSPORT_HEIGHT,
+            transport_height,
         )
     });
     FloorLayout {
@@ -118,14 +141,28 @@ mod tests {
 
     #[test]
     fn a_session_adds_the_top_row_and_the_transport() {
-        let floor = layout(1440.0, 900.0, FloorPhase::Ready { session: true });
+        let floor = layout(
+            1440.0,
+            900.0,
+            FloorPhase::Ready {
+                session: true,
+                message_lines: 0,
+            },
+        );
         assert_eq!(floor.top_row, Some(Rect::new(404.0, 16.0, 1020.0, 46.0)));
         assert_eq!(floor.stage, Rect::new(404.0, 76.0, 1020.0, 700.0));
         let transport = floor.transport.expect("transport");
         assert_eq!(transport.width, 920.0);
         assert_eq!(transport.center().0, floor.stage.center().0);
         assert_eq!(transport.bottom(), 884.0);
-        let without = layout(1440.0, 900.0, FloorPhase::Ready { session: false });
+        let without = layout(
+            1440.0,
+            900.0,
+            FloorPhase::Ready {
+                session: false,
+                message_lines: 0,
+            },
+        );
         assert_eq!(without.stage.bottom(), 884.0);
         assert_eq!(without.top_row, floor.top_row);
         assert_eq!(without.transport, None);
@@ -133,7 +170,14 @@ mod tests {
 
     #[test]
     fn narrow_windows_use_the_compact_library() {
-        let floor = layout(1100.0, 700.0, FloorPhase::Ready { session: true });
+        let floor = layout(
+            1100.0,
+            700.0,
+            FloorPhase::Ready {
+                session: true,
+                message_lines: 0,
+            },
+        );
         assert!(floor.compact);
         assert_eq!(floor.library.width, 320.0);
         assert_eq!(floor.stage.x, 352.0);
@@ -141,5 +185,30 @@ mod tests {
         assert_eq!(floor.transport.expect("transport").width, 684.0);
         assert!(layout(1280.0, 800.0, FloorPhase::Welcome).compact);
         assert!(!layout(1281.0, 800.0, FloorPhase::Welcome).compact);
+    }
+
+    #[test]
+    fn a_playback_message_grows_the_transport_and_lifts_the_stage() {
+        let floor = layout(
+            1440.0,
+            900.0,
+            FloorPhase::Ready {
+                session: true,
+                message_lines: 2,
+            },
+        );
+        assert_eq!(floor.stage.bottom(), 900.0 - 124.0 - 40.0);
+        let transport = floor.transport.expect("transport");
+        assert_eq!(transport.height, 86.0 + 10.0 + 2.0 * 18.0);
+        assert_eq!(transport.bottom(), 884.0);
+        let one_line = layout(
+            1440.0,
+            900.0,
+            FloorPhase::Ready {
+                session: true,
+                message_lines: 1,
+            },
+        );
+        assert_eq!(one_line.transport.expect("transport").height, 114.0);
     }
 }

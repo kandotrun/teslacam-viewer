@@ -246,6 +246,215 @@ pub fn grid_layout(stage: Rect, geometry: &StageGeometry) -> CameraMap<Rect> {
     })
 }
 
+/// Gap between the main window and the strip, and between strip cells.
+pub const STRIP_GAP: f32 = 14.0;
+/// The strip's height range and its share of the window height (`clamp(72px, 15vh, 128px)`).
+pub const STRIP_HEIGHT: (f32, f32, f32) = (72.0, 0.15, 128.0);
+/// Width of the mini car: columns 36 | 30 | 36, 2 pt gaps, 4 pt padding.
+pub const SWITCHER_WIDTH: f32 = 4.0 + 36.0 + 2.0 + 30.0 + 2.0 + 36.0 + 4.0;
+/// Windows at most this tall use the compact chrome (smaller name pill, icon-only states).
+pub const COMPACT_WINDOW_HEIGHT: f32 = 120.0;
+
+/// Whether `window` is small enough for the compact chrome.
+pub fn compact_chrome(window: Rect) -> bool {
+    window.height <= COMPACT_WINDOW_HEIGHT
+}
+
+fn strip_height(viewport_height: f32) -> f32 {
+    let (min, share, max) = STRIP_HEIGHT;
+    (viewport_height * share).clamp(min, max)
+}
+
+/// Splits `row` into `count` equal cells `gap` apart.
+fn cells(row: Rect, count: usize, gap: f32) -> Vec<Rect> {
+    let width = ((row.width - gap * (count as f32 - 1.0)) / count as f32).max(0.0);
+    (0..count)
+        .map(|index| {
+            Rect::new(
+                row.x + index as f32 * (width + gap),
+                row.y,
+                width,
+                row.height,
+            )
+        })
+        .collect()
+}
+
+/// Where a `source`-sized video is drawn in a window with `radius` corners: `contain`-fitted and
+/// centred, and, when its corners would stick out of the rounded window (GPUI draws video surfaces
+/// without rounded corners), shrunk until they touch the rounding. Wide footage is letterboxed
+/// edge to edge; 4:3 footage keeps a hairline of the window's black around it. An unknown size
+/// counts as 4:3.
+pub fn video_rect(window: Rect, source: (f64, f64), radius: f32) -> Rect {
+    let (width, height) = if source.0 > 0.0 && source.1 > 0.0 {
+        (source.0 as f32, source.1 as f32)
+    } else {
+        (4.0, 3.0)
+    };
+    let fit = (window.width / width).min(window.height / height);
+    let (width, height) = (width * fit, height * fit);
+    let at = |scale: f32| {
+        let (w, h) = (width * scale, height * scale);
+        Rect::new(
+            window.x + (window.width - w) / 2.0,
+            window.y + (window.height - h) / 2.0,
+            w,
+            h,
+        )
+    };
+    let corner_inside = |rect: Rect| {
+        let (dx, dy) = (rect.x - window.x, rect.y - window.y);
+        dx >= radius || dy >= radius || (radius - dx).hypot(radius - dy) <= radius
+    };
+    if corner_inside(at(1.0)) {
+        return at(1.0);
+    }
+    let (mut inside, mut outside) = (0.0f32, 1.0f32);
+    for _ in 0..32 {
+        let middle = (inside + outside) / 2.0;
+        if corner_inside(at(middle)) {
+            inside = middle;
+        } else {
+            outside = middle;
+        }
+    }
+    at(inside)
+}
+
+/// One camera filling the stage, the other five in a strip under it, the mini car at the strip's
+/// left.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ExpandedLayout {
+    /// The expanded camera's window (4:3, centred above the strip).
+    pub main: Rect,
+    /// The other five windows in canonical order.
+    pub strip: Vec<(CameraId, Rect)>,
+    /// The mini car's box.
+    pub switcher: Rect,
+    /// Height of the strip row.
+    pub strip_height: f32,
+}
+
+/// The expanded layout of `focus` inside `stage` in a window `viewport_height` points tall.
+pub fn expanded_layout(stage: Rect, focus: CameraId, viewport_height: f32) -> ExpandedLayout {
+    let inner = stage.inset(STAGE_PADDING.0, STAGE_PADDING.1);
+    let strip_height = strip_height(viewport_height).min(inner.height);
+    let main_area = Rect::new(
+        inner.x,
+        inner.y,
+        inner.width,
+        (inner.height - strip_height - STRIP_GAP).max(0.0),
+    );
+    let row = Rect::new(
+        inner.x,
+        inner.bottom() - strip_height,
+        inner.width,
+        strip_height,
+    );
+    let switcher = Rect::new(row.x, row.y, SWITCHER_WIDTH.min(row.width), row.height);
+    let rest = Rect::new(
+        row.x + SWITCHER_WIDTH + STRIP_GAP,
+        row.y,
+        (row.width - SWITCHER_WIDTH - STRIP_GAP).max(0.0),
+        row.height,
+    );
+    let others: Vec<CameraId> = CameraId::ALL
+        .into_iter()
+        .filter(|camera| *camera != focus)
+        .collect();
+    let strip = others
+        .iter()
+        .zip(cells(rest, others.len(), STRIP_GAP))
+        .map(|(camera, cell)| (*camera, fit_window(cell, 1.0)))
+        .collect();
+    ExpandedLayout {
+        main: fit_window(main_area, 1.0),
+        strip,
+        switcher,
+        strip_height,
+    }
+}
+
+/// The mini car: the car glyph with one 36 pt button per camera around it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct SwitcherLayout {
+    /// The car image box (1:2).
+    pub car: Rect,
+    /// Each camera's dot centre.
+    pub dots: CameraMap<(f32, f32)>,
+    /// Each camera's hit target.
+    pub buttons: CameraMap<Rect>,
+}
+
+/// The mini car inside `area` (a [`SWITCHER_WIDTH`] wide strip cell): front and back above and
+/// below the car, the pillars at the top corners, the repeaters at the bottom corners.
+pub fn switcher_layout(area: Rect) -> SwitcherLayout {
+    const BUTTON: f32 = 36.0;
+    const CAR_COLUMN: f32 = 30.0;
+    const CAR_MAX_HEIGHT: f32 = 140.0;
+    let left = area.x + 4.0 + BUTTON / 2.0;
+    let centre = area.x + 4.0 + BUTTON + 2.0 + CAR_COLUMN / 2.0;
+    let right = area.x + 4.0 + BUTTON + 2.0 + CAR_COLUMN + 2.0 + BUTTON / 2.0;
+    let top = area.y + BUTTON / 2.0;
+    let bottom = area.bottom() - BUTTON / 2.0;
+    let dots = CameraMap::from_fn(|camera| match camera {
+        CameraId::Front => (centre, top),
+        CameraId::Back => (centre, bottom),
+        CameraId::LeftPillar => (left, top),
+        CameraId::RightPillar => (right, top),
+        CameraId::LeftRepeater => (left, bottom),
+        CameraId::RightRepeater => (right, bottom),
+    });
+    let middle = (area.height - 2.0 * BUTTON).clamp(0.0, CAR_MAX_HEIGHT);
+    let car_height = middle.min(CAR_COLUMN * 2.0);
+    let car = Rect::new(
+        centre - car_height / 4.0,
+        area.y + BUTTON + ((area.height - 2.0 * BUTTON).max(0.0) - car_height) / 2.0,
+        car_height / 2.0,
+        car_height,
+    );
+    SwitcherLayout {
+        car,
+        buttons: dots
+            .map(|_, (x, y)| Rect::new(x - BUTTON / 2.0, y - BUTTON / 2.0, BUTTON, BUTTON)),
+        dots,
+    }
+}
+
+/// `event.mp4` filling the stage above a strip of all six cameras.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RepresentativeLayout {
+    /// The representative video's box (not 4:3: the video is `contain`-fitted inside).
+    pub main: Rect,
+    /// The six windows in canonical order.
+    pub strip: Vec<(CameraId, Rect)>,
+}
+
+/// The representative layout inside `stage` in a window `viewport_height` points tall.
+pub fn representative_layout(stage: Rect, viewport_height: f32) -> RepresentativeLayout {
+    let inner = stage.inset(STAGE_PADDING.0, STAGE_PADDING.1);
+    let strip_height = strip_height(viewport_height).min(inner.height);
+    let row = Rect::new(
+        inner.x,
+        inner.bottom() - strip_height,
+        inner.width,
+        strip_height,
+    );
+    RepresentativeLayout {
+        main: Rect::new(
+            inner.x,
+            inner.y,
+            inner.width,
+            (inner.height - strip_height - STRIP_GAP).max(0.0),
+        ),
+        strip: CameraId::ALL
+            .into_iter()
+            .zip(cells(row, 6, STRIP_GAP))
+            .map(|(camera, cell)| (camera, fit_window(cell, 1.0)))
+            .collect(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use teslacam_core::theme::Theme;
@@ -356,5 +565,139 @@ mod tests {
         assert!(close(right_pillar.x, front.x));
         assert!(close(right_repeater.x, left_pillar.x));
         assert!(close(front.width / front.height, 4.0 / 3.0));
+    }
+
+    #[test]
+    fn an_expanded_camera_fills_the_stage_above_a_strip_of_the_other_five() {
+        let stage = Rect::new(0.0, 0.0, 1020.0, 700.0);
+        let layout = expanded_layout(stage, CameraId::Back, 900.0);
+        // The strip is clamp(72, 15 % of the window height, 128) = 128 tall at the bottom of the
+        // inner box (4 pt padding), 14 pt below the main area.
+        assert!(close(layout.strip_height, 128.0));
+        assert!(close(layout.switcher.bottom(), 696.0));
+        assert!(close(layout.switcher.height, 128.0));
+        assert!(close(layout.switcher.width, SWITCHER_WIDTH));
+        assert!(close(layout.switcher.x, 24.0));
+        // The main window is 4:3, centred in the area above the strip.
+        let main = layout.main;
+        assert!(close(main.width / main.height, 4.0 / 3.0));
+        assert!(close(main.y, 4.0));
+        assert!(close(main.height, 696.0 - 128.0 - 14.0 - 4.0));
+        assert!(close(main.center().0, 510.0));
+        // The other five, in canonical order, left to right after the switcher.
+        let order: Vec<CameraId> = layout.strip.iter().map(|(camera, _)| *camera).collect();
+        assert_eq!(
+            order,
+            [
+                CameraId::Front,
+                CameraId::LeftPillar,
+                CameraId::LeftRepeater,
+                CameraId::RightPillar,
+                CameraId::RightRepeater
+            ]
+        );
+        let cell = (1020.0 - 48.0 - SWITCHER_WIDTH - 5.0 * 14.0) / 5.0;
+        for (index, (_, window)) in layout.strip.iter().enumerate() {
+            assert!(close(window.width / window.height, 4.0 / 3.0));
+            assert!(window.width <= cell + 0.01 && window.height <= 128.01);
+            let cell_x = 24.0 + SWITCHER_WIDTH + 14.0 + index as f32 * (cell + 14.0);
+            assert!(close(window.center().0, cell_x + cell / 2.0));
+            assert!(close(window.center().1, 696.0 - 64.0));
+        }
+        // A short window: 15 % of 700 pt = 105 pt.
+        let short = expanded_layout(stage, CameraId::Front, 700.0);
+        assert!(close(short.strip_height, 105.0));
+        assert!(close(
+            expanded_layout(stage, CameraId::Front, 400.0).strip_height,
+            72.0
+        ));
+    }
+
+    #[test]
+    fn the_mini_car_puts_each_dot_where_its_camera_sits() {
+        let switcher = switcher_layout(Rect::new(24.0, 568.0, SWITCHER_WIDTH, 128.0));
+        let dot = |camera| switcher.dots[camera];
+        // Columns 36 | 30 | 36 with 2 pt gaps and 4 pt padding; rows 36 | rest | 36.
+        assert_eq!(dot(CameraId::LeftPillar), (24.0 + 22.0, 568.0 + 18.0));
+        assert_eq!(dot(CameraId::Front), (24.0 + 57.0, 568.0 + 18.0));
+        assert_eq!(dot(CameraId::RightPillar), (24.0 + 92.0, 568.0 + 18.0));
+        assert_eq!(dot(CameraId::LeftRepeater), (24.0 + 22.0, 568.0 + 110.0));
+        assert_eq!(dot(CameraId::Back), (24.0 + 57.0, 568.0 + 110.0));
+        assert_eq!(dot(CameraId::RightRepeater), (24.0 + 92.0, 568.0 + 110.0));
+        // The car (1:2) fills the middle row inside the 30 pt column.
+        let car = switcher.car;
+        assert!(close(car.height, 56.0) && close(car.width, 28.0));
+        assert!(close(car.center().0, 24.0 + 57.0));
+        assert!(close(car.center().1, 568.0 + 64.0));
+        // A taller strip is limited by the column width.
+        let tall = switcher_layout(Rect::new(0.0, 0.0, SWITCHER_WIDTH, 200.0));
+        assert!(close(tall.car.width, 30.0) && close(tall.car.height, 60.0));
+        // Hit targets are 36 pt squares centred on the dots.
+        let button = switcher.buttons[CameraId::Back];
+        assert!(close(button.width, 36.0) && close(button.center().0, 24.0 + 57.0));
+    }
+
+    #[test]
+    fn the_representative_video_fills_the_stage_above_all_six_cameras() {
+        let stage = Rect::new(0.0, 0.0, 1020.0, 700.0);
+        let layout = representative_layout(stage, 900.0);
+        assert_eq!(
+            layout.main,
+            Rect::new(24.0, 4.0, 972.0, 696.0 - 128.0 - 14.0 - 4.0)
+        );
+        let order: Vec<CameraId> = layout.strip.iter().map(|(camera, _)| *camera).collect();
+        assert_eq!(order, CameraId::ALL);
+        let cell = (972.0 - 5.0 * 14.0) / 6.0;
+        for (index, (_, window)) in layout.strip.iter().enumerate() {
+            assert!(close(window.width / window.height, 4.0 / 3.0));
+            assert!(close(
+                window.center().0,
+                24.0 + index as f32 * (cell + 14.0) + cell / 2.0
+            ));
+        }
+    }
+
+    #[test]
+    fn small_windows_use_the_compact_chrome() {
+        assert!(compact_chrome(Rect::new(0.0, 0.0, 160.0, 120.0)));
+        assert!(!compact_chrome(Rect::new(0.0, 0.0, 170.0, 128.0)));
+    }
+
+    fn inside_rounded(window: Rect, radius: f32, (x, y): (f32, f32)) -> bool {
+        let cx = x.clamp(window.x + radius, window.right() - radius);
+        let cy = y.clamp(window.y + radius, window.bottom() - radius);
+        (x - cx).hypot(y - cy) <= radius + 0.01
+    }
+
+    #[test]
+    fn wide_video_is_letterboxed_edge_to_edge() {
+        // Tesla HW4 side cameras (1448 × 938) in a 400 × 300 window: full width, bars top and bottom.
+        let window = Rect::new(10.0, 20.0, 400.0, 300.0);
+        let video = video_rect(window, (1448.0, 938.0), 14.0);
+        assert!(close(video.width, 400.0));
+        assert!(close(video.height, 400.0 * 938.0 / 1448.0));
+        assert!(close(video.center().1, window.center().1));
+    }
+
+    #[test]
+    fn four_by_three_video_shrinks_until_its_corners_touch_the_rounding() {
+        let window = Rect::new(10.0, 20.0, 400.0, 300.0);
+        let video = video_rect(window, (1280.0, 960.0), 14.0);
+        assert!(close(video.width / video.height, 4.0 / 3.0));
+        assert!(close(video.center().0, window.center().0));
+        assert!(close(video.center().1, window.center().1));
+        assert!(video.width < 400.0 && video.width > 390.0, "{video:?}");
+        // The corners lie on the rounded edge, not outside it.
+        assert!(inside_rounded(window, 14.0, (video.x, video.y)));
+        assert!(!inside_rounded(
+            window,
+            14.0,
+            (video.x - 0.5, video.y - 0.5)
+        ));
+        // Without a known size the window is filled the same way.
+        assert_eq!(video_rect(window, (0.0, 0.0), 14.0), video);
+        // A tall video in a 4:3 window: pillarboxed, corners well inside.
+        let tall = video_rect(window, (720.0, 1280.0), 14.0);
+        assert!(close(tall.height, 300.0));
     }
 }

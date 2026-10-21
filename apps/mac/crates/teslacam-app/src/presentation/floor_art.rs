@@ -53,6 +53,25 @@ pub fn car_shadow_svg(ink: Rgba) -> String {
     )
 }
 
+/// The 20 pt progress ring of a running export: a `track` circle and the done part in `bar`,
+/// starting at twelve o'clock (web `ProgressRing`).
+pub fn progress_ring_svg(progress: f32, track: Rgba, bar: Rgba) -> String {
+    let circumference = 2.0 * std::f32::consts::PI * 8.0;
+    let offset = circumference * (1.0 - progress.clamp(0.0, 1.0));
+    format!(
+        concat!(
+            r#"<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 20 20" fill="none" stroke-width="2.5">"#,
+            r#"<circle cx="10" cy="10" r="8" stroke="{track}"/>"#,
+            r#"<circle cx="10" cy="10" r="8" stroke="{bar}" stroke-linecap="round" "#,
+            r#"stroke-dasharray="{circumference:.2}" stroke-dashoffset="{offset:.2}" transform="rotate(-90 10 10)"/></svg>"#
+        ),
+        track = hex(track),
+        bar = hex(bar),
+        circumference = circumference,
+        offset = offset,
+    )
+}
+
 /// The field-of-view wedges of a `width` × `height` stage as one SVG document, like the web's
 /// stage overlay: each triangle runs from its mount point to the window corners that face the car,
 /// filled with a gradient along mount → edge midpoint from the wedge colour (its own alpha times
@@ -146,6 +165,19 @@ mod tests {
         assert!(
             svg.starts_with(r#"<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="700""#)
         );
+    }
+
+    #[test]
+    fn the_progress_ring_draws_the_done_part_from_twelve_o_clock() {
+        let colors = &Theme::embedded().colors;
+        let half = progress_ring_svg(0.5, colors.line, colors.drive);
+        // r = 8: circumference 50.27, half of it left undrawn.
+        assert!(half.contains(r#"stroke-dasharray="50.27""#), "{half}");
+        assert!(half.contains(r#"stroke-dashoffset="25.13""#), "{half}");
+        assert!(half.contains(r##"stroke="#E2E4E8""##) && half.contains(r##"stroke="#3E6AE1""##));
+        assert!(half.contains(r#"transform="rotate(-90 10 10)""#));
+        let clamped = progress_ring_svg(3.0, colors.line, colors.drive);
+        assert!(clamped.contains(r#"stroke-dashoffset="0.00""#), "{clamped}");
     }
 
     #[test]
