@@ -15,6 +15,8 @@
 //!   when a camera becomes ready, or stops when every camera is terminal. Unlike the web, the message
 //!   is never replaced by [`PlaybackMessage::Rejected`], which only reports a failed start.
 //! - Seeking, skipping (clamped to the event) and rate changes keep the intent.
+//! - The session starts on the timeline that assumes full segment windows; once the media layer has
+//!   probed the clips, [`PlaybackInput::Loaded`] replaces the duration (the position is clamped).
 //! - At the end of the event the group pauses at the duration; `play` there restarts the last
 //!   segment from its start.
 //! - The representative view (`event.mp4`) pauses the six-camera clock. It is entered by the user, or
@@ -233,6 +235,8 @@ pub enum PlaybackInput {
     SetRate(PlaybackRate),
     /// A camera window or digit key: make it active and toggle its expansion.
     ToggleCamera(CameraId),
+    /// A mount dot of the mini car: make the camera active and expanded (never collapses).
+    ShowCamera(CameraId),
     /// `Esc`.
     Collapse,
     /// The view segmented control.
@@ -241,6 +245,12 @@ pub enum PlaybackInput {
     CameraStatus(CameraId, TileStatus),
     /// The media layer: the group clock moved.
     Clock(f64),
+    /// The media layer probed the clips: the event lasts `duration` seconds (the session started
+    /// with every clip assumed to fill its window). Not finite or not positive: nothing changes.
+    Loaded {
+        /// Event duration on the probed timeline.
+        duration: f64,
+    },
     /// The media layer: the group reached the end of the event.
     ReachedEnd,
     /// The media layer: the requested start succeeded.
@@ -344,6 +354,14 @@ impl PlaybackMachine {
                 };
                 Vec::new()
             }
+            PlaybackInput::ShowCamera(camera) => {
+                if self.view_mode == ViewMode::Representative {
+                    self.view_mode = self.layout.into();
+                }
+                self.active = camera;
+                self.expanded = Some(camera);
+                Vec::new()
+            }
             PlaybackInput::Collapse => {
                 self.expanded = None;
                 Vec::new()
@@ -371,6 +389,13 @@ impl PlaybackMachine {
             }
             PlaybackInput::Clock(seconds) => {
                 self.position = self.clamp(seconds);
+                Vec::new()
+            }
+            PlaybackInput::Loaded { duration } => {
+                if duration.is_finite() && duration > 0.0 {
+                    self.duration = duration;
+                    self.position = self.clamp(self.position);
+                }
                 Vec::new()
             }
             PlaybackInput::ReachedEnd => {
@@ -1001,6 +1026,45 @@ mod tests {
         assert_eq!(
             SessionConfig::new(&timeline, 500.0, StageLayout::Vehicle, false).initial_position,
             120.0
+        );
+    }
+
+    #[test]
+    fn the_probed_duration_replaces_the_assumed_one() {
+        let mut machine = playing(120.0);
+        machine.handle(PlaybackInput::Seek(110.0));
+        assert!(
+            machine
+                .handle(PlaybackInput::Loaded { duration: 102.0 })
+                .is_empty()
+        );
+        assert_eq!(machine.duration(), 102.0);
+        assert_eq!(machine.position(), 102.0);
+        assert_eq!(machine.phase(), PlaybackPhase::Playing);
+        // A probe that found nothing playable keeps the assumed length.
+        machine.handle(PlaybackInput::Loaded { duration: 0.0 });
+        machine.handle(PlaybackInput::Loaded { duration: f64::NAN });
+        assert_eq!(machine.duration(), 102.0);
+    }
+
+    #[test]
+    fn showing_a_camera_expands_it_without_toggling() {
+        let mut machine = playing(60.0);
+        assert!(
+            machine
+                .handle(PlaybackInput::ShowCamera(CameraId::Back))
+                .is_empty()
+        );
+        assert_eq!(
+            (machine.active_camera(), machine.expanded_camera()),
+            (CameraId::Back, Some(CameraId::Back))
+        );
+        machine.handle(PlaybackInput::ShowCamera(CameraId::Back));
+        assert_eq!(machine.expanded_camera(), Some(CameraId::Back));
+        machine.handle(PlaybackInput::ShowCamera(CameraId::LeftPillar));
+        assert_eq!(
+            (machine.active_camera(), machine.expanded_camera()),
+            (CameraId::LeftPillar, Some(CameraId::LeftPillar))
         );
     }
 
