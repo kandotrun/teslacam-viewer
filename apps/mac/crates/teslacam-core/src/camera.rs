@@ -34,6 +34,17 @@ impl CameraId {
         CameraId::RightRepeater,
     ];
 
+    /// The order in which the six windows fill with video after a folder loads (`DESIGN.md` §7,
+    /// mount order with the front first; same as the web's `revealOrder`).
+    pub const REVEAL_ORDER: [CameraId; 6] = [
+        CameraId::Front,
+        CameraId::LeftPillar,
+        CameraId::RightPillar,
+        CameraId::LeftRepeater,
+        CameraId::RightRepeater,
+        CameraId::Back,
+    ];
+
     /// Position in the canonical order (0–5).
     pub const fn index(self) -> usize {
         match self {
@@ -204,6 +215,14 @@ mod tests {
         }
         assert_eq!(CameraId::from_id("Front"), None);
         assert_eq!(CameraId::from_id("cabin"), None);
+    }
+
+    #[test]
+    fn the_reveal_order_covers_every_camera_once() {
+        let mut order = CameraId::REVEAL_ORDER.to_vec();
+        assert_eq!(order[0], CameraId::Front);
+        order.sort();
+        assert_eq!(order, CameraId::ALL.to_vec());
     }
 
     #[test]
