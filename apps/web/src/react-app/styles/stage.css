@@ -1,5 +1,6 @@
 /* The stage: camera windows around the car (DESIGN.md §5, §6 Stage) */
 .stage {
+  container: stage / size;
   display: grid;
   gap: var(--stage-gap-row) var(--stage-gap-column);
   padding: 4px 24px;
@@ -15,13 +16,27 @@
     "left_repeater back right_repeater";
 }
 
+/*
+ * 6分割: rows as tall as the windows (the smaller of a third of the width and half the height, at 4:3),
+ * so the 3 × 2 grid packs with even gaps and sits centred on the stage.
+ */
 .stage[data-mode="grid"] {
+  --grid-gap-row: var(--stage-gap-row);
+  --grid-gap-column: var(--stage-gap-column);
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, auto);
   grid-template-areas:
     "front back left_pillar"
     "right_pillar left_repeater right_repeater";
   align-content: center;
+  gap: var(--grid-gap-row) var(--grid-gap-column);
+}
+
+.stage[data-mode="grid"] .camera-slot {
+  height: min(
+    calc((100cqh - var(--grid-gap-row)) / 2),
+    calc((100cqw - var(--grid-gap-column) * 2) / 3 * 3 / 4)
+  );
 }
 
 .stage[data-mode="expanded"] {

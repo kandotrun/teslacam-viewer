@@ -70,6 +70,11 @@
     padding: 4px 8px;
   }
 
+  .stage[data-mode="grid"] {
+    --grid-gap-row: 10px;
+    --grid-gap-column: 14px;
+  }
+
   .floor {
     --transport-room: 156px;
   }
