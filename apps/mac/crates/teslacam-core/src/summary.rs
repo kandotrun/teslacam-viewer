@@ -45,7 +45,8 @@ pub fn missing_camera_label(availability: &CameraAvailability) -> Option<String>
     copy::missing_camera_label(&availability.missing)
 }
 
-/// The nominal duration label, e.g. `11分` for 11 segments.
+/// The nominal duration label, e.g. `11分` for 11 segments (web rule). The Mac shows
+/// `copy::format_duration` of the [`crate::event_timeline::EventTimeline`] duration instead.
 pub fn event_duration_label(event: &Event) -> String {
     copy::format_duration(timeline::event_duration(event.segments.len()) as u64)
 }

@@ -215,13 +215,25 @@ fn is_empty_media(file: &FileEntry) -> bool {
     file.name.ends_with(".mp4") && file.size == 0
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct DirectoryEvent {
-    category: Option<ClipCategory>,
+    category: ClipCategory,
     clips: HashMap<String, CameraMap<Option<FileId>>>,
     representative: Option<FileId>,
     thumbnail: Option<FileId>,
     metadata_file: Option<FileId>,
+}
+
+impl DirectoryEvent {
+    fn new(category: ClipCategory) -> DirectoryEvent {
+        DirectoryEvent {
+            category,
+            clips: HashMap::new(),
+            representative: None,
+            thumbnail: None,
+            metadata_file: None,
+        }
+    }
 }
 
 /// The result of classifying every file; finish it with [`ClassifiedFiles::finish`].
@@ -277,9 +289,9 @@ impl ClassifiedFiles {
         if !self.directory_events.contains_key(&key) {
             self.directory_order.push(key.clone());
         }
-        let event = self.directory_events.entry(key).or_default();
-        event.category.get_or_insert(category);
-        event
+        self.directory_events
+            .entry(key)
+            .or_insert_with(|| DirectoryEvent::new(category))
     }
 
     fn classify(&mut self, id: FileId, file: &FileEntry) {
@@ -372,7 +384,7 @@ impl ClassifiedFiles {
                     metadata
                 }
             };
-            let category = directory.category.unwrap_or(ClipCategory::Saved);
+            let category = directory.category;
             by_category.push(Event {
                 id: String::new(),
                 category,

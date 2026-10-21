@@ -1,7 +1,7 @@
 //! The web's nominal playback axis: every segment occupies a 60 s window regardless of real clip
 //! lengths or gaps. The Mac plays on the wall-clock axis of [`crate::event_timeline`], which agrees
-//! with this one for a regular 60 s cadence; this module stays for parity checks and for the copy
-//! that the spec defines on the nominal axis (for example the export dialog's duration).
+//! with this one for a regular 60 s cadence; this module keeps the web rule for parity checks and for
+//! the web-layout labels of [`crate::summary`].
 
 /// Nominal seconds per segment.
 pub const SEGMENT_SECONDS: f64 = 60.0;
