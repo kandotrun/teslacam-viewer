@@ -19,11 +19,16 @@
 
 pub mod camera;
 pub mod copy;
+pub mod day_timeline;
+pub mod detection;
+pub mod event_timeline;
 pub mod filename;
 pub mod filters;
 pub mod library;
 pub mod limits;
 pub mod metadata;
+pub mod summary;
+pub mod timeline;
 pub mod timestamp;
 
 #[cfg(test)]
