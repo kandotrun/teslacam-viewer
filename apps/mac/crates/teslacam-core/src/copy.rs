@@ -198,6 +198,10 @@ pub const DATE_LABEL: &str = "日付";
 pub const PREVIOUS_DAY: &str = "前の記録日";
 /// Next recorded day.
 pub const NEXT_DAY: &str = "次の記録日";
+/// The top row without a selected event.
+pub const NO_SELECTION_TITLE: &str = "イベントを選択してください";
+/// The line under [`NO_SELECTION_TITLE`].
+pub const NO_SELECTION_DESCRIPTION: &str = "一覧から選ぶと、記録された映像をここに表示します。";
 /// Event list heading (prototype).
 pub const EVENT_LIST_TITLE: &str = "イベント";
 /// No event matches the filters.
@@ -1087,6 +1091,15 @@ mod tests {
         assert_eq!(month_title(2026, 10), "2026年10月");
         assert_eq!(WEEKDAY_INITIALS, ["日", "月", "火", "水", "木", "金", "土"]);
         assert_eq!((PREVIOUS_MONTH, NEXT_MONTH), ("前の月", "次の月"));
+    }
+
+    #[test]
+    fn the_empty_selection_explains_itself() {
+        assert_eq!(NO_SELECTION_TITLE, "イベントを選択してください");
+        assert_eq!(
+            NO_SELECTION_DESCRIPTION,
+            "一覧から選ぶと、記録された映像をここに表示します。"
+        );
     }
 
     #[test]
