@@ -27,6 +27,7 @@ pub mod filters;
 pub mod library;
 pub mod limits;
 pub mod metadata;
+pub mod scan;
 pub mod summary;
 pub mod timeline;
 pub mod timestamp;
