@@ -5,11 +5,14 @@
 //! 1100 × 700) whose root is the garage floor. Development affordances are described in [`dev`].
 
 mod assets;
+mod bridge;
 mod dev;
+mod media;
 mod presentation;
 mod scan;
 mod session;
 mod store;
+mod sync_probe;
 mod ui;
 
 use std::time::Duration;
@@ -26,10 +29,11 @@ use teslacam_core::copy;
 use teslacam_core::filters::CategoryFilter;
 use teslacam_core::playback::{PlaybackInput, ViewMode};
 
-use crate::dev::{DevOptions, DevUi, DevView};
+use crate::dev::{DevFlags, DevOptions, DevUi, DevView};
 use crate::store::{AppStore, StoreEvent};
 use crate::ui::root::RootView;
 use crate::ui::style::AppTheme;
+use teslacam_core::export_state::ExportAction;
 
 gpui_kit::actions!(teslacam, [OpenFolder, Hide, Quit]);
 
@@ -132,6 +136,13 @@ fn apply_library_options(
         if options.play {
             store.playback(PlaybackInput::Play, cx);
         }
+        if options.ui.contains(&DevUi::Export) || options.export_to.is_some() {
+            store.export(ExportAction::Open, cx);
+        }
+        if options.export_to.is_some() {
+            store.set_export_destination(options.export_to.clone());
+            store.export(ExportAction::Start, cx);
+        }
     });
     let ui = options.ui.clone();
     let root = root.clone();
@@ -143,7 +154,11 @@ fn apply_library_options(
         window
             .update(cx, |_, window, cx| {
                 let view = root.read(cx);
-                let (top_row, library) = (view.top_row().clone(), view.library().clone());
+                let (top_row, library, transport) = (
+                    view.top_row().clone(),
+                    view.library().clone(),
+                    view.transport().clone(),
+                );
                 for item in &ui {
                     match item {
                         DevUi::Details => top_row.update(cx, |top, cx| top.open_details(false, cx)),
@@ -159,7 +174,10 @@ fn apply_library_options(
                         DevUi::Cluster(event_id) => {
                             library.update(cx, |library, cx| library.open_cluster_of(event_id, cx))
                         }
-                        DevUi::Category(_) => {}
+                        DevUi::Rate => {
+                            transport.update(cx, |transport, cx| transport.open_rate_menu(cx))
+                        }
+                        DevUi::Category(_) | DevUi::Export => {}
                     }
                 }
             })
@@ -203,6 +221,9 @@ fn main() {
             gpui_kit::component::Theme::change(gpui_kit::component::ThemeMode::Light, None, cx);
             assets::register_fonts(cx);
             AppTheme::install(cx);
+            cx.set_global(DevFlags {
+                sync_probe: options.sync_probe,
+            });
             force_light_appearance();
 
             let store = cx.new(|_| AppStore::new(options.scan_delay));

@@ -8,11 +8,13 @@
 //! | `TESLACAM_VIEW=vehicle\|grid\|expanded:<camera>\|representative` | the stage view of the session |
 //! | `TESLACAM_PLAY=1` | asks the session to play |
 //! | `TESLACAM_SEEK=<seconds>` | seeks the session |
-//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>` |
+//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `rate` (the rate menu) |
 //! | `TESLACAM_WINDOW=<w>x<h>` | window content size in points |
 //! | `TESLACAM_CAPTURE=<png>` | captures the window with `screencapture` after a delay, then quits |
 //! | `TESLACAM_CAPTURE_DELAY_MS=<ms>` | the delay before the capture (default 2500) |
 //! | `TESLACAM_SCAN_DELAY_MS=<ms>` | slows the scan down by this much per progress report |
+//! | `TESLACAM_EXPORT_TO=<mp4>` | starts the composite export of the selected event to this file (no save panel) |
+//! | `TESLACAM_SYNC_PROBE=1` | logs how many frames apart the drawn cameras are (media fixtures only, see `sync_probe`) |
 
 use std::path::PathBuf;
 use std::time::Duration;
@@ -47,7 +49,20 @@ pub enum DevUi {
     Cluster(String),
     /// A category filter.
     Category(ClipCategory),
+    /// The export dialog.
+    Export,
+    /// The rate menu.
+    Rate,
 }
+
+/// Development switches the views read (a GPUI global; absent in tests).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct DevFlags {
+    /// `TESLACAM_SYNC_PROBE`
+    pub sync_probe: bool,
+}
+
+impl gpui_kit::Global for DevFlags {}
 
 /// Everything read from the environment.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -72,6 +87,10 @@ pub struct DevOptions {
     pub capture_delay: Duration,
     /// `TESLACAM_SCAN_DELAY_MS`
     pub scan_delay: Duration,
+    /// `TESLACAM_EXPORT_TO`
+    pub export_to: Option<PathBuf>,
+    /// `TESLACAM_SYNC_PROBE`
+    pub sync_probe: bool,
 }
 
 fn parse_view(value: &str) -> Option<DevView> {
@@ -88,6 +107,8 @@ fn parse_ui(item: &str) -> Option<DevUi> {
         "details" => Some(DevUi::Details),
         "technical" => Some(DevUi::Technical),
         "datepicker" => Some(DevUi::DatePicker),
+        "export" => Some(DevUi::Export),
+        "rate" => Some(DevUi::Rate),
         _ => {
             let (key, value) = item.split_once(':')?;
             match key {
@@ -136,6 +157,8 @@ impl DevOptions {
             capture: non_empty("TESLACAM_CAPTURE").map(PathBuf::from),
             capture_delay: millis(non_empty("TESLACAM_CAPTURE_DELAY_MS"), 2_500),
             scan_delay: millis(non_empty("TESLACAM_SCAN_DELAY_MS"), 0),
+            export_to: non_empty("TESLACAM_EXPORT_TO").map(PathBuf::from),
+            sync_probe: non_empty("TESLACAM_SYNC_PROBE").is_some_and(|value| value.trim() == "1"),
         }
     }
 
@@ -178,8 +201,10 @@ mod tests {
             ("TESLACAM_SEEK", "42.5"),
             (
                 "TESLACAM_UI",
-                "details, search:20:35,cluster:saved-1,category:sentry,bogus",
+                "details, search:20:35,cluster:saved-1,category:sentry,bogus,export,rate",
             ),
+            ("TESLACAM_EXPORT_TO", "/tmp/out.mp4"),
+            ("TESLACAM_SYNC_PROBE", "1"),
             ("TESLACAM_WINDOW", "1100x700"),
             ("TESLACAM_CAPTURE", "/tmp/shot.png"),
             ("TESLACAM_CAPTURE_DELAY_MS", "800"),
@@ -198,9 +223,16 @@ mod tests {
                 DevUi::Details,
                 DevUi::Search("20:35".into()),
                 DevUi::Cluster("saved-1".into()),
-                DevUi::Category(ClipCategory::Sentry)
+                DevUi::Category(ClipCategory::Sentry),
+                DevUi::Export,
+                DevUi::Rate
             ]
         );
+        assert_eq!(
+            options.export_to.as_deref(),
+            Some(std::path::Path::new("/tmp/out.mp4"))
+        );
+        assert!(options.sync_probe);
         assert_eq!(options.window_size, Some((1100.0, 700.0)));
         assert_eq!(options.capture_delay, Duration::from_millis(800));
         assert_eq!(options.scan_delay, Duration::from_millis(30));
