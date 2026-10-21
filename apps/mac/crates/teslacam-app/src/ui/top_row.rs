@@ -27,6 +27,7 @@ use crate::assets::{Icon, NUMERAL_FAMILY};
 use crate::presentation::event_pill::{ITEM_GAP, PillWidths, pill_items};
 use crate::presentation::floor_art::progress_ring_svg;
 use crate::presentation::floor_layout::floor_layout;
+use crate::presentation::motion::Sheet;
 use crate::store::{AppStore, StoreEvent};
 use crate::ui::floor_phase;
 
@@ -34,6 +35,8 @@ use crate::ui::floor_phase;
 pub struct TopRow {
     store: Entity<AppStore>,
     details_open: bool,
+    /// When the details popover appeared (its `motion-sheet` entrance).
+    details_since: Option<std::time::Instant>,
     technical_open: bool,
     export_reason_open: bool,
     /// The running export's popover (clock, bar, `中止`).
@@ -101,6 +104,7 @@ impl TopRow {
             ],
             store,
             details_open: false,
+            details_since: None,
             technical_open: false,
             export_reason_open: false,
             export_progress_open: false,
@@ -778,13 +782,27 @@ impl Render for TopRow {
             }));
         let entity = cx.entity().downgrade();
         let close_entity = entity.clone();
+        // The popover enters over `motion-sheet`: it fades in and settles 8 pt down.
+        self.details_since = self
+            .details_open
+            .then(|| self.details_since.unwrap_or_else(std::time::Instant::now));
+        let sheet = Sheet::new(&tokens.motion, cx.reduce_motion());
+        let entrance = self.details_since.map_or(1.0, |since| {
+            if sheet.running(since.elapsed()) {
+                window.request_animation_frame();
+            }
+            sheet.progress(since.elapsed())
+        });
         let popover = self.details_open.then(|| {
             deferred(
                 anchored()
                     .position_mode(AnchoredPositionMode::Local)
-                    .position(point(px(0.0), px(tokens.sizes.topbar_height + 8.0)))
+                    .position(point(
+                        px(0.0),
+                        px(tokens.sizes.topbar_height + 8.0 - 8.0 * (1.0 - entrance)),
+                    ))
                     .snap_to_window_with_margin(px(16.0))
-                    .child(details_popover(
+                    .child(div().opacity(entrance).child(details_popover(
                         &details,
                         self.technical_open,
                         move |_, _, cx| {
@@ -804,7 +822,7 @@ impl Render for TopRow {
                                 .ok();
                         },
                         cx,
-                    )),
+                    ))),
             )
             .with_priority(1)
         });

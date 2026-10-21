@@ -100,8 +100,64 @@ impl Reveal {
     }
 }
 
+/// The `motion-sheet` transition: expanding a camera, opening the details popover.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Sheet {
+    duration: Duration,
+    easing: CubicBezier,
+}
+
+impl Sheet {
+    /// `motion-sheet` of `motion`; instant when `reduce_motion` is set.
+    pub fn new(motion: &Motion, reduce_motion: bool) -> Sheet {
+        Sheet {
+            duration: Duration::from_millis(if reduce_motion {
+                0
+            } else {
+                u64::from(motion.sheet.duration_ms)
+            }),
+            easing: CubicBezier::new(motion.sheet.easing),
+        }
+    }
+
+    /// Eased progress (0…1) `elapsed` after the transition started.
+    pub fn progress(&self, elapsed: Duration) -> f32 {
+        if self.duration.is_zero() {
+            return 1.0;
+        }
+        self.easing
+            .ease(elapsed.as_secs_f32() / self.duration.as_secs_f32())
+    }
+
+    /// Whether the transition is still running `elapsed` after it started.
+    pub fn running(&self, elapsed: Duration) -> bool {
+        elapsed < self.duration
+    }
+}
+
+/// `from + (to − from) × t`.
+pub fn lerp(from: f32, to: f32, t: f32) -> f32 {
+    from + (to - from) * t
+}
+
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn the_sheet_runs_320_ms_and_is_instant_with_reduce_motion() {
+        let motion = Theme::embedded().motion;
+        let sheet = Sheet::new(&motion, false);
+        assert_eq!(sheet.progress(Duration::ZERO), 0.0);
+        assert!(sheet.running(Duration::from_millis(319)));
+        assert!(!sheet.running(Duration::from_millis(320)));
+        assert_eq!(sheet.progress(Duration::from_millis(320)), 1.0);
+        let middle = sheet.progress(Duration::from_millis(160));
+        assert!(middle > 0.5 && middle < 1.0, "{middle}");
+        let reduced = Sheet::new(&motion, true);
+        assert_eq!(reduced.progress(Duration::ZERO), 1.0);
+        assert!(!reduced.running(Duration::ZERO));
+        assert_eq!(lerp(10.0, 20.0, 0.25), 12.5);
+    }
+
     use teslacam_core::theme::Theme;
 
     use super::*;

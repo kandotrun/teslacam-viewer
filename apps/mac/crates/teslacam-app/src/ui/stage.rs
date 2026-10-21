@@ -33,7 +33,7 @@ use crate::dev::DevFlags;
 use crate::media::RepresentativeView;
 use crate::presentation::floor_art::{CAR_SHADOW_BOX, car_shadow_svg, wedges_svg};
 use crate::presentation::floor_layout::floor_layout;
-use crate::presentation::motion::Reveal;
+use crate::presentation::motion::{Reveal, Sheet, lerp};
 use crate::presentation::stage_layout::{
     Rect, Wedge, compact_chrome, expanded_layout, grid_layout, representative_layout,
     switcher_layout, vehicle_layout, video_rect,
@@ -90,6 +90,11 @@ pub struct StageView {
     tick_scheduled: bool,
     scrub: Scrub,
     sync: Option<(SyncStats, Instant)>,
+    /// The camera windows' rects in the last frame, the expanded camera they were drawn for, and
+    /// the running `motion-sheet` transition (its start and the rects it starts from).
+    drawn: CameraMap<Option<Rect>>,
+    drawn_expanded: Option<Option<CameraId>>,
+    transition: Option<(Instant, CameraMap<Option<Rect>>)>,
     _observe: Subscription,
 }
 
@@ -123,6 +128,9 @@ impl StageView {
             tick_scheduled: false,
             scrub: Scrub::default(),
             sync: sync_probe.then(|| (SyncStats::default(), Instant::now())),
+            drawn: CameraMap::from_fn(|_| None),
+            drawn_expanded: None,
+            transition: None,
         }
     }
 
@@ -753,16 +761,50 @@ impl Render for StageView {
             .map_or((ViewMode::Vehicle, None, CameraId::Front), |snapshot| {
                 (snapshot.0, snapshot.1, snapshot.2)
             });
+        // Expanding or collapsing a camera moves the windows over `motion-sheet` (DESIGN.md §7).
+        let sheet = Sheet::new(&tokens.motion, cx.reduce_motion());
+        if has_session
+            && self
+                .drawn_expanded
+                .is_some_and(|previous| previous != expanded)
+        {
+            self.transition = Some((Instant::now(), self.drawn.clone()));
+        }
+        self.drawn_expanded = has_session.then_some(expanded);
+        let progress = match &self.transition {
+            Some((started, _)) if sheet.running(started.elapsed()) => {
+                window.request_animation_frame();
+                Some(sheet.progress(started.elapsed()))
+            }
+            _ => None,
+        };
+        if progress.is_none() {
+            self.transition = None;
+        }
+        let from = self.transition.as_ref().map(|(_, from)| from.clone());
+        let drawn = std::cell::RefCell::new(CameraMap::from_fn(|_| None));
         let spec = |camera: CameraId,
-                    rect: Rect,
+                    target: Rect,
                     ring: RingMode,
-                    frames: &mut CameraMap<Option<VideoFrame>>| WindowSpec {
-            camera,
-            rect,
-            fill: fills[camera],
-            frame: frames[camera].take(),
-            ring: if has_session { ring } else { RingMode::None },
-            expanded: expanded == Some(camera),
+                    frames: &mut CameraMap<Option<VideoFrame>>| {
+            let rect = match (progress, from.as_ref().and_then(|from| from[camera])) {
+                (Some(t), Some(start)) => Rect::new(
+                    lerp(start.x, target.x, t),
+                    lerp(start.y, target.y, t),
+                    lerp(start.width, target.width, t),
+                    lerp(start.height, target.height, t),
+                ),
+                _ => target,
+            };
+            drawn.borrow_mut()[camera] = Some(target);
+            WindowSpec {
+                camera,
+                rect,
+                fill: fills[camera],
+                frame: frames[camera].take(),
+                ring: if has_session { ring } else { RingMode::None },
+                expanded: expanded == Some(camera),
+            }
         };
         let ring_for = |camera: CameraId| {
             if camera == active {
@@ -783,6 +825,7 @@ impl Render for StageView {
                 );
             }
             children.push(self.mini_car(layout.switcher, focus, cx));
+            self.drawn = drawn.take();
             return root.children(children).into_any_element();
         }
         if view == ViewMode::Grid {
@@ -796,6 +839,7 @@ impl Render for StageView {
                     )
                 })
                 .collect();
+            self.drawn = drawn.take();
             return root.children(children).into_any_element();
         }
         if view == ViewMode::Representative {
@@ -806,6 +850,7 @@ impl Render for StageView {
                     self.camera_window(spec(*camera, *rect, ring_for(*camera), &mut frames), cx),
                 );
             }
+            self.drawn = drawn.take();
             return root.children(children).into_any_element();
         }
 
@@ -845,48 +890,51 @@ impl Render for StageView {
                 )
             })
             .collect();
-        root.when_some(wedge_art, |root, art| {
-            root.child(
-                img(art)
-                    .absolute()
-                    .top_0()
-                    .left_0()
-                    .w(px(stage.width.round()))
-                    .h(px(stage.height.round())),
+        let element = root
+            .when_some(wedge_art, |root, art| {
+                root.child(
+                    img(art)
+                        .absolute()
+                        .top_0()
+                        .left_0()
+                        .w(px(stage.width.round()))
+                        .h(px(stage.height.round())),
+                )
+            })
+            .child(
+                place(shadow).child(
+                    img(self.car_shadow.clone())
+                        .size_full()
+                        .object_fit(ObjectFit::Fill),
+                ),
             )
-        })
-        .child(
-            place(shadow).child(
-                img(self.car_shadow.clone())
-                    .size_full()
-                    .object_fit(ObjectFit::Fill),
-            ),
-        )
-        .child(
-            place(car).child(
-                img(self.car.clone())
-                    .size_full()
-                    .object_fit(ObjectFit::Contain),
-            ),
-        )
-        .child({
-            let (x, y) = mount;
-            div()
-                .absolute()
-                .left(px(x - 4.0))
-                .top(px(y - 4.0))
-                .size(px(8.0))
-                .rounded_full()
-                .bg(palette.drive)
-                .shadow(vec![gpui_kit::BoxShadow {
-                    color: palette.surface.opacity(0.9),
-                    offset: point(px(0.0), px(0.0)),
-                    blur_radius: px(0.0),
-                    spread_radius: px(3.0),
-                    inset: false,
-                }])
-        })
-        .children(windows)
-        .into_any_element()
+            .child(
+                place(car).child(
+                    img(self.car.clone())
+                        .size_full()
+                        .object_fit(ObjectFit::Contain),
+                ),
+            )
+            .child({
+                let (x, y) = mount;
+                div()
+                    .absolute()
+                    .left(px(x - 4.0))
+                    .top(px(y - 4.0))
+                    .size(px(8.0))
+                    .rounded_full()
+                    .bg(palette.drive)
+                    .shadow(vec![gpui_kit::BoxShadow {
+                        color: palette.surface.opacity(0.9),
+                        offset: point(px(0.0), px(0.0)),
+                        blur_radius: px(0.0),
+                        spread_radius: px(3.0),
+                        inset: false,
+                    }])
+            })
+            .children(windows)
+            .into_any_element();
+        self.drawn = drawn.take();
+        element
     }
 }
