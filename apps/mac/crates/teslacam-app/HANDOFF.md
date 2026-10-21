@@ -91,7 +91,7 @@ AppStore (Entity) ── observed by root, library (cached), top row (cached), s
 ## Verifying
 
 ```bash
-cargo test --workspace                  # core 171, media 58 + 18 main-thread, app 80 (19 headless UI)
+cargo test --workspace                  # core 171, media 58 + 18 main-thread, app 80 (17 headless UI)
 cargo clippy --workspace --all-targets -- -D warnings && cargo fmt --check
 ./scripts/gen-fixtures.sh               # media fixtures + the realistic library
 ./scripts/capture.sh /tmp/x.png TESLACAM_OPEN="$PWD/.fixtures/TeslaCam" TESLACAM_SELECT=…  # see README
