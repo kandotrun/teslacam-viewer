@@ -13,7 +13,8 @@ use gpui_kit::{
     Anchor, AnchoredPositionMode, AnyElement, Bounds, Context, DispatchPhase, Entity, FontWeight,
     InteractiveElement as _, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, ParentElement as _, Pixels, Render, Role, StatefulInteractiveElement as _,
-    Styled as _, Subscription, Window, anchored, canvas, deferred, div, point, px, relative,
+    Styled as _, Subscription, TestSupportExt as _, Window, anchored, canvas, deferred, div, point,
+    px, relative,
 };
 use teslacam_core::app_state::Step;
 use teslacam_core::copy;
@@ -317,6 +318,7 @@ impl TransportView {
                     cx.notify();
                 }),
             )
+            .test_support()
             .into_any_element()
     }
 
@@ -378,14 +380,15 @@ impl TransportView {
                             .children(
                                 PlaybackRate::ALL
                                     .map(|choice| rate_item(choice, choice == rate, &palette, cx)),
-                            ),
+                            )
+                            .test_support(),
                     ),
             )
             .with_priority(1)
         });
         div()
             .relative()
-            .child(pill)
+            .child(pill.test_support())
             .children(menu)
             .into_any_element()
     }
@@ -425,6 +428,7 @@ fn rate_item(
             this.rate_open = false;
             this.input(PlaybackInput::SetRate(choice), cx);
         }))
+        .test_support()
         .into_any_element()
 }
 
@@ -455,6 +459,7 @@ fn skip_button(forward: bool, cx: &mut Context<TransportView>) -> AnyElement {
         .on_click(cx.listener(move |this, _, _, cx| {
             this.input(PlaybackInput::Skip(seconds), cx);
         }))
+        .test_support()
         .into_any_element()
 }
 
@@ -558,7 +563,7 @@ impl Render for TransportView {
             .child(skip_button(true, cx))
             .child(div().w(px(4.0)))
             .child(self.rate_pill(snapshot.rate, cx))
-            .child(newer);
+            .child(newer.test_support());
         let row = div()
             .flex()
             .items_center()
@@ -566,8 +571,8 @@ impl Render for TransportView {
             .h(px(86.0))
             .pl(px(10.0))
             .pr(px(16.0))
-            .child(older)
-            .child(play)
+            .child(older.test_support())
+            .child(play.test_support())
             .child(clock)
             .child(self.scrubber(&snapshot, cx))
             .child(tools);
@@ -593,7 +598,8 @@ impl Render for TransportView {
                         .ui_text(12.0, 400.0)
                         .line_height(relative(1.5))
                         .text_color(palette.warning)
-                        .children(message.lines().map(|line| div().child(line))),
+                        .children(message.lines().map(|line| div().child(line)))
+                        .test_support(),
                 )
             })
             .into_any_element()

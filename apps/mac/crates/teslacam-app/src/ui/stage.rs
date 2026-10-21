@@ -16,8 +16,9 @@ use gpui_kit::{
     Animation, AnimationExt as _, AnyElement, Bounds, Context, Entity, Hsla, Image, ImageFormat,
     InteractiveElement as _, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, ObjectFit, ParentElement as _, Pixels, Render, RenderImage, Role,
-    StatefulInteractiveElement as _, Styled as _, StyledImage as _, Subscription, Transformation,
-    Window, canvas, div, img, pattern_slash, percentage, point, px, surface,
+    StatefulInteractiveElement as _, Styled as _, StyledImage as _, Subscription,
+    TestSupportExt as _, Transformation, Window, canvas, div, img, pattern_slash, percentage,
+    point, px, surface,
 };
 use teslacam_core::camera::{CameraId, CameraMap};
 use teslacam_core::copy;
@@ -380,6 +381,7 @@ impl StageView {
                     store.playback(PlaybackInput::ToggleCamera(camera), cx);
                 });
             }))
+            .test_support()
             .into_any_element()
     }
 
@@ -443,7 +445,9 @@ impl StageView {
                             store.playback(PlaybackInput::ShowCamera(camera), cx);
                         });
                     }))
+                    .test_support()
             }))
+            .test_support()
             .into_any_element()
     }
 

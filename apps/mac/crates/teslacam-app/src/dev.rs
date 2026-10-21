@@ -8,7 +8,7 @@
 //! | `TESLACAM_VIEW=vehicle\|grid\|expanded:<camera>\|representative` | the stage view of the session |
 //! | `TESLACAM_PLAY=1` | asks the session to play |
 //! | `TESLACAM_SEEK=<seconds>` | seeks the session |
-//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `rate` (the rate menu) |
+//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `exportprogress` (the running export's popover), `rate` (the rate menu) |
 //! | `TESLACAM_WINDOW=<w>x<h>` | window content size in points |
 //! | `TESLACAM_CAPTURE=<png>` | captures the window with `screencapture` after a delay, then quits |
 //! | `TESLACAM_CAPTURE_DELAY_MS=<ms>` | the delay before the capture (default 2500) |
@@ -51,6 +51,8 @@ pub enum DevUi {
     Category(ClipCategory),
     /// The export dialog.
     Export,
+    /// The running export's popover.
+    ExportProgress,
     /// The rate menu.
     Rate,
 }
@@ -108,6 +110,7 @@ fn parse_ui(item: &str) -> Option<DevUi> {
         "technical" => Some(DevUi::Technical),
         "datepicker" => Some(DevUi::DatePicker),
         "export" => Some(DevUi::Export),
+        "exportprogress" => Some(DevUi::ExportProgress),
         "rate" => Some(DevUi::Rate),
         _ => {
             let (key, value) = item.split_once(':')?;

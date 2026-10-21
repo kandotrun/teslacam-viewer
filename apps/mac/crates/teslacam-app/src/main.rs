@@ -174,6 +174,9 @@ fn apply_library_options(
                         DevUi::Cluster(event_id) => {
                             library.update(cx, |library, cx| library.open_cluster_of(event_id, cx))
                         }
+                        DevUi::ExportProgress => {
+                            top_row.update(cx, |top, cx| top.open_export_progress(cx))
+                        }
                         DevUi::Rate => {
                             transport.update(cx, |transport, cx| transport.open_rate_menu(cx))
                         }
@@ -228,6 +231,12 @@ fn main() {
 
             let store = cx.new(|_| AppStore::new(options.scan_delay));
             install_menus(&store, cx);
+            let quitting = store.clone();
+            cx.on_app_quit(move |cx| {
+                quitting.update(cx, |store, cx| store.shutdown(cx));
+                async {}
+            })
+            .detach();
 
             let (width, height) = options.window_size.unwrap_or(DEFAULT_SIZE);
             let bounds = Bounds::centered(None, size(px(width), px(height)), cx);

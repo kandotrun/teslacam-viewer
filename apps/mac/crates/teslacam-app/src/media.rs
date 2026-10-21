@@ -238,6 +238,21 @@ impl SessionMedia {
             job.cancel();
         }
     }
+
+    /// When the app quits: stops a running export and waits up to `timeout` for AVFoundation to
+    /// stop, so the partial file and the encoder's temporary file are removed. (Dropping a running
+    /// job cannot wait.) Blocks the main thread; the completion arrives on another queue.
+    pub fn abort_export_and_wait(&mut self, timeout: std::time::Duration) {
+        let Some(job) = &mut self.export else {
+            return;
+        };
+        job.cancel();
+        let deadline = std::time::Instant::now() + timeout;
+        while !job.poll().is_done() && std::time::Instant::now() < deadline {
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+        self.export = None;
+    }
 }
 
 /// What the representative window draws.

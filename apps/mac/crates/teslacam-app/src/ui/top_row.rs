@@ -3,10 +3,10 @@
 
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    AnchoredPositionMode, AnyElement, ClickEvent, Context, Entity, FontWeight, Image, ImageFormat,
-    InteractiveElement as _, IntoElement, ParentElement as _, Render, Role,
-    StatefulInteractiveElement as _, Styled as _, Subscription, Toggled, Window, anchored,
-    deferred, div, img, point, px, relative,
+    AnchoredPositionMode, AnyElement, ClickEvent, Context, Entity, FontWeight,
+    InteractiveElement as _, IntoElement, ParentElement as _, Render, RenderImage, Role,
+    StatefulInteractiveElement as _, Styled as _, Subscription, TestSupportExt as _, Toggled,
+    Window, anchored, deferred, div, img, point, px, relative,
 };
 use std::sync::Arc;
 use teslacam_core::copy;
@@ -34,6 +34,8 @@ pub struct TopRow {
     export_reason_open: bool,
     /// The running export's popover (clock, bar, `中止`).
     export_progress_open: bool,
+    /// The progress ring for (percent, scale bits).
+    ring: Option<((u8, u32), Arc<RenderImage>)>,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -58,6 +60,7 @@ impl TopRow {
             technical_open: false,
             export_reason_open: false,
             export_progress_open: false,
+            ring: None,
         }
     }
 
@@ -69,6 +72,12 @@ impl TopRow {
         self.export_progress_open = false;
         cx.notify();
         open
+    }
+
+    /// Opens the running export's popover (development hook).
+    pub fn open_export_progress(&mut self, cx: &mut Context<Self>) {
+        self.export_progress_open = true;
+        cx.notify();
     }
 
     /// Opens the details popover (and its `技術情報` disclosure).
@@ -223,20 +232,56 @@ impl TopRow {
 
     /// The export action and what replaces it while exporting, after completion or after a
     /// failure (`DESIGN.md` §6 Actions pill, Mac form).
+    /// The progress ring at `percent`, rasterised synchronously (an SVG image would load
+    /// asynchronously for every new percentage and never show in this cached view).
+    fn ring_image(
+        &mut self,
+        percent: u8,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Option<Arc<RenderImage>> {
+        let scale = window.scale_factor();
+        if let Some((key, image)) = &self.ring
+            && *key == (percent, scale.to_bits())
+        {
+            return Some(image.clone());
+        }
+        let colors = &AppTheme::get(cx).tokens.colors;
+        let svg = progress_ring_svg(f32::from(percent) / 100.0, colors.line, colors.drive);
+        let image = cx
+            .svg_renderer()
+            .render_single_frame(svg.as_bytes(), scale)
+            .ok()?;
+        if let Some((_, previous)) = self
+            .ring
+            .replace(((percent, scale.to_bits()), image.clone()))
+        {
+            cx.drop_image(previous, Some(window));
+        }
+        Some(image)
+    }
+
     fn export_control(
         &mut self,
         state: ExportState,
         reason: Option<&'static str>,
         duration: f64,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
+        let ring = match state {
+            ExportState::Running { progress } => {
+                self.ring_image(copy::progress_percent(progress), window, cx)
+            }
+            _ => {
+                self.export_progress_open = false;
+                None
+            }
+        };
         let theme = AppTheme::get(cx);
         let (palette, tokens) = (theme.palette, theme.tokens);
         let hit = tokens.sizes.hit_target_desktop;
         let fill = palette.fill;
-        if !matches!(state, ExportState::Running { .. }) {
-            self.export_progress_open = false;
-        }
         // A popover right-aligned under the actions pill.
         let popover = |content: gpui_kit::Div, role: Role| {
             deferred(
@@ -274,11 +319,6 @@ impl TopRow {
         let control = div().relative().flex().items_center().gap(px(4.0));
         match state {
             ExportState::Running { progress } => {
-                let ring = Arc::new(Image::from_bytes(
-                    ImageFormat::Svg,
-                    progress_ring_svg(progress as f32, tokens.colors.line, tokens.colors.drive)
-                        .into_bytes(),
-                ));
                 let button = div()
                     .id("export-progress")
                     .role(Role::Button)
@@ -295,7 +335,7 @@ impl TopRow {
                     .whitespace_nowrap()
                     .cursor_pointer()
                     .hover(move |style| style.bg(fill))
-                    .child(img(ring).size(px(20.0)).flex_none())
+                    .children(ring.map(|ring| img(ring).size(px(20.0)).flex_none()))
                     .child(numeral_text(
                         &copy::export_running_text(progress),
                         14.0,
@@ -350,7 +390,10 @@ impl TopRow {
                         Role::Status,
                     )
                 });
-                control.child(button).children(details).into_any_element()
+                control
+                    .child(button.test_support())
+                    .children(details)
+                    .into_any_element()
             }
             ExportState::Done { .. } => control
                 .child(
@@ -436,7 +479,7 @@ impl TopRow {
                     _ => None,
                 };
                 control
-                    .child(button)
+                    .child(button.test_support())
                     .children(note.map(|(text, role)| {
                         popover(div().text_color(palette.ink_2).child(text), role)
                     }))
@@ -698,7 +741,7 @@ impl Render for TopRow {
                             .map(|mode| self.view_option(mode, current, cx)),
                     ),
             )
-            .child(self.export_control(export_state, export_reason, duration, cx));
+            .child(self.export_control(export_state, export_reason, duration, window, cx));
         div()
             .size_full()
             .flex()

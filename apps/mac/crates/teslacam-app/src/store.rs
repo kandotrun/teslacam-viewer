@@ -185,6 +185,15 @@ impl AppStore {
         self.media = None;
     }
 
+    /// The app is quitting: a running export is stopped and its partial output removed.
+    pub fn shutdown(&mut self, cx: &mut Context<Self>) {
+        if let Some(media) = &self.media {
+            media.update(cx, |media, _| {
+                media.abort_export_and_wait(Duration::from_secs(2));
+            });
+        }
+    }
+
     /// Shows the open panel (directories only) and scans the chosen folder.
     pub fn choose_folder(&mut self, cx: &mut Context<Self>) {
         let paths = cx.prompt_for_paths(PathPromptOptions {

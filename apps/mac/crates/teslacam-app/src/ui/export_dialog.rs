@@ -12,7 +12,7 @@ use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
     AppContext as _, Context, Entity, Image, ImageFormat, InteractiveElement as _, IntoElement,
     ObjectFit, ParentElement as _, Render, Role, StatefulInteractiveElement as _, Styled as _,
-    StyledImage as _, Subscription, Task, Window, div, img, px, relative,
+    StyledImage as _, Subscription, Task, TestSupportExt as _, Window, div, img, px, relative,
 };
 use teslacam_core::camera::CameraMap;
 use teslacam_core::copy;
@@ -257,7 +257,8 @@ impl Render for ExportDialog {
                             .h(px(44.0))
                             .on_click(cx.listener(|this, _, _, cx| {
                                 this.dispatch(ExportAction::Dismiss, cx)
-                            })),
+                            }))
+                            .test_support(),
                     )
                     .child(
                         primary_button(
@@ -275,7 +276,8 @@ impl Render for ExportDialog {
                             cx,
                         )
                         .h(px(44.0))
-                        .px(px(22.0)),
+                        .px(px(22.0))
+                        .test_support(),
                     ),
             );
         // The scrim covers the window; the dialog is centred on the stage.
@@ -295,7 +297,7 @@ impl Render for ExportDialog {
                     .flex()
                     .items_center()
                     .justify_center()
-                    .child(dialog),
+                    .child(dialog.test_support()),
             )
             .into_any_element()
     }
