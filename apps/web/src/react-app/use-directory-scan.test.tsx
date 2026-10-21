@@ -106,6 +106,39 @@ describe('useDirectoryScan generation', () => {
     expect(actions.map((action) => action.kind)).toEqual(['scan-cancelled'])
   })
 
+  it('ignores a second request while the picker is still open and scans the folder it returns', async () => {
+    let pickFolder: (root: FakeDirectoryHandle) => void = () => undefined
+    let calls = 0
+    Object.defineProperty(window, 'showDirectoryPicker', {
+      configurable: true,
+      value: async () => {
+        calls += 1
+        // Chromium rejects a concurrent call with NotAllowedError ("File picker already active.").
+        if (calls > 1) throw new DOMException('File picker already active.', 'NotAllowedError')
+        return new Promise<FakeDirectoryHandle>((resolve) => {
+          pickFolder = resolve
+        })
+      },
+    })
+    const actions: AppAction[] = []
+    const hook = renderHook(() =>
+      useDirectoryScan((action) => {
+        actions.push(action)
+      }),
+    )
+
+    act(() => hook.result.current.requestDirectory())
+    act(() => hook.result.current.requestDirectory())
+    await act(async () => Promise.resolve())
+    expect(actions).toEqual([])
+
+    pickFolder(nestedDirectory(MAX_DIRECTORY_DEPTH + 1))
+    await vi.waitFor(() => expect(actions.at(-1)?.kind).toBe('scan-failed'))
+
+    expect(calls).toBe(1)
+    expect(actions.map((action) => action.kind)).toEqual(['scan-started', 'scan-failed'])
+  })
+
   it('cancels a running scan and ignores whatever it finds afterwards', async () => {
     let releaseFile: () => void = () => undefined
     const pendingFile = new Promise<File>((resolve) => {

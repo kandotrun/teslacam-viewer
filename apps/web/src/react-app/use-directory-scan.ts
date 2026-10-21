@@ -2,7 +2,11 @@ import { useCallback, useRef, type Dispatch, type RefObject } from 'react'
 
 import { buildTeslaCamLibrary } from '../teslacam/build-library'
 import { filesFromDirectoryInput } from '../teslacam/directory-input'
-import { requestTeslaCamDirectory, scanTeslaCamDirectory } from '../teslacam/directory-picker'
+import {
+  requestTeslaCamDirectory,
+  scanTeslaCamDirectory,
+  type DirectoryRequestResult,
+} from '../teslacam/directory-picker'
 import { ScanLimitError } from '../teslacam/scan-limits'
 import type { LocalFileRef } from '../teslacam/types'
 import type { AppAction } from './app-state'
@@ -26,6 +30,8 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
   const fallbackInputRef = useRef<HTMLInputElement>(null)
   const scanGenerationRef = useRef(0)
   const scanAbortRef = useRef<AbortController | null>(null)
+  /** Set while `showDirectoryPicker()` is open; a second concurrent call would be rejected as denied. */
+  const pickerPendingRef = useRef(false)
   const isNativePickerAvailable = globalThis.showDirectoryPicker !== undefined
 
   const buildLibrary = useCallback(
@@ -64,11 +70,18 @@ export function useDirectoryScan(dispatch: Dispatch<AppAction>): DirectoryScan {
   }, [])
 
   const selectNativeDirectory = useCallback(async (): Promise<void> => {
+    if (pickerPendingRef.current) return
     const generation = nextGeneration()
     const isCurrent = (): boolean => scanGenerationRef.current === generation
     try {
       // The loaded library stays on screen while the picker is open; a cancelled re-pick keeps it.
-      const request = await requestTeslaCamDirectory()
+      pickerPendingRef.current = true
+      let request: DirectoryRequestResult
+      try {
+        request = await requestTeslaCamDirectory()
+      } finally {
+        pickerPendingRef.current = false
+      }
       if (!isCurrent()) return
       switch (request.status) {
         case 'cancelled':
