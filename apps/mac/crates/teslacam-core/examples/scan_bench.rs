@@ -13,7 +13,9 @@ use teslacam_core::scan::scan_library;
 fn main() {
     let mut args = std::env::args().skip(1);
     let root = PathBuf::from(args.next().expect("usage: scan_bench <folder> [runs]"));
-    let runs: usize = args.next().map_or(5, |runs| runs.parse().expect("runs must be a number"));
+    let runs: usize = args
+        .next()
+        .map_or(5, |runs| runs.parse().expect("runs must be a number"));
     let cancel = AtomicBool::new(false);
     let mut millis = Vec::with_capacity(runs);
     for run in 1..=runs {
@@ -28,5 +30,10 @@ fn main() {
         );
     }
     millis.sort_by(f64::total_cmp);
-    println!("median {:.1} ms (min {:.1}, max {:.1})", millis[runs / 2], millis[0], millis[runs - 1]);
+    println!(
+        "median {:.1} ms (min {:.1}, max {:.1})",
+        millis[runs / 2],
+        millis[0],
+        millis[runs - 1]
+    );
 }

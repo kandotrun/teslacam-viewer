@@ -48,6 +48,8 @@ fn open_floor_with(cx: &mut TestAppContext, library: Arc<Library>) -> Floor {
     cx.update(|cx| {
         gpui_kit::init(cx);
         AppTheme::install(cx);
+        // The motion-sheet transitions run on wall-clock time; tests click windows where they come to rest.
+        cx.set_reduce_motion(true);
     });
     let store = cx.new(|_| AppStore::new(Duration::ZERO));
     let (window, root) = cx.update(|cx| {
