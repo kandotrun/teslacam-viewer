@@ -115,6 +115,10 @@ segments on the wall clock instead (`teslacam_core::event_timeline`):
 - Segment *i* starts at `ordinalSeconds(timestamp_i) − ordinalSeconds(timestamp_0)` seconds.
 - Each camera's file sits at its segment's start and is truncated where the next segment starts. A
   missing file, an undecodable file or the end of a short clip leaves a gap for that camera.
+- A tail shorter than 1 s between the end of a clip and the end of its window (the next segment's
+  start, or the event end) holds the clip's last frame instead of becoming a gap, so a 59.97 s clip
+  followed by a segment at 60 s never flashes a missing window. `teslacam-core` (`event_timeline`) and
+  `teslacam-media` (`timeline`) apply the same rule, and the composite export draws no `記録なし` there.
 - The event duration is the start of the last segment plus the longest clip of that segment (60 s when no
   clip length is known yet).
 - Playback seconds map to `(segment index, offset)`: the segment is the last one that starts at or before

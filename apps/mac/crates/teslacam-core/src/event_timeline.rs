@@ -7,6 +7,9 @@
 //! - each camera's file sits at its segment's start and is truncated where the next segment starts;
 //! - a missing file, a file that cannot be played or the end of a short clip leaves a gap for that
 //!   camera (gaps are part of the event time: the clock keeps running through them);
+//! - a tail shorter than [`HOLD_TOLERANCE_SECONDS`] between the end of a clip and the end of its
+//!   window holds the clip's last frame instead of becoming a gap, so a 59.97 s clip followed by a
+//!   segment at 60 s never flashes a missing window (the same rule as `teslacam-media`'s timeline);
 //! - the event lasts until the start of the last segment plus its longest clip, or
 //!   [`NOMINAL_SEGMENT_SECONDS`] when no clip length of the last segment is known.
 //!
@@ -19,6 +22,9 @@ use crate::timestamp::{LocalTimestamp, parse_filename_local_timestamp};
 
 /// Length assumed for a segment whose clip lengths are unknown.
 pub const NOMINAL_SEGMENT_SECONDS: f64 = 60.0;
+
+/// Tails shorter than this hold the clip's last frame instead of becoming a gap.
+pub const HOLD_TOLERANCE_SECONDS: f64 = 1.0;
 
 /// One segment's start and the media length of each camera's clip.
 #[derive(Debug, Clone, PartialEq)]
@@ -49,12 +55,15 @@ pub struct Placement {
     pub start: f64,
     /// Seconds of the clip that are used (after truncation at the next segment).
     pub duration: f64,
+    /// Seconds after the clip during which its last frame is held to close a tail shorter than
+    /// [`HOLD_TOLERANCE_SECONDS`] (0 when there is none).
+    pub hold: f64,
 }
 
 impl Placement {
-    /// Event seconds at which the clip stops.
+    /// Event seconds at which the clip, including its hold, stops covering the camera.
     pub fn end(&self) -> f64 {
-        self.start + self.duration
+        self.start + self.duration + self.hold
     }
 }
 
@@ -134,10 +143,16 @@ impl EventTimeline {
                 .filter_map(|(segment_index, (segment, window))| {
                     let length =
                         usable_length(segment.durations[camera])?.min(window.end - window.start);
+                    let tail = window.end - window.start - length;
                     (length > 0.0).then_some(Placement {
                         segment_index,
                         start: window.start,
                         duration: length,
+                        hold: if tail > 0.0 && tail < HOLD_TOLERANCE_SECONDS {
+                            tail
+                        } else {
+                            0.0
+                        },
                     })
                 })
                 .collect()
@@ -258,8 +273,9 @@ impl EventTimeline {
 
     /// The clip `camera` shows at `seconds` and the media time inside it; `None` in a gap.
     ///
-    /// A clip covers `[start, end)`; at the very end of the event the last clip that ends there
-    /// still covers it, so the final frame stays visible.
+    /// A clip covers `[start, end)` including its hold, during which the media time stays at the
+    /// clip's end (its last frame); at the very end of the event the last clip that ends there still
+    /// covers it, so the final frame stays visible.
     pub fn media_time(&self, camera: CameraId, seconds: f64) -> Option<(Placement, f64)> {
         let seconds = self.clamp(seconds);
         let placements = &self.placements[camera];
@@ -271,7 +287,7 @@ impl EventTimeline {
                     seconds >= self.duration && placement.end() >= self.duration
                 })
             })?;
-        Some((*covering, seconds - covering.start))
+        Some((*covering, (seconds - covering.start).min(covering.duration)))
     }
 
     /// The start of the segment containing `seconds`.
@@ -343,12 +359,14 @@ mod tests {
                 Placement {
                     segment_index: 0,
                     start: 0.0,
-                    duration: 50.0
+                    duration: 50.0,
+                    hold: 0.0
                 },
                 Placement {
                     segment_index: 1,
                     start: 50.0,
-                    duration: 60.0
+                    duration: 60.0,
+                    hold: 0.0
                 },
             ]
         );
@@ -410,6 +428,62 @@ mod tests {
         assert_eq!(timeline.media_time(CameraId::Front, 61.0), None);
         assert_eq!(timeline.media_time(CameraId::LeftPillar, 1.0), None);
         assert!(timeline.has_media());
+    }
+
+    #[test]
+    fn tails_under_a_second_hold_the_last_frame() {
+        let timeline = EventTimeline::new(&[
+            segment(
+                "2026-08-21_12-00-00",
+                &[(CameraId::Front, 60.0), (CameraId::Back, 59.97)],
+            ),
+            segment(
+                "2026-08-21_12-01-00",
+                &[(CameraId::Front, 60.0), (CameraId::Back, 59.5)],
+            ),
+        ])
+        .expect("timeline");
+        let back = timeline.placements(CameraId::Back);
+        assert_eq!(back[0].duration, 59.97);
+        assert!((back[0].hold - 0.03).abs() < 1e-9);
+        assert!((back[0].end() - 60.0).abs() < 1e-9);
+        assert!((back[1].hold - 0.5).abs() < 1e-9);
+        assert_eq!(timeline.placements(CameraId::Front)[0].hold, 0.0);
+        // Inside the hold the clip's last frame stays on screen.
+        assert_eq!(
+            timeline
+                .media_time(CameraId::Back, 59.99)
+                .map(|(placement, time)| (placement.segment_index, time)),
+            Some((0, 59.97))
+        );
+        assert_eq!(
+            timeline
+                .media_time(CameraId::Back, 119.8)
+                .map(|(placement, time)| (placement.segment_index, time)),
+            Some((1, 59.5))
+        );
+        assert_eq!(
+            timeline
+                .media_time(CameraId::Back, 120.0)
+                .map(|(placement, time)| (placement.segment_index, time)),
+            Some((1, 59.5))
+        );
+    }
+
+    #[test]
+    fn tails_of_a_second_or_more_stay_gaps() {
+        let timeline = EventTimeline::new(&[
+            segment(
+                "2026-08-21_12-00-00",
+                &[(CameraId::Front, 60.0), (CameraId::Back, 59.0)],
+            ),
+            segment("2026-08-21_12-01-00", &[(CameraId::Front, 60.0)]),
+        ])
+        .expect("timeline");
+        let back = timeline.placements(CameraId::Back);
+        assert_eq!(back[0].hold, 0.0);
+        assert_eq!(back[0].end(), 59.0);
+        assert_eq!(timeline.media_time(CameraId::Back, 59.5), None);
     }
 
     #[test]
@@ -526,7 +600,8 @@ mod tests {
             &[Placement {
                 segment_index: 0,
                 start: 0.0,
-                duration: 90.0
+                duration: 90.0,
+                hold: 0.0
             }]
         );
         assert_eq!(timeline.placements(CameraId::Front).len(), 2);
