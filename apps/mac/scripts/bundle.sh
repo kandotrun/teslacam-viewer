@@ -6,7 +6,8 @@
 #
 # The bundle is neither signed nor notarized: macOS Gatekeeper asks before the first launch of a
 # copy downloaded from elsewhere (right-click > Open). Fonts, icons and the car image are compiled
-# into the binary, so the bundle holds the executable and Info.plist only.
+# into the binary, so the bundle holds the executable, Info.plist and the app icon, which is
+# rendered from assets/AppIcon.svg with sips and iconutil.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -23,6 +24,19 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$ROOT/target/release/$EXECUTABLE" "$APP/Contents/MacOS/$EXECUTABLE"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 
+ICONSET="$ROOT/target/bundle/AppIcon.iconset"
+rm -rf "$ICONSET"
+mkdir -p "$ICONSET"
+sips -s format png "$ROOT/assets/AppIcon.svg" --out "$ICONSET/icon_512x512@2x.png" >/dev/null
+for size in 16 32 128 256 512; do
+  sips -z "$size" "$size" "$ICONSET/icon_512x512@2x.png" --out "$ICONSET/icon_${size}x${size}.png" >/dev/null
+  double=$((size * 2))
+  [[ $size == 512 ]] || sips -z "$double" "$double" "$ICONSET/icon_512x512@2x.png" \
+    --out "$ICONSET/icon_${size}x${size}@2x.png" >/dev/null
+done
+iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
+rm -rf "$ICONSET"
+
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -32,6 +46,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <string>ja</string>
   <key>CFBundleDisplayName</key>
   <string>$NAME</string>
+  <key>CFBundleIconFile</key>
+  <string>AppIcon</string>
   <key>CFBundleExecutable</key>
   <string>$EXECUTABLE</string>
   <key>CFBundleIdentifier</key>
