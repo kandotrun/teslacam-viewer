@@ -6,13 +6,14 @@
 //! | `TESLACAM_OPEN=<folder>` | scans the folder at launch instead of waiting for the open panel |
 //! | `TESLACAM_SELECT=<event id>` | selects that event once the library is loaded |
 //! | `TESLACAM_VIEW=vehicle\|grid\|expanded:<camera>\|representative` | the stage view of the session |
-//! | `TESLACAM_PLAY=1` | asks the session to play |
+//! | `TESLACAM_PLAY=1\|0` | asks the session to play (1) or pause (0) |
 //! | `TESLACAM_SEEK=<seconds>` | seeks the session |
-//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `exportprogress` (the running export's popover), `rate` (the rate menu) |
+//! | `TESLACAM_UI=<item>,…` | opens UI: `details`, `technical`, `datepicker`, `search:<query>`, `cluster:<event id>`, `category:<recent\|saved\|sentry>`, `export` (the export dialog), `exportprogress` (the running export's popover), `rate` (the rate menu), `representativeplay` (presses play on `event.mp4`) |
 //! | `TESLACAM_WINDOW=<w>x<h>` | window content size in points |
 //! | `TESLACAM_CAPTURE=<png>` | captures the window with `screencapture` after a delay, then quits |
 //! | `TESLACAM_CAPTURE_DELAY_MS=<ms>` | the delay before the capture (default 2500) |
 //! | `TESLACAM_SCAN_DELAY_MS=<ms>` | slows the scan down by this much per progress report |
+//! | `TESLACAM_MEDIA_DELAY_MS=<ms>` | opens the players this much later (shows the loading state) |
 //! | `TESLACAM_EXPORT_TO=<mp4>` | starts the composite export of the selected event to this file (no save panel) |
 //! | `TESLACAM_SYNC_PROBE=1` | logs how many frames apart the drawn cameras are (media fixtures only, see `sync_probe`) |
 
@@ -55,6 +56,8 @@ pub enum DevUi {
     ExportProgress,
     /// The rate menu.
     Rate,
+    /// Play on the representative video.
+    RepresentativePlay,
 }
 
 /// Development switches the views read (a GPUI global; absent in tests).
@@ -76,7 +79,7 @@ pub struct DevOptions {
     /// `TESLACAM_VIEW`
     pub view: Option<DevView>,
     /// `TESLACAM_PLAY`
-    pub play: bool,
+    pub play: Option<bool>,
     /// `TESLACAM_SEEK`
     pub seek: Option<f64>,
     /// `TESLACAM_UI`
@@ -89,6 +92,8 @@ pub struct DevOptions {
     pub capture_delay: Duration,
     /// `TESLACAM_SCAN_DELAY_MS`
     pub scan_delay: Duration,
+    /// `TESLACAM_MEDIA_DELAY_MS`
+    pub media_delay: Duration,
     /// `TESLACAM_EXPORT_TO`
     pub export_to: Option<PathBuf>,
     /// `TESLACAM_SYNC_PROBE`
@@ -112,6 +117,7 @@ fn parse_ui(item: &str) -> Option<DevUi> {
         "export" => Some(DevUi::Export),
         "exportprogress" => Some(DevUi::ExportProgress),
         "rate" => Some(DevUi::Rate),
+        "representativeplay" => Some(DevUi::RepresentativePlay),
         _ => {
             let (key, value) = item.split_once(':')?;
             match key {
@@ -146,7 +152,11 @@ impl DevOptions {
             open: non_empty("TESLACAM_OPEN").map(PathBuf::from),
             select: non_empty("TESLACAM_SELECT"),
             view: non_empty("TESLACAM_VIEW").and_then(|value| parse_view(value.trim())),
-            play: non_empty("TESLACAM_PLAY").is_some_and(|value| value.trim() == "1"),
+            play: non_empty("TESLACAM_PLAY").and_then(|value| match value.trim() {
+                "1" => Some(true),
+                "0" => Some(false),
+                _ => None,
+            }),
             seek: non_empty("TESLACAM_SEEK").and_then(|value| value.trim().parse().ok()),
             ui: non_empty("TESLACAM_UI")
                 .map(|value| {
@@ -160,6 +170,7 @@ impl DevOptions {
             capture: non_empty("TESLACAM_CAPTURE").map(PathBuf::from),
             capture_delay: millis(non_empty("TESLACAM_CAPTURE_DELAY_MS"), 2_500),
             scan_delay: millis(non_empty("TESLACAM_SCAN_DELAY_MS"), 0),
+            media_delay: millis(non_empty("TESLACAM_MEDIA_DELAY_MS"), 0),
             export_to: non_empty("TESLACAM_EXPORT_TO").map(PathBuf::from),
             sync_probe: non_empty("TESLACAM_SYNC_PROBE").is_some_and(|value| value.trim() == "1"),
         }
@@ -207,6 +218,7 @@ mod tests {
                 "details, search:20:35,cluster:saved-1,category:sentry,bogus,export,rate",
             ),
             ("TESLACAM_EXPORT_TO", "/tmp/out.mp4"),
+            ("TESLACAM_MEDIA_DELAY_MS", "1500"),
             ("TESLACAM_SYNC_PROBE", "1"),
             ("TESLACAM_WINDOW", "1100x700"),
             ("TESLACAM_CAPTURE", "/tmp/shot.png"),
@@ -218,7 +230,7 @@ mod tests {
             Some(std::path::Path::new("/Volumes/TESLA/TeslaCam"))
         );
         assert_eq!(options.view, Some(DevView::Expanded(CameraId::LeftPillar)));
-        assert!(options.play);
+        assert_eq!(options.play, Some(true));
         assert_eq!(options.seek, Some(42.5));
         assert_eq!(
             options.ui,
@@ -236,9 +248,16 @@ mod tests {
             Some(std::path::Path::new("/tmp/out.mp4"))
         );
         assert!(options.sync_probe);
+        assert_eq!(options.media_delay, Duration::from_millis(1_500));
         assert_eq!(options.window_size, Some((1100.0, 700.0)));
         assert_eq!(options.capture_delay, Duration::from_millis(800));
         assert_eq!(options.scan_delay, Duration::from_millis(30));
+    }
+
+    #[test]
+    fn play_can_ask_for_a_pause() {
+        assert_eq!(options(&[("TESLACAM_PLAY", "0")]).play, Some(false));
+        assert_eq!(options(&[("TESLACAM_PLAY", "yes")]).play, None);
     }
 
     #[test]

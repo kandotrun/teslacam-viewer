@@ -133,8 +133,10 @@ fn apply_library_options(
         if let Some(seconds) = options.seek {
             store.playback(PlaybackInput::Seek(seconds), cx);
         }
-        if options.play {
-            store.playback(PlaybackInput::Play, cx);
+        match options.play {
+            Some(true) => store.playback(PlaybackInput::Play, cx),
+            Some(false) => store.playback(PlaybackInput::Pause, cx),
+            None => {}
         }
         if options.ui.contains(&DevUi::Export) || options.export_to.is_some() {
             store.export(ExportAction::Open, cx);
@@ -146,6 +148,7 @@ fn apply_library_options(
     });
     let ui = options.ui.clone();
     let root = root.clone();
+    let store = store.clone();
     cx.spawn(async move |cx: &mut AsyncApp| {
         // Let the rail measure itself before clusters are looked up.
         cx.background_executor()
@@ -176,6 +179,14 @@ fn apply_library_options(
                         }
                         DevUi::ExportProgress => {
                             top_row.update(cx, |top, cx| top.open_export_progress(cx))
+                        }
+                        DevUi::RepresentativePlay => {
+                            if let Some(media) = store.read(cx).media().cloned() {
+                                media.update(cx, |media, _| {
+                                    media.toggle_representative(teslacam_media::host_now())
+                                });
+                            }
+                            root.update(cx, |_, cx| cx.notify());
                         }
                         DevUi::Rate => {
                             transport.update(cx, |transport, cx| transport.open_rate_menu(cx))
@@ -229,7 +240,11 @@ fn main() {
             });
             force_light_appearance();
 
-            let store = cx.new(|_| AppStore::new(options.scan_delay));
+            let store = cx.new(|_| {
+                let mut store = AppStore::new(options.scan_delay);
+                store.set_media_delay(options.media_delay);
+                store
+            });
             install_menus(&store, cx);
             let quitting = store.clone();
             cx.on_app_quit(move |cx| {

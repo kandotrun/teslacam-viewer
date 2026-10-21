@@ -10,11 +10,10 @@ use std::rc::Rc;
 
 use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{
-    Anchor, AnchoredPositionMode, AnyElement, Bounds, Context, DispatchPhase, Entity, FontWeight,
-    InteractiveElement as _, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent,
-    MouseUpEvent, ParentElement as _, Pixels, Render, Role, StatefulInteractiveElement as _,
-    Styled as _, Subscription, TestSupportExt as _, Window, anchored, canvas, deferred, div, point,
-    px, relative,
+    AnyElement, Bounds, Context, DispatchPhase, Entity, FontWeight, InteractiveElement as _,
+    IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement as _,
+    Pixels, Render, Role, StatefulInteractiveElement as _, Styled as _, Subscription,
+    TestSupportExt as _, Window, canvas, deferred, div, point, px, relative,
 };
 use teslacam_core::app_state::Step;
 use teslacam_core::copy;
@@ -353,12 +352,12 @@ impl TransportView {
             }));
         let menu = self.rate_open.then(|| {
             let entity = cx.entity().downgrade();
+            // Above the pill, centred on it.
             deferred(
-                anchored()
-                    .anchor(Anchor::BottomRight)
-                    .position_mode(AnchoredPositionMode::Local)
-                    .position(point(px(58.0), px(-10.0)))
-                    .snap_to_window_with_margin(px(16.0))
+                div()
+                    .absolute()
+                    .right(px(-12.0))
+                    .bottom(px(hit + 10.0))
                     .child(
                         popover_surface(16.0, cx)
                             .id("rate-menu")

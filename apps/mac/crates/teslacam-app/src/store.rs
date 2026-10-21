@@ -47,6 +47,8 @@ pub struct AppStore {
     loaded_at: Option<Instant>,
     /// Development: export here instead of asking with the save panel (`TESLACAM_EXPORT_TO`).
     export_destination: Option<PathBuf>,
+    /// Development: open the players this much later (`TESLACAM_MEDIA_DELAY_MS`).
+    media_delay: Duration,
 }
 
 impl EventEmitter<StoreEvent> for AppStore {}
@@ -65,7 +67,13 @@ impl AppStore {
             media: None,
             loaded_at: None,
             export_destination: None,
+            media_delay: Duration::ZERO,
         }
+    }
+
+    /// Development: the players open `delay` after a session starts (the loading state stays up).
+    pub fn set_media_delay(&mut self, delay: Duration) {
+        self.media_delay = delay;
     }
 
     /// Development: exports go to `path` without the save panel.
@@ -162,17 +170,42 @@ impl AppStore {
         let Some((session, effects)) = Session::new(event, workspace.layout) else {
             return;
         };
-        // AVFoundation needs the main thread; headless UI tests run the pure session only.
-        self.media = MainThreadMarker::new().map(|mtm| {
-            let input = EventInput::from_event(event, &library, &session.timeline);
-            let representative = event
-                .representative
-                .map(|file| library.file(file).path.clone());
-            let initial = session.playback.position();
-            cx.new(|_| SessionMedia::open(input, initial, representative, host_now(), mtm))
-        });
+        let input = EventInput::from_event(event, &library, &session.timeline);
+        let representative = event
+            .representative
+            .map(|file| library.file(file).path.clone());
+        let initial = session.playback.position();
         self.session = Some(session);
         self.forward(effects.media, cx);
+        if self.media_delay.is_zero() {
+            self.open_media(input, initial, representative, cx);
+            return;
+        }
+        let (delay, generation) = (self.media_delay, self.session_generation);
+        cx.spawn(async move |this, cx| {
+            cx.background_executor().timer(delay).await;
+            this.update(cx, |store, cx| {
+                if store.session_generation == generation {
+                    store.open_media(input, initial, representative, cx);
+                    cx.notify();
+                }
+            })
+            .ok();
+        })
+        .detach();
+    }
+
+    /// AVFoundation needs the main thread; headless UI tests run the pure session only.
+    fn open_media(
+        &mut self,
+        input: EventInput,
+        initial: f64,
+        representative: Option<PathBuf>,
+        cx: &mut Context<Self>,
+    ) {
+        self.media = MainThreadMarker::new().map(|mtm| {
+            cx.new(|_| SessionMedia::open(input, initial, representative, host_now(), mtm))
+        });
     }
 
     /// Ends the session: a running export stops silently and the players are released.
