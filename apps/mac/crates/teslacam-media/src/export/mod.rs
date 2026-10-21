@@ -170,6 +170,10 @@ enum Stage {
 }
 
 /// A running export. Main thread only; call [`ExportJob::poll`] regularly (e.g. once per frame).
+///
+/// Prefer [`ExportJob::cancel`] followed by polling until done: it waits for AVFoundation to stop
+/// before deleting the partial file. Dropping a running job also cancels it, but cannot wait, so the
+/// partial file is removed on a best-effort basis.
 pub struct ExportJob {
     output: PathBuf,
     layout: ExportLayout,
