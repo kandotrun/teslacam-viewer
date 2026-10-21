@@ -182,6 +182,8 @@ pub struct ExportJob {
     cancel: Arc<AtomicBool>,
     on_progress: Box<dyn FnMut(f32)>,
     reported: f32,
+    /// Whether the exporter has started writing `output` (it replaces an existing file only then).
+    wrote_output: bool,
     _mtm: MainThreadMarker,
 }
 
@@ -235,6 +237,7 @@ impl CompositeExporter {
             cancel,
             on_progress: Box::new(on_progress),
             reported: -1.0,
+            wrote_output: false,
             _mtm: mtm,
         }
     }
@@ -311,7 +314,11 @@ impl ExportJob {
 
     fn finish(&mut self, state: ExportState) {
         if let ExportState::Failed(_) = state {
-            let _ = std::fs::remove_file(&self.output);
+            // Only output this export wrote is removed: a file that was at the destination before
+            // encoding started (the save panel only confirmed replacing it) stays.
+            if self.wrote_output {
+                let _ = std::fs::remove_file(&self.output);
+            }
         } else {
             self.report(1.0);
         }
@@ -320,6 +327,7 @@ impl ExportJob {
     }
 
     fn begin(&mut self, prepared: Prepared) {
+        self.wrote_output = true;
         match start_session(&prepared, &self.layout, &self.output) {
             Ok((session, done)) => {
                 self.stage = Stage::Exporting {

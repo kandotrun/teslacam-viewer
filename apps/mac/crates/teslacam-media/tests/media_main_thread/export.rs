@@ -38,6 +38,10 @@ pub const TESTS: &[crate::Test] = &[
         "export_errors_map_to_the_contract",
         export_errors_map_to_the_contract,
     ),
+    (
+        "export_keeps_an_existing_file_until_encoding_starts",
+        export_keeps_an_existing_file_until_encoding_starts,
+    ),
 ];
 
 const W: usize = 1280;
@@ -490,4 +494,47 @@ fn export_errors_map_to_the_contract(mtm: MainThreadMarker) {
         ExportError::Aborted.message(),
         "動画の書き出しをキャンセルしました。"
     );
+}
+
+/// The save panel only confirms a replacement: a file at the destination stays until the exporter
+/// starts writing there, so an abort or a failure while preparing leaves it alone.
+fn export_keeps_an_existing_file_until_encoding_starts(mtm: MainThreadMarker) {
+    let scratch = fixtures::scratch();
+    let output = scratch.join("previous-export.mp4");
+
+    std::fs::write(&output, b"an earlier export").unwrap();
+    let mut job = CompositeExporter::new().start(&fixtures::full_event(), &output, |_| {}, mtm);
+    job.cancel();
+    assert_eq!(job.poll(), &ExportState::Failed(ExportError::Aborted));
+    assert!(
+        output.exists(),
+        "aborting while preparing deleted the existing file"
+    );
+
+    let garbage = scratch.join("garbage-keep.mp4");
+    std::fs::write(&garbage, b"\0\x01\x02\x03").unwrap();
+    let nothing = EventInput {
+        segments: vec![SegmentInput {
+            start_seconds: 0.0,
+            files: CameraMap::from_fn(|c| (c == CameraId::Front).then(|| garbage.clone())),
+        }],
+    };
+    let mut job = CompositeExporter::new().start(&nothing, &output, |_| {}, mtm);
+    let state = run(&mut job, Duration::from_secs(30));
+    assert_eq!(state, ExportState::Failed(ExportError::NoPlayableMedia));
+    assert!(
+        output.exists(),
+        "a failure while preparing deleted the existing file"
+    );
+
+    // Once encoding starts the old file is replaced, and a cancel then removes the partial one.
+    let mut job = CompositeExporter::new().start(&fixtures::full_event(), &output, |_| {}, mtm);
+    assert!(pump_until(Duration::from_secs(60), || matches!(
+        job.poll(),
+        ExportState::Exporting { .. }
+    )));
+    job.cancel();
+    let state = run(&mut job, Duration::from_secs(30));
+    assert_eq!(state, ExportState::Failed(ExportError::Aborted));
+    assert!(!output.exists(), "partial output left behind");
 }
