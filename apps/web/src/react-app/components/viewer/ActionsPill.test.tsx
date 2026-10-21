@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, vi } from 'vitest'
 
@@ -39,6 +39,8 @@ describe('export control', () => {
     expect(dialog).toHaveTextContent('イベント全体・1分')
     expect(dialog).toHaveTextContent('対応ブラウザでは高速に書き出します。完了まではタブを閉じないでください。')
     expect(dialog.querySelector('svg.export-preview')).toBeInTheDocument()
+    expect(within(dialog).queryByRole('banner')).not.toBeInTheDocument()
+    expect(within(dialog).queryByRole('contentinfo')).not.toBeInTheDocument()
   })
 
   it('shows progress while exporting and then offers the video for saving', async () => {

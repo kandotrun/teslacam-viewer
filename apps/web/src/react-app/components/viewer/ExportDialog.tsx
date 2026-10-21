@@ -59,12 +59,12 @@ export function ExportDialog({ event, format, onCancel, onStart }: ExportDialogP
         onCancel()
       }}
     >
-      <header className="export-dialog__head">
+      <div className="export-dialog__head">
         <h2 id="export-dialog-title">合成動画を書き出す</h2>
         <button aria-label="書き出し画面を閉じる" className="icon-button" type="button" onClick={onCancel}>
           <X aria-hidden="true" size={20} />
         </button>
-      </header>
+      </div>
       <p className="export-dialog__text" id="export-dialog-description">
         選択中の記録を、6カメラと車両配置を含む<span className="nowrap">1本の動画にまとめます。</span><span className="nowrap">利用できないカメラは「記録なし」と表示します。</span>
       </p>
@@ -90,10 +90,10 @@ export function ExportDialog({ event, format, onCancel, onStart }: ExportDialogP
       <p className="export-dialog__notice">
         <span className="nowrap">対応ブラウザでは高速に書き出します。</span><span className="nowrap">完了まではタブを閉じないでください。</span>
       </p>
-      <footer className="export-dialog__actions">
+      <div className="export-dialog__actions">
         <button className="text-button" type="button" onClick={onCancel}>キャンセル</button>
         <button className="primary-button" type="button" onClick={onStart}>書き出しを開始</button>
-      </footer>
+      </div>
     </dialog>
   )
 }
