@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TeslaCam Viewer garage floor prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@500;600&display=swap">
+<style>
+/*
+ * Garage floor: the car is the map. Six camera windows sit where the cameras are,
+ * the library and the transport float above the floor, numbers read from across the room.
+ */
+:root {
+  --floor: #e9ebee;
+  --floor-light: #f7f8fa;
+  --surface: #ffffff;
+  --glass: rgb(255 255 255 / .94);
+  --ink: #171a20;
+  --ink-2: #5c5e62;
+  --ink-3: #6b6e74;
+  --line: #e2e4e8;
+  --fill: #f2f3f5;
+  --drive: #3e6ae1;
+  --drive-soft: rgb(62 106 225 / .14);
+  --sentry: #e31937;
+  --saved: #12805a;
+  --recent: #5c5e62;
+  --video: #000000;
+  --shadow-float: 0 1px 2px rgb(23 26 32 / .06), 0 14px 40px rgb(23 26 32 / .12);
+  --gutter: 16px;
+  --panel-w: 372px;
+  --font-ui: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
+  --font-num: "Barlow", "Hiragino Sans", system-ui, sans-serif;
+  font-family: var(--font-ui);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { overflow: hidden; background: radial-gradient(ellipse 70% 75% at 62% 46%, var(--floor-light) 0%, var(--floor) 62%); }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+button:focus-visible { outline: 2px solid var(--drive); outline-offset: 3px; }
+p, h1, h2, h3 { margin: 0; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
+
+/* ---------- Floating library ---------- */
+.library { position: absolute; z-index: 3; top: var(--gutter); left: var(--gutter); bottom: var(--gutter); width: var(--panel-w); display: flex; flex-direction: column; background: var(--glass); backdrop-filter: blur(24px) saturate(1.4); border: 1px solid rgb(23 26 32 / .05); border-radius: 22px; box-shadow: var(--shadow-float); overflow: hidden; }
+.library-head { display: flex; align-items: center; gap: 10px; padding: 16px 14px 10px 20px; }
+.wordmark { font: 600 15px/1 var(--font-num); letter-spacing: .01em; }
+.folder-chip { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px 0 10px; border-radius: 999px; background: var(--fill); font-size: 12px; color: var(--ink-2); }
+.folder-chip:hover { background: #e9ebee; }
+.segmented { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; margin: 6px 14px 0; padding: 3px; border-radius: 14px; background: var(--fill); }
+.segmented button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 4px 6px; border-radius: 11px; font-size: 12px; color: var(--ink-2); }
+.segmented button b { font: 600 15px/1.1 var(--font-num); color: var(--ink); }
+.segmented button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(23 26 32 / .12); }
+.day { padding: 18px 20px 8px; }
+.day-nav { display: flex; align-items: center; gap: 4px; }
+.day-nav h2 { flex: 1; font-size: 20px; font-weight: 600; letter-spacing: .01em; }
+.day-nav h2 .num { font-size: 22px; }
+.day-nav h2 small { font-size: 13px; font-weight: 500; color: var(--ink-2); margin-left: 4px; }
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-2); }
+.icon-btn:hover { background: var(--fill); color: var(--ink); }
+.icon-btn:disabled { opacity: .35; cursor: default; background: none; }
+.rail { position: relative; height: 34px; margin-top: 10px; }
+.rail-track { position: absolute; left: 0; right: 0; top: 10px; height: 4px; border-radius: 2px; background: var(--fill); }
+.rail-mark { position: absolute; top: 4px; width: 8px; height: 16px; margin-left: -4px; border-radius: 4px; }
+.rail-mark[data-c="sentry"] { background: var(--sentry); }
+.rail-mark[data-c="saved"] { background: var(--saved); }
+.rail-mark[data-c="recent"] { background: #9aa0a8; }
+.rail-mark.is-current { top: 0; height: 24px; width: 10px; margin-left: -5px; border-radius: 5px; box-shadow: 0 0 0 2px var(--surface), 0 2px 6px rgb(23 26 32 / .3); }
+.rail-hours { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; font: 500 11px/1 var(--font-num); color: var(--ink-3); }
+.list { flex: 1; overflow: auto; padding: 8px 10px 14px; display: flex; flex-direction: column; gap: 2px; }
+.event { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; width: 100%; padding: 8px; border-radius: 16px; text-align: left; }
+.event:hover { background: var(--fill); }
+.event[aria-current="true"] { background: var(--drive-soft); }
+.thumb { position: relative; width: 92px; aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; background: #1c2027; }
+.thumb .scene { position: absolute; inset: 0; }
+.event-time { display: flex; align-items: baseline; gap: 8px; }
+.event-time .num { font-size: 24px; font-weight: 600; line-height: 1.05; }
+.chip { display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.chip svg.i { width: 13px; height: 13px; stroke-width: 2.2; }
+.chip[data-c="sentry"] { color: var(--sentry); background: rgb(227 25 55 / .1); }
+.chip[data-c="saved"] { color: var(--saved); background: rgb(18 128 90 / .1); }
+.chip[data-c="recent"] { color: var(--recent); background: var(--fill); }
+.event-facts { display: flex; gap: 12px; margin-top: 5px; font-size: 12px; color: var(--ink-2); }
+.event-facts .num { font-size: 13px; color: var(--ink); font-weight: 500; }
+.event-warn { margin-top: 3px; font-size: 11px; color: #8a5a00; }
+.library-body { display: contents; }
+.library-foot { padding: 10px 20px 14px; border-top: 1px solid var(--line); font-size: 11px; color: var(--ink-3); }
+
+/* ---------- Stage: the car on the garage floor ---------- */
+.stage { position: absolute; top: calc(var(--gutter) + 56px); bottom: 124px; left: calc(var(--panel-w) + var(--gutter) * 2); right: var(--gutter); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.18fr) minmax(0, 1fr); grid-template-rows: minmax(0, .8fr) minmax(0, 1.12fr) minmax(0, .86fr); grid-template-areas: "lp front rp" "lp car rp" "lr back rr"; gap: 14px 26px; padding: 4px 24px; }
+.wedges { position: absolute; inset: 0; pointer-events: none; overflow: visible; }
+.cam { position: relative; align-self: center; justify-self: center; width: 100%; max-height: 100%; aspect-ratio: 4 / 3; border-radius: 14px; overflow: hidden; background: var(--video); transition: box-shadow .2s ease; }
+.cam:hover { box-shadow: 0 0 0 2px rgb(255 255 255 / .9), 0 0 0 4px var(--ink); }
+.cam[data-active="true"] { box-shadow: 0 0 0 2px var(--floor-light), 0 0 0 4px var(--drive); }
+.cam .scene { position: absolute; inset: 0; }
+.cam-label { position: absolute; left: 10px; bottom: 10px; display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: rgb(0 0 0 / .55); backdrop-filter: blur(8px); color: #fff; font-size: 12px; font-weight: 500; }
+.cam-missing { position: absolute; inset: 0; display: grid; place-content: center; justify-items: center; gap: 6px; color: #c2c8d0; font-size: 12px; background: repeating-linear-gradient(135deg, #15181d 0 10px, #181b21 10px 20px); }
+.cam[data-cam="front"] { grid-area: front; width: 100%; }
+.cam[data-cam="left_pillar"] { grid-area: lp; }
+.cam[data-cam="right_pillar"] { grid-area: rp; }
+.cam[data-cam="left_repeater"] { grid-area: lr; }
+.cam[data-cam="right_repeater"] { grid-area: rr; }
+.cam[data-cam="back"] { grid-area: back; width: 86%; }
+.car { grid-area: car; position: relative; justify-self: center; align-self: center; height: 100%; aspect-ratio: 1 / 2; }
+.car::before { content: ""; position: absolute; inset: 6% -18% 2%; border-radius: 50%; background: radial-gradient(closest-side, rgb(23 26 32 / .22), transparent); filter: blur(6px); }
+.car img { position: relative; width: 100%; height: 100%; object-fit: contain; }
+.mount { position: absolute; width: 8px; height: 8px; margin: -4px; border-radius: 50%; background: var(--drive); box-shadow: 0 0 0 3px rgb(255 255 255 / .9); opacity: 0; transition: opacity .2s; }
+.mount.is-on { opacity: 1; }
+
+/* ---------- Top: event pill + actions ---------- */
+.topbar { position: absolute; z-index: 2; top: var(--gutter); left: calc(var(--panel-w) + var(--gutter) * 2); right: var(--gutter); display: flex; align-items: center; gap: 10px; }
+.pill { display: flex; align-items: center; gap: 4px; height: 46px; padding: 0 6px; border-radius: 999px; background: var(--glass); backdrop-filter: blur(24px); box-shadow: var(--shadow-float); }
+.event-pill { gap: 14px; padding: 0 18px 0 8px; min-width: 0; }
+.event-pill .when { font-size: 15px; font-weight: 600; white-space: nowrap; }
+.event-pill .when .num { font-size: 18px; }
+.event-pill .where { font-size: 13px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.event-pill .detect { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); white-space: nowrap; }
+.event-pill .detect .num { color: var(--sentry); font-weight: 600; font-size: 15px; }
+.sep { width: 1px; height: 18px; background: var(--line); }
+.spacer { flex: 1; }
+.seg-small { display: flex; gap: 2px; padding: 3px; border-radius: 999px; background: var(--fill); }
+.seg-small button { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; color: var(--ink-2); }
+.seg-small button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(23 26 32 / .12); }
+.text-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.text-btn:hover { background: var(--fill); }
+
+/* ---------- Transport ---------- */
+.transport { position: absolute; z-index: 2; bottom: var(--gutter); left: calc(var(--panel-w) + var(--gutter) * 2 + 24px); right: calc(var(--gutter) + 24px); max-width: 920px; margin: 0 auto; display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 18px; padding: 14px 18px 14px 14px; border-radius: 22px; background: var(--glass); backdrop-filter: blur(24px); box-shadow: var(--shadow-float); }
+.play { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 50%; background: var(--ink); color: #fff; }
+.play svg.i { width: 24px; height: 24px; fill: currentColor; stroke: none; }
+.play:hover { background: #2b2f37; }
+.clock { display: flex; flex-direction: column; min-width: 92px; }
+.clock .now { font: 600 34px/1 var(--font-num); font-variant-numeric: tabular-nums; }
+.clock .total { margin-top: 3px; font: 500 13px/1 var(--font-num); color: var(--ink-3); }
+.scrub { position: relative; height: 46px; }
+.scrub-track { position: absolute; left: 0; right: 0; top: 22px; height: 6px; border-radius: 3px; background: var(--fill); }
+.scrub-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--drive); }
+.scrub-tick { position: absolute; top: -3px; width: 2px; height: 12px; margin-left: -1px; border-radius: 1px; background: #c9ccd2; }
+.scrub-thumb { position: absolute; top: 15px; width: 20px; height: 20px; margin-left: -10px; border-radius: 50%; background: var(--surface); box-shadow: 0 0 0 2px var(--drive), 0 2px 6px rgb(23 26 32 / .25); }
+.scrub-detect { position: absolute; top: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 2px; font-size: 11px; font-weight: 600; color: var(--sentry); }
+.scrub-detect::after { content: ""; width: 2px; height: 12px; border-radius: 1px; background: var(--sentry); }
+.scrub-segments { position: absolute; left: 0; right: 0; bottom: -2px; display: flex; justify-content: space-between; font: 500 11px/1 var(--font-num); color: var(--ink-3); }
+.transport-tools { display: flex; align-items: center; gap: 2px; }
+.skip { position: relative; }
+.skip small { position: absolute; inset: 0; display: grid; place-items: center; padding-top: 1px; font: 600 8.5px/1 var(--font-num); }
+.rate { height: 36px; padding: 0 12px; border-radius: 999px; background: var(--fill); font: 600 14px/1 var(--font-num); }
+
+/* ---------- Welcome state ---------- */
+.welcome { display: none; flex: 1; flex-direction: column; padding: 34px 26px 22px; }
+.welcome h1 { font-size: 30px; font-weight: 600; line-height: 1.3; letter-spacing: .01em; }
+.welcome p { margin-top: 14px; font-size: 14px; line-height: 1.9; color: var(--ink-2); }
+.cta { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 50px; margin-top: 28px; padding: 0 26px; border-radius: 999px; background: var(--drive); color: #fff; font-size: 15px; font-weight: 600; align-self: flex-start; }
+.cta:hover { background: #3459c4; }
+.welcome-steps { margin-top: auto; display: grid; gap: 14px; }
+.welcome-steps div { display: grid; grid-template-columns: 32px 1fr; gap: 10px; align-items: start; font-size: 13px; line-height: 1.7; color: var(--ink-2); }
+.welcome-steps svg.i { width: 20px; height: 20px; margin: 2px 6px; color: var(--ink); }
+.welcome-steps b { display: block; color: var(--ink); font-weight: 600; }
+body.is-welcome .library-view, body.is-welcome .topbar, body.is-welcome .transport { display: none; }
+body.is-welcome .welcome { display: flex; }
+body.is-welcome .stage { top: var(--gutter); bottom: var(--gutter); }
+body.is-welcome .cam { background: rgb(255 255 255 / .55); box-shadow: inset 0 0 0 1px rgb(23 26 32 / .06); }
+body.is-welcome .cam .scene, body.is-welcome .cam .cam-missing { display: none; }
+body.is-welcome .cam-label { background: none; color: var(--ink-2); backdrop-filter: none; left: 50%; top: 50%; bottom: auto; transform: translate(-50%, -50%); }
+body.is-welcome .wedges { opacity: .5; }
+
+/* ---------- Mock night scenes (stand-ins for real footage) ---------- */
+.scene { background: linear-gradient(180deg, #0d1422 0%, #18233a 46%, #20242c 47%, #121418 100%); }
+.scene::before { content: ""; position: absolute; inset: 0; background:
+  radial-gradient(circle at 22% 40%, rgb(255 184 92 / .55), transparent 7%),
+  radial-gradient(circle at 74% 38%, rgb(255 184 92 / .45), transparent 6%),
+  radial-gradient(ellipse 60% 18% at 50% 47%, rgb(255 190 120 / .12), transparent),
+  linear-gradient(180deg, transparent 47%, rgb(255 255 255 / .05) 47.4%, transparent 48%); }
+.scene.front::after, .scene.back::after { content: ""; position: absolute; left: 50%; bottom: 0; width: 70%; height: 53%; transform: translateX(-50%); background: linear-gradient(90deg, transparent 49.2%, rgb(255 236 180 / .55) 49.2%, rgb(255 236 180 / .55) 50.8%, transparent 50.8%); clip-path: polygon(46% 0, 54% 0, 100% 100%, 0 100%); opacity: .7; }
+.scene.side { background: linear-gradient(180deg, #111a2b 0%, #1d2a42 30%, #2a2f38 31%, #15171b 100%); }
+.scene.side::after { content: ""; position: absolute; left: 0; right: 0; top: 31%; height: 22%; background: repeating-linear-gradient(90deg, #232832 0 14%, #1a1e25 14% 18%, #2b303a 18% 30%, #1a1e25 30% 33%); opacity: .9; }
+.scene.lit::before { background:
+  radial-gradient(circle at 30% 36%, rgb(255 210 140 / .6), transparent 9%),
+  radial-gradient(circle at 82% 30%, rgb(160 200 255 / .35), transparent 7%); }
+
+
+/* ---------- Narrower windows ---------- */
+.seg-small button, .text-btn { white-space: nowrap; }
+@media (max-width: 1280px) {
+  :root { --panel-w: 320px; }
+  .event-pill .detect, .event-pill .sep:last-of-type { display: none; }
+  .transport { gap: 12px; left: calc(var(--panel-w) + var(--gutter) * 2); right: var(--gutter); }
+}
+@media (max-width: 1000px) {
+  .event-pill .where, .event-pill .sep { display: none; }
+  .seg-small button { font-size: 0; gap: 0; padding: 0 9px; }
+  .text-btn { font-size: 0; gap: 0; padding: 0 10px; }
+  .transport .skip { display: none; }
+  .clock { min-width: 70px; }
+  .clock .now { font-size: 28px; }
+  .stage { gap: 10px 14px; padding: 4px 8px; }
+}
+
+/* ---------- Mockup switcher (not part of the design) ---------- */
+.mock-switch { position: fixed; z-index: 9; right: 18px; top: 74px; display: flex; gap: 4px; padding: 4px; border-radius: 999px; background: rgb(23 26 32 / .78); }
+.mock-switch button { height: 28px; padding: 0 12px; border-radius: 999px; color: #fff; font-size: 12px; }
+.mock-switch button[aria-pressed="true"] { background: rgb(255 255 255 / .2); }
+body.is-welcome .mock-switch { top: 18px; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.7-.9l-.8-1.2A2 2 0 0 0 7.9 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5Z"/></symbol>
+  <symbol id="i-back10" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-fwd10" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1Z"/></symbol>
+  <symbol id="i-bookmark" viewBox="0 0 24 24"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2Z"/></symbol>
+  <symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="19" r="3"/><path d="M9 19h8.5a3.5 3.5 0 0 0 0-7h-11a3.5 3.5 0 0 1 0-7H15"/><circle cx="18" cy="5" r="3"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-off" viewBox="0 0 24 24"><path d="m2 2 20 20"/><path d="M10.7 5.1H15a2 2 0 0 1 2 2v3.4l4-2.4v8"/><path d="M17 17H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2"/></symbol>
+</svg>
+
+<aside class="library" aria-label="ライブラリ">
+  <div class="library-head">
+    <span class="wordmark">TeslaCam Viewer</span>
+    <button class="folder-chip library-view" type="button" aria-label="別のフォルダを選ぶ"><svg class="i"><use href="#i-folder"/></svg>TeslaCam</button>
+  </div>
+
+  <section class="welcome" aria-labelledby="welcome-title">
+    <h1 id="welcome-title">TeslaCamの<br>記録を見る</h1>
+    <p>USBドライブの TeslaCam フォルダを選ぶと、セントリーと保存したクリップ、最近の走行を日ごとに並べて、6台のカメラを同時に再生します。</p>
+    <button class="cta" type="button" data-go="viewer"><svg class="i"><use href="#i-folder"/></svg>フォルダを選ぶ</button>
+    <div class="welcome-steps">
+      <div><svg class="i"><use href="#i-shield"/></svg><span><b>セントリーは検知の15秒前から</b>何が近づいたのかをすぐ確かめられます。</span></div>
+      <div><svg class="i"><use href="#i-download"/></svg><span><b>6カメラを1本の動画に</b>車両の配置どおりに並べて書き出せます。</span></div>
+    </div>
+  </section>
+
+  <div class="library-view library-body">
+    <div class="segmented" role="group" aria-label="種類">
+      <button type="button" aria-pressed="true">すべて<b>6</b></button>
+      <button type="button" aria-pressed="false">走行<b>2</b></button>
+      <button type="button" aria-pressed="false">保存<b>2</b></button>
+      <button type="button" aria-pressed="false">セントリー<b>2</b></button>
+    </div>
+    <section class="day" aria-label="日付">
+      <div class="day-nav">
+        <button class="icon-btn" type="button" aria-label="前の日"><svg class="i"><use href="#i-left"/></svg></button>
+        <h2><span class="num">8月20日</span><small>木曜日</small></h2>
+        <button class="icon-btn" type="button" aria-label="次の日" disabled><svg class="i"><use href="#i-right"/></svg></button>
+      </div>
+      <div class="rail" aria-hidden="true">
+        <div class="rail-track"></div>
+        <span class="rail-mark" data-c="recent" style="left:38%"></span>
+        <span class="rail-mark" data-c="sentry" style="left:58.6%"></span>
+        <span class="rail-mark" data-c="saved" style="left:77.8%"></span>
+        <span class="rail-mark is-current" data-c="sentry" style="left:85.8%"></span>
+        <span class="rail-mark" data-c="recent" style="left:86.5%"></span>
+        <div class="rail-hours"><span>0</span><span>6</span><span>12</span><span>18</span><span>24</span></div>
+      </div>
+    </section>
+    <div class="list" aria-label="イベント">
+      <button class="event" type="button">
+        <span class="thumb"><span class="scene front"></span></span>
+        <span><span class="event-time"><span class="num">20:45</span><span class="chip" data-c="recent"><svg class="i"><use href="#i-route"/></svg>走行</span></span>
+        <span class="event-facts"><span><span class="num">2</span>分</span><span><span class="num">6</span>カメラ</span></span></span>
+      </button>
+      <button class="event" type="button" aria-current="true">
+        <span class="thumb"><span class="scene front lit"></span></span>
+        <span><span class="event-time"><span class="num">20:35</span><span class="chip" data-c="sentry"><svg class="i"><use href="#i-shield"/></svg>セントリー</span></span>
+        <span class="event-facts"><span><span class="num">1</span>分</span><span><span class="num">6</span>カメラ</span><span>20:35:30に検知</span></span></span>
+      </button>
+      <button class="event" type="button">
+        <span class="thumb"><span class="scene back"></span></span>
+        <span><span class="event-time"><span class="num">18:40</span><span class="chip" data-c="saved"><svg class="i"><use href="#i-bookmark"/></svg>保存</span></span>
+        <span class="event-facts"><span><span class="num">1</span>分</span><span><span class="num">6</span>カメラ</span></span></span>
+      </button>
+      <button class="event" type="button">
+        <span class="thumb"><span class="scene side"></span></span>
+        <span><span class="event-time"><span class="num">14:05</span><span class="chip" data-c="sentry"><svg class="i"><use href="#i-shield"/></svg>セントリー</span></span>
+        <span class="event-facts"><span><span class="num">1</span>分</span><span><span class="num">5</span>カメラ</span></span>
+        <span class="event-warn">右リピーターの記録がありません</span></span>
+      </button>
+      <button class="event" type="button">
+        <span class="thumb"><span class="scene front"></span></span>
+        <span><span class="event-time"><span class="num">09:10</span><span class="chip" data-c="recent"><svg class="i"><use href="#i-route"/></svg>走行</span></span>
+        <span class="event-facts"><span><span class="num">1</span>分</span><span><span class="num">6</span>カメラ</span></span></span>
+      </button>
+    </div>
+    <div class="library-foot">暗号化されたクリップ 3件は再生できないため除きました</div>
+  </div>
+</aside>
+
+<header class="topbar">
+  <div class="pill event-pill">
+    <span class="chip" data-c="sentry" style="height:30px;padding:0 12px;font-size:12px"><svg class="i"><use href="#i-shield"/></svg>セントリー</span>
+    <span class="when"><span class="num">20:35</span> 開始</span>
+    <span class="sep"></span>
+    <span class="where"><svg class="i" style="width:15px;height:15px;vertical-align:-3px;margin-right:4px"><use href="#i-pin"/></svg>渋谷区 神南一丁目</span>
+    <span class="sep"></span>
+    <span class="detect"><svg class="i" style="width:15px;height:15px"><use href="#i-eye"/></svg>物体の接近を<span class="num">20:35:30</span>に検知</span>
+  </div>
+  <span class="spacer"></span>
+  <div class="pill">
+    <div class="seg-small" role="group" aria-label="表示">
+      <button type="button" aria-pressed="true"><svg class="i"><use href="#i-car"/></svg>車両配置</button>
+      <button type="button" aria-pressed="false"><svg class="i"><use href="#i-grid"/></svg>6分割</button>
+    </div>
+    <button class="text-btn" type="button"><svg class="i"><use href="#i-download"/></svg>書き出す</button>
+  </div>
+</header>
+
+<main class="stage" aria-label="6台のカメラ">
+  <svg class="wedges" id="wedges"></svg>
+  <button class="cam" data-cam="front" data-active="true" type="button"><span class="scene front lit"></span><span class="cam-label">フロント</span></button>
+  <button class="cam" data-cam="left_pillar" type="button"><span class="scene side"></span><span class="cam-label">左ピラー</span></button>
+  <button class="cam" data-cam="right_pillar" type="button"><span class="scene side lit"></span><span class="cam-label">右ピラー</span></button>
+  <div class="car" id="car"><img src="../../apps/web/public/vehicle-top.png" alt="">
+    <span class="mount" data-for="front" style="left:50%;top:22%"></span>
+    <span class="mount" data-for="left_pillar" style="left:16%;top:46%"></span>
+    <span class="mount" data-for="right_pillar" style="left:84%;top:46%"></span>
+    <span class="mount" data-for="left_repeater" style="left:10%;top:31%"></span>
+    <span class="mount" data-for="right_repeater" style="left:90%;top:31%"></span>
+    <span class="mount" data-for="back" style="left:50%;top:93%"></span>
+  </div>
+  <button class="cam" data-cam="left_repeater" type="button"><span class="scene side"></span><span class="cam-label">左リピーター</span></button>
+  <button class="cam" data-cam="back" type="button"><span class="scene back"></span><span class="cam-label">リア</span></button>
+  <button class="cam" data-cam="right_repeater" type="button"><span class="cam-missing"><svg class="i" style="width:22px;height:22px"><use href="#i-off"/></svg>記録がありません</span><span class="cam-label">右リピーター</span></button>
+</main>
+
+<footer class="transport" aria-label="再生">
+  <div class="transport-tools">
+    <button class="icon-btn" type="button" aria-label="前のイベント"><svg class="i"><use href="#i-left"/></svg></button>
+    <button class="play" type="button" aria-label="再生"><svg class="i"><use href="#i-play"/></svg></button>
+  </div>
+  <div class="clock"><span class="now">0:15</span><span class="total">/ 1:00</span></div>
+  <div class="scrub" role="slider" aria-label="再生位置" aria-valuenow="15" aria-valuemin="0" aria-valuemax="60">
+    <div class="scrub-detect" style="left:50%">検知</div>
+    <div class="scrub-track"><div class="scrub-fill" style="width:25%"></div></div>
+    <div class="scrub-thumb" style="left:25%"></div>
+  </div>
+  <div class="transport-tools">
+    <button class="icon-btn skip" type="button" aria-label="10秒戻る"><svg class="i" style="width:22px;height:22px;stroke-width:1.6"><use href="#i-back10"/></svg><small>10</small></button>
+    <button class="icon-btn skip" type="button" aria-label="10秒進む"><svg class="i" style="width:22px;height:22px;stroke-width:1.6"><use href="#i-fwd10"/></svg><small>10</small></button>
+    <button class="rate" type="button" aria-label="再生速度">1×</button>
+    <button class="icon-btn" type="button" aria-label="次のイベント"><svg class="i"><use href="#i-right"/></svg></button>
+  </div>
+</footer>
+
+<div class="mock-switch" role="group" aria-label="モックの状態">
+  <button type="button" data-go="welcome" aria-pressed="false">はじめ</button>
+  <button type="button" data-go="viewer" aria-pressed="true">再生中</button>
+</div>
+
+<script>
+const wedges = document.getElementById('wedges')
+const stage = document.querySelector('.stage')
+const car = document.getElementById('car')
+// Draw a soft field-of-view wedge from each camera's mount point on the car to its window.
+function drawWedges() {
+  const s = stage.getBoundingClientRect()
+  wedges.setAttribute('viewBox', `0 0 ${s.width} ${s.height}`)
+  wedges.innerHTML = '<defs>' + [...document.querySelectorAll('.cam')].map((cam) => {
+    const id = cam.dataset.cam
+    return `<linearGradient id="g-${id}" gradientUnits="userSpaceOnUse"></linearGradient>`
+  }).join('') + '</defs>'
+  for (const cam of document.querySelectorAll('.cam')) {
+    const id = cam.dataset.cam
+    const mount = car.querySelector(`[data-for="${id}"]`).getBoundingClientRect()
+    const r = cam.getBoundingClientRect()
+    const mx = mount.left + mount.width / 2 - s.left, my = mount.top + mount.height / 2 - s.top
+    const cx = r.left + r.width / 2 - s.left, cy = r.top + r.height / 2 - s.top
+    // the two tile corners that face the car span the wedge
+    const near = Math.abs(cx - mx) > Math.abs(cy - my)
+      ? (cx < mx ? [[r.right, r.top + 10], [r.right, r.bottom - 10]] : [[r.left, r.top + 10], [r.left, r.bottom - 10]])
+      : (cy < my ? [[r.left + 14, r.bottom], [r.right - 14, r.bottom]] : [[r.left + 14, r.top], [r.right - 14, r.top]])
+    const [a, b] = near.map(([x, y]) => [x - s.left, y - s.top])
+    const g = wedges.querySelector(`#g-${id}`)
+    g.setAttribute('x1', mx); g.setAttribute('y1', my); g.setAttribute('x2', (a[0] + b[0]) / 2); g.setAttribute('y2', (a[1] + b[1]) / 2)
+    const active = cam.dataset.active === 'true'
+    g.innerHTML = `<stop offset="0" stop-color="${active ? '#3e6ae1' : '#171a20'}" stop-opacity="${active ? .28 : .07}"/><stop offset="1" stop-color="${active ? '#3e6ae1' : '#171a20'}" stop-opacity="0"/>`
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
+    poly.setAttribute('points', `${mx},${my} ${a[0]},${a[1]} ${b[0]},${b[1]}`)
+    poly.setAttribute('fill', `url(#g-${id})`)
+    wedges.appendChild(poly)
+    car.querySelector(`[data-for="${id}"]`).classList.toggle('is-on', active)
+  }
+}
+for (const cam of document.querySelectorAll('.cam')) {
+  cam.addEventListener('click', () => {
+    for (const other of document.querySelectorAll('.cam')) other.dataset.active = String(other === cam)
+    drawWedges()
+  })
+}
+for (const btn of document.querySelectorAll('[data-go]')) {
+  btn.addEventListener('click', () => {
+    document.body.classList.toggle('is-welcome', btn.dataset.go === 'welcome')
+    for (const b of document.querySelectorAll('.mock-switch button')) b.setAttribute('aria-pressed', String(b.dataset.go === btn.dataset.go))
+    requestAnimationFrame(drawWedges)
+  })
+}
+new ResizeObserver(drawWedges).observe(stage)
+document.querySelector('.car img').addEventListener('load', drawWedges)
+</script>
+</body>
+</html>
