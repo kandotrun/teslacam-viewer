@@ -207,3 +207,51 @@
     padding: 0 8px;
   }
 }
+
+/*
+ * Portrait tablet and phone: the strip under an expanded camera or event.mp4 wraps into rows of windows
+ * a third of the stage wide, so their names and touch targets stay legible (DESIGN.md §6 Stage). The
+ * strip windows size their own row; the large window takes the rest and sits right above the strip.
+ */
+@media (max-width: 1100px) and (orientation: portrait) {
+  .stage[data-mode="expanded"],
+  .stage[data-mode="representative"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) auto auto;
+    gap: 10px;
+  }
+
+  .stage[data-mode="expanded"] {
+    grid-template-areas:
+      "main main main"
+      "switcher s1 s2"
+      "s3 s4 s5";
+  }
+
+  .stage[data-mode="representative"] {
+    grid-template-areas:
+      "main main main"
+      "s1 s2 s3"
+      "s4 s5 s6";
+  }
+
+  .stage[data-mode="expanded"] .camera-slot[data-area="main"] {
+    place-items: end center;
+  }
+
+  .stage[data-mode="expanded"] .camera-slot[data-area^="s"],
+  .stage[data-mode="representative"] .camera-slot[data-area^="s"] {
+    container-type: inline-size;
+  }
+
+  .stage[data-mode="expanded"] .camera-slot[data-area^="s"] .camera-window,
+  .stage[data-mode="representative"] .camera-slot[data-area^="s"] .camera-window {
+    width: 100cqw;
+  }
+
+  /* The mini car takes the height of the windows beside it instead of setting it. */
+  .stage[data-mode="expanded"] .camera-switcher {
+    contain: size;
+    align-self: stretch;
+  }
+}
