@@ -1,0 +1,25 @@
+# Weekly version updates, grouped so routine bumps arrive as one pull request per ecosystem.
+# Security updates are still opened individually as soon as an advisory is published.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    groups:
+      web-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: cargo
+    directory: /apps/mac
+    schedule:
+      interval: weekly
+    groups:
+      mac-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # GPUI Kit pins an exact gpui-pre snapshot; upgrade it deliberately.
+      - dependency-name: gpui-kit
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
