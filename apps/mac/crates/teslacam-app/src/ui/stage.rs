@@ -768,7 +768,7 @@ impl Render for StageView {
                 .drawn_expanded
                 .is_some_and(|previous| previous != expanded)
         {
-            self.transition = Some((Instant::now(), self.drawn.clone()));
+            self.transition = Some((Instant::now(), self.drawn));
         }
         self.drawn_expanded = has_session.then_some(expanded);
         let progress = match &self.transition {
@@ -781,7 +781,7 @@ impl Render for StageView {
         if progress.is_none() {
             self.transition = None;
         }
-        let from = self.transition.as_ref().map(|(_, from)| from.clone());
+        let from = self.transition.as_ref().map(|(_, from)| *from);
         let drawn = std::cell::RefCell::new(CameraMap::from_fn(|_| None));
         let spec = |camera: CameraId,
                     target: Rect,
