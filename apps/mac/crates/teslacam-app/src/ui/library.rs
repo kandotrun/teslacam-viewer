@@ -525,6 +525,9 @@ impl LibraryPanel {
             )
             .child(
                 div()
+                    .id("scan-bar")
+                    .role(Role::ProgressIndicator)
+                    .aria_label(copy::SCAN_PROGRESS_LABEL)
                     .relative()
                     .h(px(4.0))
                     .rounded(px(2.0))
@@ -651,6 +654,7 @@ impl LibraryPanel {
             .id("categories")
             .role(Role::RadioGroup)
             .aria_label(copy::CATEGORY_GROUP)
+            .test_support()
             .mx(px(14.0))
             .mt(px(4.0))
             .flex()
@@ -805,6 +809,10 @@ impl LibraryPanel {
                 }
             }));
         let day = div()
+            .id("day")
+            .role(Role::Group)
+            .aria_label(copy::DAY_RAIL_REGION)
+            .test_support()
             .pt(px(16.0))
             .px(px(20.0))
             .pb(px(4.0))
@@ -920,27 +928,32 @@ impl LibraryPanel {
                 .child(empty_text)
                 .into_any_element()
         } else {
-            image_cache(self.thumbnails.clone())
+            let rows = image_cache(self.thumbnails.clone()).size_full().child(
+                uniform_list(
+                    "events",
+                    self.rows.len(),
+                    cx.processor(|this, range: Range<usize>, _, cx| {
+                        let rows = this.rows.clone();
+                        range
+                            .map(|index| this.row(index, &rows[index], cx))
+                            .collect::<Vec<_>>()
+                    }),
+                )
+                .track_scroll(&self.list)
+                .size_full()
+                .pt(px(4.0))
+                .px(px(10.0))
+                .pb(px(12.0)),
+            );
+            div()
+                .id("event-list")
+                .role(Role::List)
+                .aria_label(copy::EVENT_LIST_REGION)
                 .flex_1()
                 .min_h_0()
                 .mt(px(6.0))
-                .child(
-                    uniform_list(
-                        "events",
-                        self.rows.len(),
-                        cx.processor(|this, range: Range<usize>, _, cx| {
-                            let rows = this.rows.clone();
-                            range
-                                .map(|index| this.row(index, &rows[index], cx))
-                                .collect::<Vec<_>>()
-                        }),
-                    )
-                    .track_scroll(&self.list)
-                    .size_full()
-                    .pt(px(4.0))
-                    .px(px(10.0))
-                    .pb(px(12.0)),
-                )
+                .child(rows)
+                .test_support()
                 .into_any_element()
         };
 

@@ -865,6 +865,10 @@ impl Render for TopRow {
             .gap(px(ROW_GAP))
             .child(
                 div()
+                    .id("now-playing")
+                    .role(Role::Group)
+                    .aria_label(copy::NOW_PLAYING_REGION)
+                    .test_support()
                     .relative()
                     .flex()
                     .min_w_0()

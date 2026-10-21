@@ -589,3 +589,26 @@ fn the_scan_warnings_stay_at_the_panel_bottom_when_nothing_matches(cx: &mut Test
         "the footer moved from {with_rows} to {without_rows} pt above the panel bottom"
     );
 }
+
+#[gpui_kit::test]
+fn regions_carry_the_catalog_names_shared_with_the_web(cx: &mut TestAppContext) {
+    // Spec §5: categories.region, list.region, the day rail region, context.region.
+    let floor = open_floor(cx);
+    let label = |id: &'static str, cx: &mut TestAppContext| {
+        cx.update_window(floor.window, |_, window, cx| {
+            window.render_frame(cx);
+            window.find(id).label().map(str::to_owned)
+        })
+        .expect("render")
+    };
+    assert_eq!(label("categories", cx).as_deref(), Some("映像カテゴリ"));
+    assert_eq!(label("event-list", cx).as_deref(), Some("イベント一覧"));
+    assert_eq!(
+        label("day", cx).as_deref(),
+        Some("日内イベントタイムライン")
+    );
+    assert_eq!(
+        label("now-playing", cx).as_deref(),
+        Some("再生中のイベント")
+    );
+}

@@ -214,6 +214,9 @@ impl TransportView {
         };
         let detection = snapshot.marks.detection.map(|fraction| {
             mark_box(fraction)
+                .id("detection-marker")
+                .role(Role::Image)
+                .aria_label(copy::DETECTION_MARKER_LABEL)
                 .top(px(-12.0))
                 .text_color(palette.sentry_ink)
                 .child(copy::DETECTION_TICK)

@@ -54,8 +54,8 @@ pub const fn category_short_label(category: ClipCategory) -> &'static str {
 
 /// The segmented control's "all" item.
 pub const CATEGORY_ALL: &str = "すべて";
-/// Accessible name of the category segmented control (prototype).
-pub const CATEGORY_GROUP: &str = "種類";
+/// Accessible name of the category segmented control (spec §5 `categories.region`, as on the web).
+pub const CATEGORY_GROUP: &str = "映像カテゴリ";
 
 // ---------------------------------------------------------------------------------------------
 // Welcome, scanning, errors
@@ -202,13 +202,19 @@ pub const NEXT_DAY: &str = "次の記録日";
 pub const NO_SELECTION_TITLE: &str = "イベントを選択してください";
 /// The line under [`NO_SELECTION_TITLE`].
 pub const NO_SELECTION_DESCRIPTION: &str = "一覧から選ぶと、記録された映像をここに表示します。";
-/// Event list heading (prototype).
-pub const EVENT_LIST_TITLE: &str = "イベント";
+/// Accessible name of the event rows (spec §5 `list.region`).
+pub const EVENT_LIST_REGION: &str = "イベント一覧";
+/// Accessible name of the event pill group (spec §5 `context.region`).
+pub const NOW_PLAYING_REGION: &str = "再生中のイベント";
+/// Accessible name of the scrubber's detection tick (spec §5 `transport.detectionMarker`).
+pub const DETECTION_MARKER_LABEL: &str = "検知位置";
+/// Accessible name of the scan's progress bar (as on the web).
+pub const SCAN_PROGRESS_LABEL: &str = "読み込みの進行状況";
 /// No event matches the filters.
 pub const EVENT_LIST_EMPTY: &str = "この条件に一致するイベントはありません。";
 /// The shown day has no events.
 pub const DAY_EMPTY: &str = "この日のイベントはありません。";
-/// Accessible name of the day rail.
+/// Accessible name of the day section with the rail (spec §2.10.9).
 pub const DAY_RAIL_REGION: &str = "日内イベントタイムライン";
 /// Accessible name of the day rail's marker group.
 pub const DAY_MARKERS: &str = "この日の記録";
