@@ -208,11 +208,18 @@ impl AppStore {
         });
     }
 
-    /// Ends the session: a running export stops silently and the players are released.
+    /// Ends the session: a running export stops silently (waiting up to a second for AVFoundation,
+    /// so no partial or temporary file is left) and the players are released.
     fn end_session(&mut self, cx: &mut Context<Self>) {
         if let Some(session) = &mut self.session {
             let effects = session.export.dispatch(ExportAction::SessionEnded);
-            self.perform_export(effects, cx);
+            if effects.contains(&ExportEffect::CancelExport)
+                && let Some(media) = &self.media
+            {
+                media.update(cx, |media, _| {
+                    media.abort_export_and_wait(Duration::from_secs(1));
+                });
+            }
         }
         self.session = None;
         self.media = None;
