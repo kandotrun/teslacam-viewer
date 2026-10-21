@@ -27,6 +27,9 @@ test('captures the welcome and viewer screens for visual review', async ({ brows
     await page.getByRole('button', { name: '一時停止' }).click()
     await page.waitForTimeout(400)
     await page.screenshot({ path: `${evidenceRoot}/${screen.name}-viewer.png` })
+    await page.locator('.event-pill').click()
+    await expect(page.getByRole('dialog', { name: 'イベント詳細' })).toBeVisible()
+    await page.screenshot({ path: `${evidenceRoot}/${screen.name}-details.png` })
     await context.close()
   }
 })

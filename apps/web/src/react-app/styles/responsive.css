@@ -33,6 +33,24 @@
     display: none;
   }
 
+  .event-pill {
+    gap: 10px;
+    padding: 0 14px 0 6px;
+  }
+
+  .floor[data-library-hidden="false"] .event-pill__suffix {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .topbar,
+  .event-pill-group {
+    gap: 8px;
+  }
+
   .segmented--pill .segmented__label,
   .action-button__text {
     position: absolute;
@@ -102,6 +120,13 @@
   .library {
     right: var(--gutter);
     width: auto;
+  }
+
+  .floor[data-library-hidden] .event-pill__suffix {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
   }
 
   .topbar {

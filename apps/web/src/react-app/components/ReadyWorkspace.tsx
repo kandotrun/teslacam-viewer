@@ -93,16 +93,14 @@ export function ReadyWorkspace({ state, dispatch, band, onRescan }: ReadyWorkspa
           onOlder={navigate(view.olderEventId)}
           onViewMode={setViewMode}
         />
-      ) : (
+      ) : band !== 'phone' && (
         <>
-          {band !== 'phone' && (
-            <header className="topbar">
-              <section aria-labelledby="placeholder-title" className="pill placeholder-pill">
-                <h1 id="placeholder-title">イベントを選択してください</h1>
-                <p>一覧から選ぶと、記録された映像をここに表示します。</p>
-              </section>
-            </header>
-          )}
+          <header className="topbar">
+            <section aria-labelledby="placeholder-title" className="pill placeholder-pill">
+              <h1 id="placeholder-title">イベントを選択してください</h1>
+              <p>一覧から選ぶと、記録された映像をここに表示します。</p>
+            </section>
+          </header>
           <EmptyStage />
         </>
       )}

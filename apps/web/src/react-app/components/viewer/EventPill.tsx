@@ -131,7 +131,7 @@ export function EventPill({ event, onBack, libraryToggle }: EventPillProps) {
         onClick={() => setOpen((current) => !current)}
       >
         <CategoryChip category={event.category} size="large" wording="full" />
-        <span className="event-pill__when"><span className="num">{startClock(event.timestamp)}</span> 開始</span>
+        <span className="event-pill__when"><span className="num">{startClock(event.timestamp)}</span><span className="event-pill__suffix"> 開始</span></span>
         {location !== null && (
           <span className="event-pill__where">
             <MapPin aria-hidden="true" size={15} />

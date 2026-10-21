@@ -10,6 +10,7 @@
 .event-pill {
   gap: 14px;
   min-width: 0;
+  overflow: hidden;
   padding: 0 18px 0 8px;
   text-align: left;
   transition: box-shadow var(--motion-fast-duration) var(--motion-fast-easing);
@@ -105,7 +106,7 @@
 
 .details__row {
   display: grid;
-  grid-template-columns: 116px minmax(0, 1fr);
+  grid-template-columns: 136px minmax(0, 1fr);
   gap: 12px;
   font: var(--type-ui);
 }
