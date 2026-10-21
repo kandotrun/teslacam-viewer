@@ -35,6 +35,7 @@ use super::components::{
 use super::date_picker::{PickerAction, date_picker};
 use super::rail::{RailClick, day_rail};
 use super::style::{AppTheme, Palette, TypeExt as _, icon, numeral_text};
+use super::text::ja_text;
 use super::thumbnails::ThumbnailCache;
 use crate::assets::Icon;
 use crate::store::{AppStore, StoreEvent};
@@ -343,7 +344,7 @@ impl LibraryPanel {
                 .mt(px(14.0))
                 .type_role(&tokens.type_scale.body)
                 .text_color(palette.ink_2)
-                .child(copy::WELCOME_DESCRIPTION)
+                .child(ja_text(copy::WELCOME_DESCRIPTION))
                 .into_any_element(),
             Some(error) => {
                 let (headline, description) = copy::folder_error_text(error);
@@ -363,14 +364,14 @@ impl LibraryPanel {
                             .ui_text(15.0, 600.0)
                             .line_height(relative(1.5))
                             .text_color(palette.ink)
-                            .child(headline),
+                            .child(ja_text(headline)),
                     )
                     .child(
                         div()
                             .type_role(&tokens.type_scale.body)
                             .line_height(relative(1.7))
                             .text_color(palette.ink_2)
-                            .child(description),
+                            .child(ja_text(description)),
                     )
                     .into_any_element()
             }
@@ -943,26 +944,25 @@ impl LibraryPanel {
                 .into_any_element()
         };
 
-        let footer =
-            (!warnings.is_empty()).then(|| {
-                div()
-                    .id("scan-warnings")
-                    .flex()
-                    .flex_col()
-                    .gap(px(2.0))
-                    .pt(px(10.0))
-                    .px(px(20.0))
-                    .pb(px(14.0))
-                    .border_t_1()
-                    .border_color(palette.line)
-                    .ui_text(11.0, 400.0)
-                    .line_height(relative(1.4))
-                    .text_color(palette.ink_3)
-                    .children(warnings.iter().map(|warning| {
-                        div().child(copy::warning_text(warning.kind, warning.count))
-                    }))
-                    .test_support()
-            });
+        let footer = (!warnings.is_empty()).then(|| {
+            div()
+                .id("scan-warnings")
+                .flex()
+                .flex_col()
+                .gap(px(2.0))
+                .pt(px(10.0))
+                .px(px(20.0))
+                .pb(px(14.0))
+                .border_t_1()
+                .border_color(palette.line)
+                .ui_text(11.0, 400.0)
+                .line_height(relative(1.4))
+                .text_color(palette.ink_3)
+                .children(warnings.iter().map(|warning| {
+                    div().child(ja_text(copy::warning_text(warning.kind, warning.count)))
+                }))
+                .test_support()
+        });
 
         div()
             .flex()
@@ -1037,7 +1037,7 @@ impl LibraryPanel {
                         .w_full()
                         .text_size(px(11.0))
                         .text_color(palette.warning)
-                        .child(missing),
+                        .child(ja_text(missing)),
                 )
             });
         div()

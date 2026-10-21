@@ -6,8 +6,10 @@ use gpui_kit::{
     AnchoredPositionMode, AnyElement, ClickEvent, Context, Entity, FontWeight,
     InteractiveElement as _, IntoElement, ParentElement as _, Render, RenderImage, Role,
     StatefulInteractiveElement as _, Styled as _, Subscription, TestSupportExt as _, Toggled,
-    Window, anchored, deferred, div, img, point, px, relative,
+    Window, anchored, canvas, deferred, div, img, point, px, relative,
 };
+use std::cell::Cell;
+use std::rc::Rc;
 use std::sync::Arc;
 use teslacam_core::copy;
 use teslacam_core::event_copy::{EventDetails, event_details, event_pill};
@@ -19,8 +21,10 @@ use super::components::{
     ChipSize, KeyboardFocus as _, category_chip, glass, icon_button, popover_surface,
     primary_button, ring, segment_selected, text_button,
 };
-use super::style::{AppTheme, Palette, TypeExt as _, icon, numeral_text};
-use crate::assets::Icon;
+use super::style::{AppTheme, Palette, TypeExt as _, UI_FAMILY, icon, numeral_text, tabular};
+use super::text::ja_text;
+use crate::assets::{Icon, NUMERAL_FAMILY};
+use crate::presentation::event_pill::{ITEM_GAP, PillWidths, pill_items};
 use crate::presentation::floor_art::progress_ring_svg;
 use crate::presentation::floor_layout::floor_layout;
 use crate::store::{AppStore, StoreEvent};
@@ -36,7 +40,47 @@ pub struct TopRow {
     export_progress_open: bool,
     /// The progress ring for (percent, scale bits).
     ring: Option<((u8, u32), Arc<RenderImage>)>,
+    /// Measured width of the actions pill (the event pill gets the rest of the row).
+    actions_width: Rc<Cell<f32>>,
     _subscriptions: Vec<Subscription>,
+}
+
+/// The export popovers are at least this wide, so a one-sentence message does not wrap into a
+/// column under the narrow `もう一度` button.
+const EXPORT_POPOVER_MIN_WIDTH: f32 = 240.0;
+
+/// Space between the event pill and the actions pill.
+const ROW_GAP: f32 = 10.0;
+/// Horizontal padding of the event pill (8 left, 18 right).
+const PILL_PADDING: f32 = 26.0;
+
+/// The natural width of `text` set in one style.
+fn text_width(
+    window: &Window,
+    text: &str,
+    family: &'static str,
+    size: f32,
+    weight: f32,
+    tabular_figures: bool,
+) -> f32 {
+    let mut font = gpui_kit::font(family);
+    font.weight = FontWeight(weight);
+    if tabular_figures {
+        font.features = tabular();
+    }
+    let run = gpui_kit::TextRun {
+        len: text.len(),
+        font,
+        color: gpui_kit::black(),
+        background_color: None,
+        underline: None,
+        strikethrough: None,
+    };
+    window
+        .text_system()
+        .shape_line(text.to_owned().into(), px(size), &[run], None)
+        .width
+        .as_f32()
 }
 
 impl TopRow {
@@ -61,6 +105,7 @@ impl TopRow {
             export_reason_open: false,
             export_progress_open: false,
             ring: None,
+            actions_width: Rc::new(Cell::new(0.0)),
         }
     }
 
@@ -158,7 +203,7 @@ fn details_popover(
                                 div()
                                     .ui_text(12.0, 400.0)
                                     .text_color(palette.warning)
-                                    .child(warning),
+                                    .child(ja_text(warning)),
                             )
                         }),
                 )
@@ -298,6 +343,7 @@ impl TopRow {
                         .role(role)
                         .px(px(14.0))
                         .py(px(10.0))
+                        .min_w(px(EXPORT_POPOVER_MIN_WIDTH))
                         .max_w(px(300.0))
                         .ui_text(12.0, 400.0)
                         .child(content),
@@ -460,7 +506,7 @@ impl TopRow {
                     })),
                 )
                 .child(popover(
-                    div().text_color(palette.warning).child(message),
+                    div().text_color(palette.warning).child(ja_text(message)),
                     Role::Alert,
                 ))
                 .into_any_element(),
@@ -490,7 +536,7 @@ impl TopRow {
                 control
                     .child(button.test_support())
                     .children(note.map(|(text, role)| {
-                        popover(div().text_color(palette.ink_2).child(text), role)
+                        popover(div().text_color(palette.ink_2).child(ja_text(text)), role)
                     }))
                     .into_any_element()
             }
@@ -557,13 +603,14 @@ impl Render for TopRow {
         let viewport = window.viewport_size();
         let snapshot = {
             let store = self.store.read(cx);
-            let compact = floor_layout(
+            let floor = floor_layout(
                 viewport.width.as_f32(),
                 viewport.height.as_f32(),
                 floor_phase(store),
                 tokens,
-            )
-            .compact;
+            );
+            let (compact, row_width) =
+                (floor.compact, floor.top_row.map_or(0.0, |rect| rect.width));
             store
                 .session()
                 .zip(store.selected_event())
@@ -574,7 +621,7 @@ impl Render for TopRow {
                         session.playback.view_mode(),
                         event.representative.is_some(),
                         session.export.unavailable_reason(),
-                        compact,
+                        (compact, row_width),
                         session.export.state().clone(),
                         session.timeline.duration(),
                     )
@@ -586,12 +633,58 @@ impl Render for TopRow {
             view_mode,
             has_representative,
             export_reason,
-            compact,
+            (compact, row_width),
             export_state,
             duration,
         )) = snapshot
         else {
             return self.placeholder(cx);
+        };
+        // Items drop whole from the right, detection first, then place (DESIGN.md §6).
+        let shown = {
+            let measure =
+                |text: &str, family: &'static str, size: f32, weight: f32, tabular: bool| {
+                    text_width(window, text, family, size, weight, tabular)
+                };
+            let numeral_m = &tokens.type_scale.numeral_m;
+            let chip = 12.0
+                + 14.0
+                + 4.0
+                + measure(
+                    copy::category_label(pill.category),
+                    UI_FAMILY,
+                    12.0,
+                    600.0,
+                    false,
+                )
+                + 12.0;
+            let clock = measure(
+                &pill.start_clock,
+                NUMERAL_FAMILY,
+                numeral_m.size,
+                f32::from(numeral_m.weight),
+                true,
+            ) + 4.0
+                + measure(copy::EVENT_START_SUFFIX, UI_FAMILY, 15.0, 600.0, false);
+            let widths = PillWidths {
+                fixed: PILL_PADDING + chip + ITEM_GAP + clock,
+                place: pill
+                    .location
+                    .as_ref()
+                    .map(|location| 15.0 + 5.0 + measure(location, UI_FAMILY, 13.0, 400.0, false)),
+                detection: pill
+                    .detection
+                    .as_ref()
+                    .filter(|_| !compact)
+                    .map(|detection| {
+                        15.0 + 6.0
+                            + measure(&detection.lead, UI_FAMILY, 13.0, 400.0, false)
+                            + measure(&detection.time, NUMERAL_FAMILY, 15.0, 600.0, true)
+                            + measure(&detection.tail, UI_FAMILY, 13.0, 400.0, false)
+                    }),
+            };
+            let available = row_width - self.actions_width.get() - ROW_GAP;
+            pill_items(available, widths)
         };
         let ink = palette.ink;
         let float = AppTheme::get(cx).float_shadow.clone();
@@ -607,11 +700,11 @@ impl Render for TopRow {
             .aria_expanded(self.details_open)
             .flex()
             .items_center()
-            .gap(px(14.0))
+            .gap(px(ITEM_GAP))
             .min_w_0()
             .h(px(tokens.sizes.topbar_height))
             .pl(px(8.0))
-            .pr(px(18.0))
+            .pr(px(PILL_PADDING - 8.0))
             .overflow_hidden()
             .cursor_pointer()
             .hover(move |style| style.shadow(hover_shadow.clone()))
@@ -632,29 +725,24 @@ impl Render for TopRow {
                     )
                     .child(div().ml(px(4.0)).child(copy::EVENT_START_SUFFIX)),
             )
-            .when_some(pill.location.clone(), |row, location| {
-                row.child(separator(&palette)).child(
-                    div()
-                        .flex()
-                        .items_center()
-                        .gap(px(5.0))
-                        .min_w_0()
-                        .flex_shrink(1.0)
-                        .ui_text(13.0, 400.0)
-                        .text_color(palette.ink_2)
-                        .child(icon(Icon::MapPin, 15.0, palette.ink_2))
-                        .child(
-                            div()
-                                .min_w_0()
-                                .overflow_hidden()
-                                .text_ellipsis()
-                                .whitespace_nowrap()
-                                .child(location),
-                        ),
-                )
-            })
             .when_some(
-                pill.detection.clone().filter(|_| !compact),
+                pill.location.clone().filter(|_| shown.place),
+                |row, location| {
+                    row.child(separator(&palette)).child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(5.0))
+                            .flex_none()
+                            .ui_text(13.0, 400.0)
+                            .text_color(palette.ink_2)
+                            .child(icon(Icon::MapPin, 15.0, palette.ink_2))
+                            .child(div().whitespace_nowrap().child(location)),
+                    )
+                },
+            )
+            .when_some(
+                pill.detection.clone().filter(|_| shown.detection),
                 |row, detection| {
                     row.child(separator(&palette)).child(
                         div()
@@ -729,7 +817,23 @@ impl Render for TopRow {
         } else {
             view_mode
         };
+        let measured = self.actions_width.clone();
         let actions = glass(999.0, cx)
+            .relative()
+            .child(
+                canvas(
+                    move |bounds, window, _| {
+                        let width = bounds.size.width.as_f32();
+                        if (width - measured.get()).abs() > 0.5 {
+                            measured.set(width);
+                            window.refresh();
+                        }
+                    },
+                    |_, _, _, _| {},
+                )
+                .absolute()
+                .size_full(),
+            )
             .flex()
             .flex_none()
             .items_center()
@@ -758,7 +862,7 @@ impl Render for TopRow {
             .flex()
             .items_start()
             .justify_between()
-            .gap(px(10.0))
+            .gap(px(ROW_GAP))
             .child(
                 div()
                     .relative()

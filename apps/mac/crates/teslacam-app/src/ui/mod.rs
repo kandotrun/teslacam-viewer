@@ -11,6 +11,7 @@ pub mod stage;
 pub mod style;
 #[cfg(test)]
 mod tests;
+pub mod text;
 pub mod thumbnails;
 pub mod top_row;
 pub mod transport;
