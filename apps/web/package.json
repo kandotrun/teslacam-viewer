@@ -51,5 +51,8 @@
     "vite": "^8.3.5",
     "vitest": "^4.1.12",
     "wrangler": "^4.151.3"
+  },
+  "overrides": {
+    "@opentelemetry/api": "1.9.1"
   }
 }
