@@ -280,6 +280,7 @@ impl CompositeExporter {
             cancel.clone(),
         );
         thread::spawn(move || {
+            av::run_as_user_initiated();
             let prepared = match prepare(&event, &layout, &vehicle, &worker_cancel) {
                 Ok(prepared) => prepared,
                 Err(error) => {

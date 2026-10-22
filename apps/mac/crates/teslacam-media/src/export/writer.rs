@@ -13,6 +13,7 @@
 //! job then reads an atomic frame counter and a channel.
 
 use std::{
+    collections::VecDeque,
     path::{Path, PathBuf},
     ptr::NonNull,
     sync::{
@@ -26,7 +27,7 @@ use std::{
 
 use block2::RcBlock;
 use objc2::{
-    Message,
+    AnyThread, Message,
     rc::{Retained, autoreleasepool},
     runtime::AnyObject,
 };
@@ -43,7 +44,8 @@ use objc2_av_foundation::{
 use objc2_core_foundation::{CFRetained, CGAffineTransform, CGPoint, CGRect, CGSize};
 use objc2_core_graphics::{CGColorSpace, kCGColorSpaceSRGB};
 use objc2_core_image::{
-    CIColor, CIContext, CIImage, kCIContextCacheIntermediates, kCIContextWorkingColorSpace,
+    CIColor, CIContext, CIImage, CIRenderDestination, CIRenderTask, kCIContextCacheIntermediates,
+    kCIContextWorkingColorSpace,
 };
 use objc2_core_media::{CMSampleBuffer, CMTime};
 use objc2_core_video::{
@@ -72,6 +74,10 @@ const BIT_RATE: i64 = 7_300_000;
 const KEY_FRAME_INTERVAL: u32 = 2;
 /// Decoded frames a camera's reader may run ahead of the encoder.
 const READ_AHEAD: usize = 4;
+/// Frames the GPU may render ahead of the encoder. The GPU is shared with every other app; waiting
+/// for each frame before composing the next one left it idle between frames, and on a busy machine
+/// compositing then took 12.5 s instead of overlapping with decoding.
+const RENDER_AHEAD: usize = 3;
 
 /// Shared between the worker thread and the main thread.
 struct Shared {
@@ -239,6 +245,14 @@ fn encode(
         }
     }
     let fps = f64::from(layout.fps);
+    let mut rendering: VecDeque<Rendering> = VecDeque::with_capacity(RENDER_AHEAD + 1);
+    let deliver = |rendering: Rendering| -> Result<(), ExportError> {
+        unsafe { rendering.task.waitUntilCompletedAndReturnError() }
+            .map_err(|error| media_failure(av::media_error(&error)))?;
+        writer.append(&rendering.buffer, rendering.index, &shared.cancel)?;
+        shared.frames.store(rendering.index + 1, Ordering::SeqCst);
+        Ok(())
+    };
     for index in 0..plan.frame_count {
         if shared.cancel.load(Ordering::SeqCst) {
             return Err(ExportError::Aborted);
@@ -257,12 +271,29 @@ fn encode(
                 }
             }
             let buffer = writer.buffer()?;
-            compositor.render(&image, &buffer);
-            writer.append(&buffer, index, &shared.cancel)
+            let task = compositor.render(&image, &buffer)?;
+            rendering.push_back(Rendering {
+                index,
+                buffer,
+                task,
+            });
+            match rendering.len() > RENDER_AHEAD {
+                true => deliver(rendering.pop_front().expect("more than RENDER_AHEAD")),
+                false => Ok(()),
+            }
         })?;
-        shared.frames.store(index + 1, Ordering::SeqCst);
+    }
+    while let Some(next) = rendering.pop_front() {
+        deliver(next)?;
     }
     writer.finish(plan.frame_count)
+}
+
+/// An output frame the GPU is drawing.
+struct Rendering {
+    index: u64,
+    buffer: CFRetained<CVPixelBuffer>,
+    task: Retained<CIRenderTask>,
 }
 
 /// One decoded frame and its presentation time on the event axis.
@@ -291,6 +322,7 @@ impl Stream {
     ) -> Stream {
         let (tx, rx) = mpsc::sync_channel(READ_AHEAD);
         let thread = thread::spawn(move || {
+            av::run_as_user_initiated();
             let composition = composition.into_inner();
             read(&composition, &tx, &cancel);
         });
@@ -417,7 +449,6 @@ struct Compositor {
     /// `CIColorClamp`, whose defaults clip every component to 0…1.
     clamp: Retained<NSString>,
     space: CFRetained<CGColorSpace>,
-    frame: CGRect,
     /// The floor colour over the whole frame.
     background: Retained<CIImage>,
     overlay: Retained<CIImage>,
@@ -471,7 +502,6 @@ impl Compositor {
             context,
             clamp: NSString::from_str("CIColorClamp"),
             space,
-            frame,
             background,
             overlay,
             missing,
@@ -501,16 +531,20 @@ impl Compositor {
         }
     }
 
-    /// Draws `image` with the overlay on top into `buffer` (waits for the GPU).
-    fn render(&self, image: &CIImage, buffer: &CVPixelBuffer) {
+    /// Starts drawing `image` with the overlay on top into `buffer` on the GPU.
+    fn render(
+        &self,
+        image: &CIImage,
+        buffer: &CVPixelBuffer,
+    ) -> Result<Retained<CIRenderTask>, ExportError> {
         unsafe {
             let image = self.overlay.imageByCompositingOverImage(image);
-            self.context.render_toCVPixelBuffer_bounds_colorSpace(
-                &image,
-                buffer,
-                self.frame,
-                Some(&self.space),
-            );
+            let destination =
+                CIRenderDestination::initWithPixelBuffer(CIRenderDestination::alloc(), buffer);
+            destination.setColorSpace(Some(&self.space));
+            self.context
+                .startTaskToRender_toDestination_error(&image, &destination)
+                .map_err(|error| media_failure(av::media_error(&error)))
         }
     }
 }
