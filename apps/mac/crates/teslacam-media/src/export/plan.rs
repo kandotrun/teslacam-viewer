@@ -15,6 +15,9 @@ pub(crate) struct Keyframes {
     pub values: Vec<f64>,
 }
 
+/// Event times this close to a boundary count as on it (frame times like `n / 30` are not exact).
+pub(crate) const TIME_EPSILON: f64 = 1e-6;
+
 /// When a camera's missing tile (`記録なし`) is visible.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum MissingTile {
@@ -22,8 +25,49 @@ pub(crate) enum MissingTile {
     Never,
     /// The camera has no video at all.
     Always,
-    /// Visible only in some ranges.
-    During(Keyframes),
+    /// Visible only in these `[start, end)` ranges of event seconds (sorted, adjacent ones merged).
+    During(Vec<(f64, f64)>),
+}
+
+impl MissingTile {
+    /// Whether the tile covers the camera's window at event time `t`.
+    pub fn visible_at(&self, t: f64) -> bool {
+        match self {
+            MissingTile::Never => false,
+            MissingTile::Always => true,
+            MissingTile::During(ranges) => ranges
+                .iter()
+                .any(|(start, end)| *start <= t + TIME_EPSILON && t + TIME_EPSILON < *end),
+        }
+    }
+
+    /// The ranges as opacity keyframes over an animation of `duration` seconds; `None` when the
+    /// visibility never changes.
+    pub fn keyframes(&self, duration: f64) -> Option<Keyframes> {
+        let MissingTile::During(ranges) = self else {
+            return None;
+        };
+        let mut key_times = vec![0.0];
+        let mut values = Vec::new();
+        let mut cursor = 0.0;
+        for (start, end) in ranges {
+            if *start > cursor {
+                values.push(0.0);
+                key_times.push(start / duration);
+            }
+            values.push(1.0);
+            key_times.push(end / duration);
+            cursor = *end;
+        }
+        if cursor < duration {
+            values.push(0.0);
+            key_times.push(1.0);
+        }
+        if let Some(last) = key_times.last_mut() {
+            *last = 1.0;
+        }
+        Some(Keyframes { key_times, values })
+    }
 }
 
 /// One camera in the export frame.
@@ -56,7 +100,7 @@ pub(crate) fn plan_export(timeline: &EventTimeline, layout: &ExportLayout) -> Op
         CameraPlan {
             hole: layout.video_rect(camera, camera_timeline.display_size()),
             has_video: camera_timeline.has_video(),
-            missing: missing_tile(camera_timeline, duration),
+            missing: missing_tile(camera_timeline),
         }
     });
     let frame_count = (duration * f64::from(layout.fps) - 1e-6).ceil().max(1.0) as u64;
@@ -68,7 +112,7 @@ pub(crate) fn plan_export(timeline: &EventTimeline, layout: &ExportLayout) -> Op
 }
 
 /// The missing tile schedule of one camera.
-pub(crate) fn missing_tile(timeline: &CameraTimeline, duration: f64) -> MissingTile {
+pub(crate) fn missing_tile(timeline: &CameraTimeline) -> MissingTile {
     let mut gaps: Vec<(f64, f64)> = Vec::new();
     for span in &timeline.spans {
         if matches!(span.coverage, Coverage::Video { .. }) {
@@ -85,26 +129,7 @@ pub(crate) fn missing_tile(timeline: &CameraTimeline, duration: f64) -> MissingT
     if gaps.is_empty() {
         return MissingTile::Never;
     }
-    let mut key_times = vec![0.0];
-    let mut values = Vec::new();
-    let mut cursor = 0.0;
-    for (start, end) in gaps {
-        if start > cursor {
-            values.push(0.0);
-            key_times.push(start / duration);
-        }
-        values.push(1.0);
-        key_times.push(end / duration);
-        cursor = end;
-    }
-    if cursor < duration {
-        values.push(0.0);
-        key_times.push(1.0);
-    }
-    if let Some(last) = key_times.last_mut() {
-        *last = 1.0;
-    }
-    MissingTile::During(Keyframes { key_times, values })
+    MissingTile::During(gaps)
 }
 
 #[cfg(test)]
@@ -149,8 +174,8 @@ mod tests {
         ])
     }
 
-    fn keyframes(key_times: &[f64], values: &[f64]) -> MissingTile {
-        MissingTile::During(Keyframes {
+    fn keyframes(key_times: &[f64], values: &[f64]) -> Option<Keyframes> {
+        Some(Keyframes {
             key_times: key_times.to_vec(),
             values: values.to_vec(),
         })
@@ -173,12 +198,54 @@ mod tests {
         assert!(!plan.cameras[CameraId::RightRepeater].has_video);
         assert_eq!(
             plan.cameras[CameraId::Back].missing,
-            keyframes(&[0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0], &[0.0, 1.0, 0.0])
+            MissingTile::During(vec![(20.0, 40.0)])
         );
         assert_eq!(
             plan.cameras[CameraId::Front].missing,
+            MissingTile::During(vec![(28.0, 40.0)])
+        );
+    }
+
+    #[test]
+    fn keyframes_put_the_gaps_on_the_animation_timeline() {
+        let plan = plan_export(&gaps_timeline(), &ExportLayout::contract()).unwrap();
+        assert_eq!(
+            plan.cameras[CameraId::Back].missing.keyframes(60.0),
+            keyframes(&[0.0, 1.0 / 3.0, 2.0 / 3.0, 1.0], &[0.0, 1.0, 0.0])
+        );
+        assert_eq!(
+            plan.cameras[CameraId::Front].missing.keyframes(60.0),
             keyframes(&[0.0, 28.0 / 60.0, 2.0 / 3.0, 1.0], &[0.0, 1.0, 0.0])
         );
+        assert_eq!(
+            MissingTile::During(vec![(0.0, 20.0)]).keyframes(40.0),
+            keyframes(&[0.0, 0.5, 1.0], &[1.0, 0.0])
+        );
+        assert_eq!(
+            MissingTile::During(vec![(30.0, 40.0)]).keyframes(40.0),
+            keyframes(&[0.0, 0.75, 1.0], &[0.0, 1.0])
+        );
+        assert_eq!(MissingTile::Never.keyframes(60.0), None);
+        assert_eq!(MissingTile::Always.keyframes(60.0), None);
+    }
+
+    #[test]
+    fn missing_tiles_are_visible_from_the_gap_start_until_its_end() {
+        let back = MissingTile::During(vec![(20.0, 40.0)]);
+        assert!(!back.visible_at(19.99));
+        assert!(back.visible_at(600.0 / 30.0), "the frame at the gap start");
+        assert!(back.visible_at(20.0 - 1e-9), "rounding noise at the start");
+        assert!(back.visible_at(1199.0 / 30.0));
+        assert!(!back.visible_at(1200.0 / 30.0), "the frame at the gap end");
+        assert!(!back.visible_at(40.0 - 1e-9), "rounding noise at the end");
+        assert!(MissingTile::Always.visible_at(0.0));
+        assert!(!MissingTile::Never.visible_at(30.0));
+        let two = MissingTile::During(vec![(0.0, 5.0), (10.0, 15.0)]);
+        let shown: Vec<bool> = [0.0, 4.9, 5.0, 9.9, 10.0, 14.9, 15.0]
+            .iter()
+            .map(|t| two.visible_at(*t))
+            .collect();
+        assert_eq!(shown, [true, true, false, false, true, true, false]);
     }
 
     #[test]
@@ -205,12 +272,12 @@ mod tests {
             segment(30.0, |c| (c != CameraId::Back).then_some(Ok(info(10.0)))),
         ]);
         assert_eq!(
-            missing_tile(&timeline.cameras[CameraId::Front], 40.0),
-            keyframes(&[0.0, 0.5, 1.0], &[1.0, 0.0])
+            missing_tile(&timeline.cameras[CameraId::Front]),
+            MissingTile::During(vec![(0.0, 20.0)])
         );
         assert_eq!(
-            missing_tile(&timeline.cameras[CameraId::Back], 40.0),
-            keyframes(&[0.0, 0.75, 1.0], &[0.0, 1.0])
+            missing_tile(&timeline.cameras[CameraId::Back]),
+            MissingTile::During(vec![(30.0, 40.0)])
         );
     }
 

@@ -50,6 +50,17 @@ impl Rect {
     pub fn center(&self) -> (f64, f64) {
         (self.x + self.width / 2.0, self.y + self.height / 2.0)
     }
+
+    /// The same rectangle with the origin at the bottom-left of a frame `frame_height` tall
+    /// (CoreAnimation on macOS, Core Image).
+    pub fn bottom_left(&self, frame_height: f64) -> Rect {
+        Rect::new(
+            self.x,
+            frame_height - self.y - self.height,
+            self.width,
+            self.height,
+        )
+    }
 }
 
 /// A straight (non-premultiplied) colour with components in 0…1.
@@ -136,6 +147,22 @@ pub fn fit_transform(natural: (f64, f64), preferred: Affine, destination: Rect) 
         scale * d,
         scale * (tx - min_x) + fitted.x,
         scale * (ty - min_y) + fitted.y,
+    ]
+}
+
+/// `transform` (top-left origin on both sides, as [`fit_transform`] returns it) for Core Image, whose
+/// origin is at the bottom-left: it draws a source image `source_height` pixels tall into a frame
+/// `frame_height` pixels tall.
+pub fn bottom_left_transform(transform: Affine, source_height: f64, frame_height: f64) -> Affine {
+    // Flip the source, apply `transform`, flip the frame.
+    let [a, b, c, d, tx, ty] = transform;
+    [
+        a,
+        -b,
+        -c,
+        d,
+        c * source_height + tx,
+        frame_height - d * source_height - ty,
     ]
 }
 
@@ -579,6 +606,39 @@ mod tests {
             ys.iter().cloned().fold(f64::NEG_INFINITY, f64::max),
             fitted.bottom()
         ));
+    }
+
+    #[test]
+    fn bottom_left_transforms_place_an_upright_frame_in_the_flipped_slot() {
+        let slot = Rect::new(464.0, 12.0, 352.0, 264.0);
+        let t = fit_transform((1280.0, 960.0), IDENTITY, slot);
+        assert_eq!(
+            bottom_left_transform(t, 960.0, 720.0),
+            [0.275, 0.0, 0.0, 0.275, 464.0, 444.0]
+        );
+        assert_eq!(
+            slot.bottom_left(720.0),
+            Rect::new(464.0, 444.0, 352.0, 264.0)
+        );
+    }
+
+    #[test]
+    fn bottom_left_transforms_map_every_point_like_the_top_left_one() {
+        let rotate = [0.0, 1.0, -1.0, 0.0, 960.0, 0.0];
+        let slot = Rect::new(20.0, 30.0, 300.0, 300.0);
+        for preferred in [IDENTITY, rotate] {
+            let t = fit_transform((1280.0, 960.0), preferred, slot);
+            let ci = bottom_left_transform(t, 960.0, 720.0);
+            for (x, y) in [(0.0, 0.0), (1280.0, 0.0), (0.0, 960.0), (300.0, 200.0)] {
+                let (tx, ty) = apply(t, (x, y));
+                let (cx, cy) = apply(ci, (x, 960.0 - y));
+                assert!(
+                    (cx - tx).abs() < 1e-9 && (cy - (720.0 - ty)).abs() < 1e-9,
+                    "{preferred:?} ({x}, {y}): ({cx}, {cy}) vs ({tx}, {})",
+                    720.0 - ty
+                );
+            }
+        }
     }
 
     #[test]
