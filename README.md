@@ -43,10 +43,16 @@ that mattered.
 | | Web, before the 2026-10 rewrite | Web, now | Mac app |
 |---|---|---|---|
 | Open a folder of ~100,000 files | ~56 s (browser enumeration 18.7 s + first file-size reads 34.8 s + library 2.7 s) | library step 1.96 s → 0.19 s; walk no longer waits per file (not re-timed on a real drive) | **0.33 s** (96,120 files, 1,441 `event.json`, median of 5) |
-| Camera-to-camera sync while playing | corrected from `timeupdate` (~3.75 Hz) once drift exceeds 0.25 s, so cameras could be up to ~0.25–0.5 s apart | same mechanism | **0 frames** apart at 0.5×–4×, after seeks and across 60 s segment boundaries |
+| Camera-to-camera sync while playing | corrected from `timeupdate` (~3.75 Hz) once drift exceeds 0.25 s; measured¹: 1 frame apart throughout at 1×, a camera 0.2 s off stays 8 frames off, ~280 ms of blank windows at each segment boundary | steered on every frame the source presents (`requestVideoFrameCallback`) by playback rate, seeking only past 0.3 s; next segment preloaded. Measured¹: median **0 frames** apart at 1× and after seeks (all six identical in 46–100 % of samples, at most 1 apart), median 0–1 and 95th percentile ≤ 2 at 2×, a camera 0.2 s off back in 1.1–1.3 s, no blank frame at segment boundaries | **0 frames** apart at 0.5×–4×, after seeks and across 60 s segment boundaries |
 | Expanding one camera | reloaded all six videos (15–55 ms of black) | no reload | no reload |
 | CPU while playing six cameras | not measured | not measured | 3.7–9.1 % of one core; 0 % paused |
 | Composite export of a 120 s event (1280 × 720 MP4) | WebCodecs ≈ 264 fps (≈ 14 s), on in-memory files | same path, overlay drawn once (+3–7 %) | 19–26 s (4.6–6.2× real time, `AVAssetExportSession`) |
+
+¹ The web sync numbers come from `apps/web/tests/e2e/sync.spec.ts` in Playwright's headless Chromium,
+not Chrome 155: 320 × 240 frame-counter clips at 36 fps, every file read delayed by 150 ms like a USB
+drive, and each camera's counter read through a canvas on every animation frame. "Now" is 8 runs, several
+on a heavily loaded machine; "before" is the same test run once against the previous code. Faster than
+1×, one display refresh already spans more than one frame.
 
 How the Mac app gets there: it walks the folder with plain `std::fs` and reads `event.json` files in
 parallel; VideoToolbox decodes in hardware and GPUI draws the decoded `IOSurface` frames directly
@@ -85,8 +91,11 @@ directly (Mac).
   (from `apps/mac`).
 - Mac sync and export: `just mac-fixtures && just mac-test` — the media crate's main-thread tests decode
   the burned-in frame counters and assert 0 frames of spread, and time the export.
-- The web and WebAssembly benchmarks were one-off harnesses run during development and are not in this
-  repository; their numbers are recorded here.
+- Web sync: `just web-e2e` — `tests/e2e/sync.spec.ts` asserts the spread of the burned-in counters and
+  writes what it measured to `apps/web/.omo/evidence/teslacam-viewer/json/sync-metrics.json`
+  (regenerate the clips with `apps/web/scripts/gen-sync-fixtures.sh`).
+- The other web and WebAssembly benchmarks were one-off harnesses run during development and are not in
+  this repository; their numbers are recorded here.
 
 ## Privacy
 
