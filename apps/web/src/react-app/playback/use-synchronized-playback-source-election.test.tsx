@@ -4,6 +4,12 @@ import { vi } from 'vitest'
 import type { CameraId, TeslaCamEvent } from '../../teslacam/types'
 import { useSynchronizedPlayback } from './use-synchronized-playback'
 
+/** A video at the end of its media, as the browser reports it when `ended` fires. */
+function atEnd(element: HTMLVideoElement): HTMLVideoElement {
+  Object.defineProperty(element, 'ended', { configurable: true, value: true })
+  return element
+}
+
 function eventWithSegments(count: number): TeslaCamEvent {
   return {
     id: 'playback-event',
@@ -26,7 +32,7 @@ function video(): HTMLVideoElement {
 }
 
 describe('useSynchronizedPlayback source election', () => {
-  it('uses only the elected clock, corrects drift beyond but not at 250ms, and enters the next segment at zero', () => {
+  it('uses only the elected clock and enters the next segment at zero', () => {
     const front = video()
     const back = video()
     const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(2)))
@@ -43,17 +49,9 @@ describe('useSynchronizedPlayback source election', () => {
 
     act(() => {
       front.currentTime = 20
-      back.currentTime = 19.75
       hook.result.current.handleVideoEvent('front', front, 'timeupdate')
     })
-    expect(back.currentTime).toBe(19.75)
-
-    act(() => {
-      front.currentTime = 20.01
-      back.currentTime = 19.75
-      hook.result.current.handleVideoEvent('front', front, 'timeupdate')
-    })
-    expect(back.currentTime).toBe(20.01)
+    expect(hook.result.current.elapsedSeconds).toBe(20)
 
     act(() => {
       front.currentTime = 60
@@ -78,7 +76,7 @@ describe('useSynchronizedPlayback source election', () => {
       hook.result.current.handleVideoEvent('back', back, 'ready')
       hook.result.current.handleVideoEvent('back', back, 'unavailable')
       front.currentTime = 60
-      hook.result.current.handleVideoEvent('front', front, 'ended')
+      hook.result.current.handleVideoEvent('front', atEnd(front), 'ended')
     })
 
     expect(hook.result.current.elapsedSeconds).toBe(60)

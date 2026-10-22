@@ -4,6 +4,7 @@ import { cameraIds, type CameraId, type TeslaCamEvent } from '../../../teslacam/
 import { categoryLabel, eventTime } from '../../event-filters'
 import { cameraLabels } from '../../event-summary'
 import { ObjectUrlRegistry } from '../../playback/object-url-registry'
+import { segmentBuffers } from '../../playback/segment-buffers'
 import { useSynchronizedPlayback } from '../../playback/use-synchronized-playback'
 import { initialPlaybackSeconds, sentryDetection, startsAtPreRoll } from '../../presentation/event-copy'
 import {
@@ -52,6 +53,8 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
   const playback = useSynchronizedPlayback(event, preferredCamera, initialPlaybackSeconds(event))
   const exporter = useCompositeExport(event)
   const segment = event.segments.at(playback.segmentIndex)
+  const buffers = segmentBuffers(playback.segmentIndex, event.segments.length)
+  const spareSegment = buffers.spareSegmentIndex === null ? undefined : event.segments.at(buffers.spareSegmentIndex)
   const everyCameraFailed = cameraIds.every((cameraId) => terminalStatuses.includes(statuses[cameraId] ?? 'loading'))
   const representative = event.representativeFile
   const view = effectiveViewMode(viewMode, representative !== undefined, everyCameraFailed)
@@ -164,6 +167,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
         {cameraIds.map((cameraId) => (
           <CameraWindow
             active={cameraId === activeCamera}
+            activeSlot={buffers.activeSlot}
             area={windowArea(mode, cameraId, focusCamera)}
             cameraId={cameraId}
             expanded={cameraId === expandedCamera && mode === 'expanded'}
@@ -173,6 +177,7 @@ function Session({ event, band, viewMode, onViewMode, onOlder, onNewer, onBack, 
             registerVideo={playback.registerVideo}
             registry={registry}
             revealIndex={revealOrder.indexOf(cameraId)}
+            spareFileRef={spareSegment?.cameras[cameraId]}
             unregisterVideo={playback.unregisterVideo}
             onPlaybackEvent={playback.handleVideoEvent}
             onStatus={updateStatus}
