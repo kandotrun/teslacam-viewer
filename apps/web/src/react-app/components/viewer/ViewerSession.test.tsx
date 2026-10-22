@@ -263,3 +263,45 @@ describe('event pill and details', () => {
     expect(details).not.toHaveTextContent('検知')
   })
 })
+
+function eventWithTwoSegments(): TeslaCamEvent {
+  const segment = (timestamp: string): TeslaCamEvent['segments'][number] => {
+    const cameras: Partial<Record<(typeof cameraIds)[number], ReturnType<typeof fileRef>>> = {}
+    for (const cameraId of cameraIds) cameras[cameraId] = fileRef(`${timestamp}-${cameraId}.mp4`)
+    return { timestamp, cameras }
+  }
+  return {
+    ...eventWithCameras(),
+    id: 'two-segments',
+    segments: [segment('2026-08-21_12-00-00'), segment('2026-08-21_12-01-00')],
+  }
+}
+
+describe('segments', () => {
+  it('preloads the next segment in hidden videos and plays them at the boundary without loading anything', async () => {
+    render(<Viewer event={eventWithTwoSegments()} />)
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalledTimes(12))
+    const playing = screen.getAllByTestId('camera-video')
+    const preloaded = [...document.querySelectorAll<HTMLVideoElement>('video[data-buffer="spare"]')]
+    expect(playing).toHaveLength(6)
+    expect(preloaded).toHaveLength(6)
+    for (const video of [...playing, ...preloaded]) {
+      Object.defineProperty(video, 'readyState', { configurable: true, value: HTMLMediaElement.HAVE_ENOUGH_DATA })
+      fireEvent.canPlay(video)
+    }
+    const loads = vi.mocked(HTMLMediaElement.prototype.load).mock.calls.length
+    vi.mocked(HTMLMediaElement.prototype.play).mockClear()
+
+    const source = firstCameraVideo(playing)
+    // jsdom does not play media, so mark the source as finished the way a browser does before `ended`.
+    Object.defineProperty(source, 'ended', { configurable: true, value: true })
+    fireEvent.ended(source)
+
+    await waitFor(() => expect(screen.getAllByTestId('camera-video')).toEqual(preloaded))
+    expect(preloaded.map((video) => video.dataset['buffer'])).toEqual(Array.from({ length: 6 }, () => 'active'))
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(12)
+    expect(vi.mocked(HTMLMediaElement.prototype.load).mock.calls.length).toBe(loads)
+    await waitFor(() => expect(vi.mocked(HTMLMediaElement.prototype.play).mock.contexts).toEqual(expect.arrayContaining(preloaded)))
+    expect(screen.getByRole('button', { name: '一時停止' })).toBeVisible()
+  })
+})

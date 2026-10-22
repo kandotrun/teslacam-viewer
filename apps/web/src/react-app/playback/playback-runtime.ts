@@ -51,10 +51,6 @@ export function setPlaybackRate(runtime: PlaybackRuntime, rate: number): void {
   runtime.rate = rate
 }
 
-export function setPlaybackSegment(runtime: PlaybackRuntime, segmentIndex: number): void {
-  runtime.segmentIndex = segmentIndex
-}
-
 export function setNoPlayableRequest(runtime: PlaybackRuntime, noPlayableRequest: boolean): void {
   runtime.noPlayableRequest = noPlayableRequest
 }
