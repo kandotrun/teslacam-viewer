@@ -1,13 +1,26 @@
 //! The composite MP4 export (DESIGN.md "Export frame", spec §3.5–§3.8).
 //!
-//! One `AVMutableComposition` with a video track per camera (clips on the wall-clock event timeline)
-//! goes through an `AVMutableVideoComposition` that contain-fits every camera into its slot, and an
-//! `AVVideoCompositionCoreAnimationTool` that lays one static overlay image on top (floor, rounded
-//! holes, wedges, car, labels). Missing tiles (`記録なし`) sit between the video and the overlay and
-//! are switched on only for the ranges a camera has no video, with discrete opacity keyframes, so no
-//! layer is redrawn per frame. `AVAssetExportSession` encodes H.264 1280 × 720 at 30 fps.
+//! Every output frame is the same picture: the floor, every camera contain-fitted into its slot, the
+//! missing tile (`記録なし`) over a camera's window while it has no video, and on top one static
+//! overlay image (floor, rounded holes, wedges, car, labels) drawn once per export by
+//! [`crate::overlay`]. H.264, 1280 × 720, 30 fps; output frame `n` shows each camera's latest frame at
+//! or before `n / 30` s on the wall-clock event timeline. Two pipelines draw it:
+//!
+//! - [`ExportBackend::ReaderWriter`], the default (`writer`): one `AVAssetReader` per camera decodes
+//!   in hardware on its own thread, Core Image composes every frame on the GPU and `AVAssetWriter`
+//!   encodes it in hardware, all off the main thread.
+//! - [`ExportBackend::ExportSession`] (`session`): `AVAssetExportSession` with an
+//!   `AVMutableVideoComposition` and Core Animation layers, the pipeline of v0.1.0, kept to compare
+//!   against.
+//!
+//! Both prepare on a worker thread (probe, plan, draw the static images) and touch the destination
+//! file only once the main thread's [`ExportJob::poll`] has seen the preparation finish and the job
+//! was not cancelled.
 
+mod frames;
 mod plan;
+mod session;
+mod writer;
 
 use std::{
     borrow::Cow,
@@ -20,37 +33,19 @@ use std::{
     thread,
 };
 
-use block2::RcBlock;
-use objc2::{
-    AnyThread, MainThreadMarker, Message,
-    rc::Retained,
-    runtime::{AnyObject, ProtocolObject},
-};
-use objc2_av_foundation::{
-    AVAssetExportPreset1280x720, AVAssetExportSession, AVAssetExportSessionStatus, AVAssetTrack,
-    AVCoreAnimationBeginTimeAtZero, AVFileTypeMPEG4, AVMutableComposition,
-    AVMutableCompositionTrack, AVMutableVideoComposition, AVMutableVideoCompositionInstruction,
-    AVMutableVideoCompositionLayerInstruction, AVURLAsset, AVVideoCompositionCoreAnimationTool,
-    AVVideoCompositionInstructionProtocol, AVVideoCompositionLayerInstruction,
-};
-use objc2_core_foundation::{CGAffineTransform, CGPoint, CGRect, CGSize};
-use objc2_core_graphics::{CGColor, CGImage};
-use objc2_core_media::CMTime;
-use objc2_foundation::{NSArray, NSNumber, NSString};
-use objc2_quartz_core::{
-    CAKeyframeAnimation, CALayer, CAMediaTiming, kCAAnimationDiscrete, kCAFillModeBoth,
-};
+use objc2::{MainThreadMarker, Message, rc::Retained};
+use objc2_av_foundation::AVAssetTrack;
 
 pub(crate) use plan::{ExportPlan, MissingTile, plan_export};
 
 use crate::{
     av::{self, SendBox},
     input::{CameraId, CameraMap, EventInput},
-    layout::{ExportLayout, Rect, fit_transform},
+    layout::ExportLayout,
     overlay::{self, Drawn, OverlayError, VEHICLE_PNG},
-    probe::probe_event_blocking,
+    probe::{ProbedEvent, probe_event_blocking},
     status::MediaError,
-    timeline::plan_event_timeline,
+    timeline::{EventTimeline, plan_event_timeline},
 };
 
 /// Why an export did not produce a file (spec §3.7). [`ExportError::message`] is the UI copy.
@@ -128,11 +123,23 @@ impl ExportState {
     }
 }
 
-/// Builds composite exports. Holds the layout (from `packages/contract`) and the car image.
+/// Which pipeline encodes the export; see the module docs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ExportBackend {
+    /// `AVAssetReader` per camera → Core Image → `AVAssetWriter`, on worker threads (the default).
+    #[default]
+    ReaderWriter,
+    /// `AVAssetExportSession` with a video composition and Core Animation (v0.1.0).
+    ExportSession,
+}
+
+/// Builds composite exports. Holds the layout (from `packages/contract`), the car image and the
+/// pipeline.
 #[derive(Debug, Clone)]
 pub struct CompositeExporter {
     layout: ExportLayout,
     vehicle_png: Cow<'static, [u8]>,
+    backend: ExportBackend,
 }
 
 impl Default for CompositeExporter {
@@ -141,29 +148,61 @@ impl Default for CompositeExporter {
     }
 }
 
-/// One camera's composition track and the source track (with its start on the event axis) of each
-/// of its clips.
-struct CameraTrack {
-    track: Retained<AVMutableCompositionTrack>,
-    sources: Vec<(f64, Retained<AVAssetTrack>)>,
+/// What both pipelines start from, prepared on the worker thread.
+pub(crate) struct Prepared {
+    /// The loaded assets and tracks (kept alive for the whole export).
+    probed: ProbedEvent,
+    timeline: EventTimeline,
+    plan: ExportPlan,
+    overlay: Drawn,
+    /// The missing tile of each camera that ever shows it.
+    missing: CameraMap<Option<Drawn>>,
 }
 
-/// Everything the worker thread prepares off the main thread.
-struct Prepared {
+impl Prepared {
+    /// The source track of each clip of `camera`, with the clip's start on the event axis.
+    fn sources(&self, camera: CameraId) -> Vec<(f64, Retained<AVAssetTrack>)> {
+        self.timeline.cameras[camera]
+            .clips
+            .iter()
+            .map(|clip| {
+                let track = self
+                    .probed
+                    .track(clip.segment, camera)
+                    .expect("placed clips have a loaded track");
+                (clip.start, track.retain())
+            })
+            .collect()
+    }
+}
+
+/// A prepared export, waiting for the main thread to let it write the output file.
+struct Ready {
     plan: ExportPlan,
-    composition: Retained<AVMutableComposition>,
-    /// Composition track per camera with video.
-    tracks: CameraMap<Option<CameraTrack>>,
-    overlay: Drawn,
-    missing: CameraMap<Option<Drawn>>,
-    _assets: Vec<Retained<AVURLAsset>>,
+    pipeline: ReadyPipeline,
+}
+
+enum ReadyPipeline {
+    Session(Box<session::Composed>),
+    Writer(writer::Pending),
+}
+
+/// A running encoder, owned by the [`ExportJob`] on the main thread.
+trait Encoding {
+    /// 0…1 while encoding.
+    fn progress(&self) -> f32;
+    /// `Some` once the encoder stopped: `Ok` when the file is complete.
+    fn outcome(&mut self) -> Option<Result<(), ExportError>>;
+    /// Asks the encoder to stop; [`Encoding::outcome`] then reports [`ExportError::Aborted`].
+    fn cancel(&mut self);
+    /// The job is dropped while encoding: stop without waiting, and remove the partial `output`.
+    fn abandon(&mut self, output: &Path);
 }
 
 enum Stage {
-    Preparing(mpsc::Receiver<Result<SendBox<Prepared>, ExportError>>),
+    Preparing(mpsc::Receiver<Result<SendBox<Ready>, ExportError>>),
     Exporting {
-        session: Retained<AVAssetExportSession>,
-        done: Arc<AtomicBool>,
+        encoding: Box<dyn Encoding>,
         plan: Box<ExportPlan>,
     },
     Done,
@@ -188,11 +227,12 @@ pub struct ExportJob {
 }
 
 impl CompositeExporter {
-    /// The contract layout with the bundled car image.
+    /// The contract layout with the bundled car image and the default pipeline.
     pub fn new() -> CompositeExporter {
         CompositeExporter {
             layout: ExportLayout::contract(),
             vehicle_png: Cow::Borrowed(VEHICLE_PNG),
+            backend: ExportBackend::default(),
         }
     }
 
@@ -202,9 +242,20 @@ impl CompositeExporter {
         self
     }
 
+    /// Uses another pipeline.
+    pub fn with_backend(mut self, backend: ExportBackend) -> CompositeExporter {
+        self.backend = backend;
+        self
+    }
+
     /// The export frame layout.
     pub fn layout(&self) -> &ExportLayout {
         &self.layout
+    }
+
+    /// The pipeline exports run through.
+    pub fn backend(&self) -> ExportBackend {
+        self.backend
     }
 
     /// Starts exporting `event` to `output` (an existing file there is replaced). Returns
@@ -220,14 +271,51 @@ impl CompositeExporter {
     ) -> ExportJob {
         let (tx, rx) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
-        let (event, layout, vehicle, worker_cancel) = (
+        let (event, layout, vehicle, backend, path, worker_cancel) = (
             event.clone(),
             self.layout.clone(),
             self.vehicle_png.clone().into_owned(),
+            self.backend,
+            output.to_path_buf(),
             cancel.clone(),
         );
         thread::spawn(move || {
-            let _ = tx.send(prepare(&event, &layout, &vehicle, &worker_cancel).map(SendBox));
+            av::run_as_user_initiated();
+            let prepared = match prepare(&event, &layout, &vehicle, &worker_cancel) {
+                Ok(prepared) => prepared,
+                Err(error) => {
+                    let _ = tx.send(Err(error));
+                    return;
+                }
+            };
+            let plan = prepared.plan.clone();
+            match backend {
+                ExportBackend::ExportSession => {
+                    let ready = session::compose(prepared).map(|composed| {
+                        SendBox(Ready {
+                            plan,
+                            pipeline: ReadyPipeline::Session(Box::new(composed)),
+                        })
+                    });
+                    let _ = tx.send(ready);
+                }
+                ExportBackend::ReaderWriter => {
+                    match writer::compose(prepared, layout, path, worker_cancel) {
+                        Ok((pending, encoder)) => {
+                            let ready = Ready {
+                                plan,
+                                pipeline: ReadyPipeline::Writer(pending),
+                            };
+                            if tx.send(Ok(SendBox(ready))).is_ok() {
+                                encoder.run();
+                            }
+                        }
+                        Err(error) => {
+                            let _ = tx.send(Err(error));
+                        }
+                    }
+                }
+            }
         });
         ExportJob {
             output: output.to_path_buf(),
@@ -246,44 +334,31 @@ impl CompositeExporter {
 impl ExportJob {
     /// Advances the export and returns its state.
     pub fn poll(&mut self) -> &ExportState {
-        match &self.stage {
+        match &mut self.stage {
             Stage::Preparing(rx) => match rx.try_recv() {
-                Ok(Ok(SendBox(prepared))) if !self.cancel.load(Ordering::SeqCst) => {
-                    self.begin(prepared)
-                }
+                Ok(Ok(SendBox(ready))) if !self.cancel.load(Ordering::SeqCst) => self.begin(ready),
                 Ok(Err(error)) => self.finish(ExportState::Failed(error)),
                 Ok(Ok(_)) | Err(mpsc::TryRecvError::Disconnected) => {
                     self.finish(ExportState::Failed(ExportError::Aborted))
                 }
                 Err(mpsc::TryRecvError::Empty) => {}
             },
-            Stage::Exporting {
-                session,
-                done,
-                plan,
-            } => {
-                if done.load(Ordering::SeqCst) {
-                    let state = match unsafe { session.status() } {
-                        AVAssetExportSessionStatus::Completed => ExportState::Finished {
-                            path: self.output.clone(),
-                            duration: plan.duration,
-                            frames: plan.frame_count,
-                        },
-                        AVAssetExportSessionStatus::Cancelled => {
-                            ExportState::Failed(ExportError::Aborted)
-                        }
-                        _ => {
-                            let error = unsafe { session.error() }.map(|e| av::media_error(&e));
-                            ExportState::Failed(ExportError::RecordingFailed(error))
-                        }
+            Stage::Exporting { encoding, plan } => match encoding.outcome() {
+                Some(Ok(())) => {
+                    let state = ExportState::Finished {
+                        path: self.output.clone(),
+                        duration: plan.duration,
+                        frames: plan.frame_count,
                     };
                     self.finish(state);
-                } else {
-                    let progress = unsafe { session.progress() }.clamp(0.0, 0.999);
+                }
+                Some(Err(error)) => self.finish(ExportState::Failed(error)),
+                None => {
+                    let progress = encoding.progress().clamp(0.0, 0.999);
                     self.state = ExportState::Exporting { progress };
                     self.report(progress);
                 }
-            }
+            },
             Stage::Done => {}
         }
         &self.state
@@ -298,8 +373,8 @@ impl ExportJob {
     /// AVFoundation stopped, and any partial file is deleted.
     pub fn cancel(&mut self) {
         self.cancel.store(true, Ordering::SeqCst);
-        match &self.stage {
-            Stage::Exporting { session, .. } => unsafe { session.cancelExport() },
+        match &mut self.stage {
+            Stage::Exporting { encoding, .. } => encoding.cancel(),
             Stage::Preparing(_) => self.finish(ExportState::Failed(ExportError::Aborted)),
             Stage::Done => {}
         }
@@ -326,14 +401,19 @@ impl ExportJob {
         self.state = state;
     }
 
-    fn begin(&mut self, prepared: Prepared) {
+    fn begin(&mut self, ready: Ready) {
         self.wrote_output = true;
-        match start_session(&prepared, &self.layout, &self.output) {
-            Ok((session, done)) => {
+        let started = match ready.pipeline {
+            ReadyPipeline::Session(composed) => {
+                session::start(*composed, &self.layout, &self.output)
+            }
+            ReadyPipeline::Writer(pending) => Ok(pending.start()),
+        };
+        match started {
+            Ok(encoding) => {
                 self.stage = Stage::Exporting {
-                    session,
-                    done,
-                    plan: Box::new(prepared.plan),
+                    encoding,
+                    plan: Box::new(ready.plan),
                 };
                 self.state = ExportState::Exporting { progress: 0.0 };
                 self.report(0.0);
@@ -345,15 +425,14 @@ impl ExportJob {
 
 impl Drop for ExportJob {
     fn drop(&mut self) {
-        if let Stage::Exporting { session, .. } = &self.stage {
-            unsafe { session.cancelExport() };
-            let _ = std::fs::remove_file(&self.output);
-        }
         self.cancel.store(true, Ordering::SeqCst);
+        if let Stage::Exporting { encoding, .. } = &mut self.stage {
+            encoding.abandon(&self.output);
+        }
     }
 }
 
-/// Worker thread: probe, plan, compose and draw the static images.
+/// Worker thread: probe, plan and draw the static images.
 fn prepare(
     event: &EventInput,
     layout: &ExportLayout,
@@ -367,226 +446,35 @@ fn prepare(
     let overlay =
         overlay::draw_overlay(layout, &holes, vehicle_png).map_err(|error| match error {
             OverlayError::VehicleImage => ExportError::VehicleImage,
-            OverlayError::Graphics => {
-                ExportError::RecordingFailed(Some(av::local_error("could not draw the overlay")))
-            }
+            OverlayError::Graphics => failure("could not draw the overlay"),
         })?;
     let mut missing = CameraMap::from_fn(|_| None);
     for camera in CameraId::ALL {
         if plan.cameras[camera].missing != MissingTile::Never {
             let hole = plan.cameras[camera].hole;
-            let tile =
-                overlay::draw_missing_tile(layout, (hole.width, hole.height)).map_err(|_| {
-                    ExportError::RecordingFailed(Some(av::local_error(
-                        "could not draw a missing tile",
-                    )))
-                })?;
+            let tile = overlay::draw_missing_tile(layout, (hole.width, hole.height))
+                .map_err(|_| failure("could not draw a missing tile"))?;
             missing[camera] = Some(tile);
         }
-    }
-    let composition = unsafe { AVMutableComposition::composition() };
-    let mut tracks = CameraMap::from_fn(|_| None);
-    for camera in CameraId::ALL {
-        let camera_timeline = &timeline.cameras[camera];
-        if !camera_timeline.has_video() {
-            continue;
-        }
-        let sources: Vec<(f64, Retained<AVAssetTrack>)> = camera_timeline
-            .clips
-            .iter()
-            .map(|clip| {
-                let track = probed
-                    .track(clip.segment, camera)
-                    .expect("placed clips have a loaded track");
-                (clip.start, track.retain())
-            })
-            .collect();
-        let track =
-            av::add_video_track(&composition).map_err(|e| ExportError::RecordingFailed(Some(e)))?;
-        let refs: Vec<&AVAssetTrack> = sources.iter().map(|(_, track)| &**track).collect();
-        av::insert_clips(&track, camera_timeline, &refs, timeline.duration)
-            .map_err(|e| ExportError::RecordingFailed(Some(e)))?;
-        tracks[camera] = Some(CameraTrack { track, sources });
     }
     if cancel.load(Ordering::SeqCst) {
         return Err(ExportError::Aborted);
     }
-    let assets = probed
-        .files
-        .iter()
-        .flat_map(|cameras| {
-            cameras
-                .iter()
-                .filter_map(|(_, file)| file.as_ref()?.media.as_ref())
-        })
-        .map(|(asset, _)| asset.clone())
-        .collect();
     Ok(Prepared {
+        probed,
+        timeline,
         plan,
-        composition,
-        tracks,
         overlay,
         missing,
-        _assets: assets,
     })
 }
 
-fn cg_rect_bottom_left(rect: Rect, height: f64) -> CGRect {
-    // CALayer geometry on macOS has its origin at the bottom-left.
-    CGRect {
-        origin: CGPoint {
-            x: rect.x,
-            y: height - rect.y - rect.height,
-        },
-        size: CGSize {
-            width: rect.width,
-            height: rect.height,
-        },
-    }
+/// A recording failure that did not come from AVFoundation.
+fn failure(what: &str) -> ExportError {
+    ExportError::RecordingFailed(Some(av::local_error(what)))
 }
 
-fn image_layer(image: &CGImage, frame: CGRect) -> Retained<CALayer> {
-    let layer = CALayer::new();
-    layer.setFrame(frame);
-    // SAFETY: CALayer.contents accepts a CGImage.
-    unsafe { layer.setContents(Some(&*(image as *const CGImage as *const AnyObject))) };
-    layer
-}
-
-fn opacity_animation(plan: &plan::Keyframes, duration: f64) -> Retained<CAKeyframeAnimation> {
-    let animation = CAKeyframeAnimation::animationWithKeyPath(Some(&NSString::from_str("opacity")));
-    let values: Vec<Retained<NSNumber>> =
-        plan.values.iter().map(|v| NSNumber::new_f64(*v)).collect();
-    let key_times: Vec<Retained<NSNumber>> = plan
-        .key_times
-        .iter()
-        .map(|t| NSNumber::new_f64(*t))
-        .collect();
-    unsafe {
-        let values = NSArray::from_retained_slice(&values);
-        // SAFETY: an NSArray of NSNumbers is an NSArray of objects; the element type is only static.
-        let values = &*(Retained::as_ptr(&values) as *const NSArray);
-        animation.setValues(Some(values));
-        animation.setKeyTimes(Some(&NSArray::from_retained_slice(&key_times)));
-        animation.setCalculationMode(kCAAnimationDiscrete);
-        // AVFoundation treats a beginTime of 0 as "now"; this constant means the start of the video.
-        animation.setBeginTime(AVCoreAnimationBeginTimeAtZero);
-        animation.setFillMode(kCAFillModeBoth);
-    }
-    animation.setDuration(duration);
-    animation.setRemovedOnCompletion(false);
-    animation
-}
-
-/// Main thread: video composition, CoreAnimation layers and the export session.
-fn start_session(
-    prepared: &Prepared,
-    layout: &ExportLayout,
-    output: &Path,
-) -> Result<(Retained<AVAssetExportSession>, Arc<AtomicBool>), ExportError> {
-    let failed = |what: &str| ExportError::RecordingFailed(Some(av::local_error(what)));
-    let plan = &prepared.plan;
-    let (width, height) = (layout.width, layout.height);
-
-    let video_composition = unsafe { AVMutableVideoComposition::videoComposition() };
-    unsafe {
-        video_composition.setRenderSize(CGSize { width, height });
-        video_composition.setFrameDuration(CMTime::new(1, layout.fps as i32));
-    }
-    let instruction =
-        unsafe { AVMutableVideoCompositionInstruction::videoCompositionInstruction() };
-    let floor = CGColor::new_srgb(layout.floor.r, layout.floor.g, layout.floor.b, 1.0);
-    unsafe {
-        instruction.setTimeRange(av::range(0.0, plan.duration));
-        instruction.setBackgroundColor(Some(&floor));
-    }
-    let mut layer_instructions: Vec<Retained<AVVideoCompositionLayerInstruction>> = Vec::new();
-    for camera in CameraId::ALL {
-        let Some(CameraTrack { track, sources }) = &prepared.tracks[camera] else {
-            continue;
-        };
-        let instruction = unsafe {
-            AVMutableVideoCompositionLayerInstruction::videoCompositionLayerInstructionWithAssetTrack(track)
-        };
-        for (index, (start, source)) in sources.iter().enumerate() {
-            let (natural, preferred) =
-                unsafe { (source.naturalSize(), source.preferredTransform()) };
-            let [a, b, c, d, tx, ty] = fit_transform(
-                (natural.width, natural.height),
-                av::affine_parts(preferred),
-                layout.slots[camera],
-            );
-            let time = if index == 0 { 0.0 } else { *start };
-            unsafe {
-                instruction
-                    .setTransform_atTime(CGAffineTransform { a, b, c, d, tx, ty }, av::cm(time))
-            };
-        }
-        layer_instructions.push(Retained::into_super(instruction));
-    }
-    unsafe {
-        instruction.setLayerInstructions(&NSArray::from_retained_slice(&layer_instructions));
-        let instruction: Retained<ProtocolObject<dyn AVVideoCompositionInstructionProtocol>> =
-            ProtocolObject::from_retained(instruction);
-        video_composition.setInstructions(&NSArray::from_retained_slice(&[instruction]));
-    }
-
-    // Layers, bottom to top: video, missing tiles, overlay.
-    let full = CGRect {
-        origin: CGPoint { x: 0.0, y: 0.0 },
-        size: CGSize { width, height },
-    };
-    let parent = CALayer::new();
-    parent.setFrame(full);
-    let video = CALayer::new();
-    video.setFrame(full);
-    parent.addSublayer(&video);
-    for camera in CameraId::ALL {
-        let Some(tile) = &prepared.missing[camera] else {
-            continue;
-        };
-        let layer = image_layer(
-            &tile.image,
-            cg_rect_bottom_left(plan.cameras[camera].hole, height),
-        );
-        match &plan.cameras[camera].missing {
-            MissingTile::Never => continue,
-            MissingTile::Always => layer.setOpacity(1.0),
-            MissingTile::During(keyframes) => {
-                layer.setOpacity(0.0);
-                layer.addAnimation_forKey(
-                    &opacity_animation(keyframes, plan.duration),
-                    Some(&NSString::from_str("missing")),
-                );
-            }
-        }
-        parent.addSublayer(&layer);
-    }
-    parent.addSublayer(&image_layer(&prepared.overlay.image, full));
-    let tool = unsafe {
-        AVVideoCompositionCoreAnimationTool::videoCompositionCoreAnimationToolWithPostProcessingAsVideoLayer_inLayer(&video, &parent)
-    };
-    unsafe { video_composition.setAnimationTool(Some(&tool)) };
-
-    let _ = std::fs::remove_file(output);
-    let preset = unsafe { AVAssetExportPreset1280x720 };
-    let session = unsafe {
-        AVAssetExportSession::initWithAsset_presetName(
-            AVAssetExportSession::alloc(),
-            &prepared.composition,
-            preset,
-        )
-    }
-    .ok_or_else(|| failed("could not create the export session"))?;
-    unsafe {
-        session.setOutputURL(Some(&av::file_url(output)));
-        session.setOutputFileType(AVFileTypeMPEG4);
-        session.setShouldOptimizeForNetworkUse(true);
-        session.setVideoComposition(Some(&video_composition));
-    }
-    let done = Arc::new(AtomicBool::new(false));
-    let flag = done.clone();
-    let handler = RcBlock::new(move || flag.store(true, Ordering::SeqCst));
-    unsafe { session.exportAsynchronouslyWithCompletionHandler(&handler) };
-    Ok((session, done))
+/// A recording failure with AVFoundation's error.
+fn media_failure(error: MediaError) -> ExportError {
+    ExportError::RecordingFailed(Some(error))
 }

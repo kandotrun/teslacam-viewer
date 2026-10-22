@@ -134,6 +134,11 @@ button.camera-window[data-active="true"] {
   background: var(--video);
 }
 
+/* The next segment, preloaded under the playing video until the boundary. */
+.camera-window video[data-buffer="spare"] {
+  visibility: hidden;
+}
+
 .camera-window__label {
   position: absolute;
   left: 10px;
