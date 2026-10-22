@@ -138,6 +138,7 @@ test('replays the last segment when play is pressed at the end', async ({ contex
   await expect(page.getByRole('button', { name: '再生' })).toBeVisible({ timeout: 10_000 })
   const ended = await playbackPosition(page)
   await page.getByRole('button', { name: '再生' }).click()
-  await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible()
+  // Replaying seeks all six videos back to the last segment, which can take a few seconds on CI runners.
+  await expect(page.getByRole('button', { name: '一時停止' })).toBeVisible({ timeout: 15_000 })
   await expect.poll(() => playbackPosition(page)).not.toBe(ended)
 })

@@ -7,7 +7,19 @@ import {
 } from './scan-limits'
 import type { EventMetadata, LocalFileRef } from './types'
 
-const metadataStringSchema = z.string().max(MAX_METADATA_STRING_LENGTH)
+// The limit counts UTF-16 code units (String#length), as the shared contract and the Mac app do.
+// zod's `.max()` counts code points since 4.6, so the check is explicit.
+const metadataStringSchema = z.string().check((context) => {
+  if (context.value.length > MAX_METADATA_STRING_LENGTH) {
+    context.issues.push({
+      code: 'too_big',
+      origin: 'string',
+      maximum: MAX_METADATA_STRING_LENGTH,
+      inclusive: true,
+      input: context.value,
+    })
+  }
+})
 
 const eventMetadataSchema = z
   .object({
