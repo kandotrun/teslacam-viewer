@@ -46,7 +46,7 @@ that mattered.
 | Camera-to-camera sync while playing | corrected from `timeupdate` (~3.75 Hz) once drift exceeds 0.25 s; measured¹: 1 frame apart throughout at 1×, a camera 0.2 s off stays 8 frames off, ~280 ms of blank windows at each segment boundary | steered on every frame the source presents (`requestVideoFrameCallback`) by playback rate, seeking only past 0.3 s; next segment preloaded. Measured¹: median **0 frames** apart at 1× and after seeks (all six identical in 46–100 % of samples, at most 1 apart), median 0–1 and 95th percentile ≤ 2 at 2×, a camera 0.2 s off back in 1.1–1.3 s, no blank frame at segment boundaries | **0 frames** apart at 0.5×–4×, after seeks and across 60 s segment boundaries |
 | Expanding one camera | reloaded all six videos (15–55 ms of black) | no reload | no reload |
 | CPU while playing six cameras | not measured | not measured | 3.7–9.1 % of one core; 0 % paused |
-| Composite export of a 120 s event (1280 × 720 MP4) | WebCodecs ≈ 264 fps (≈ 14 s), on in-memory files | same path, overlay drawn once (+3–7 %) | 19–26 s (4.6–6.2× real time, `AVAssetExportSession`) |
+| Composite export of a 120 s event (1280 × 720 MP4) | WebCodecs ≈ 264 fps (≈ 14 s), on in-memory files | same path, overlay drawn once (+3–7 %) | **7.0–7.9 s** (≈ 490 fps, 15–17× real time); 19–26 s with `AVAssetExportSession` before |
 
 ¹ The web sync numbers come from `apps/web/tests/e2e/sync.spec.ts` in Playwright's headless Chromium,
 not Chrome 155: 320 × 240 frame-counter clips at 36 fps, every file read delayed by 150 ms like a USB
@@ -58,8 +58,24 @@ How the Mac app gets there: it walks the folder with plain `std::fs` and reads `
 parallel; VideoToolbox decodes in hardware and GPUI draws the decoded `IOSurface` frames directly
 (no copies); six `AVPlayer`s share one host clock and start together with `setRate:time:atHostTime:`
 after an exact seek. For comparison, six independently started players drifted up to 3,851 frames apart
-after seeks. Web export is currently faster than the Mac's `AVAssetExportSession` preset; a dedicated
-reader/writer pipeline is a possible follow-up.
+after seeks. The export decodes every camera with its own `AVAssetReader`, so the six hardware decoders
+run in parallel, composes each frame with Core Image on the GPU and encodes it with the hardware H.264
+encoder through `AVAssetWriter`, all on worker threads.
+
+### What made the Mac export faster
+
+Release build, the 120 s six-camera fixture event, three runs alternating with the previous pipeline so
+both saw the same machine load (load average 37–47, the GPU shared with other apps):
+
+| Change | Before | After |
+|---|---|---|
+| `AVAssetExportSession` (video composition + Core Animation overlay) → six `AVAssetReader`s, Core Image, `AVAssetWriter` | 22.5–27.4 s (median 24.6 s) | 7.0–7.9 s (median 7.4 s) |
+| Wait for each Core Image render → keep three frames on the GPU; run the export threads as user-initiated work | 8.1–21.3 s, depending on what else used the GPU | 7.0–7.9 s |
+| Decoding the six cameras alone (the floor of this pipeline) | — | 6.0 s |
+
+The static overlay (floor, rounded holes, wedges, car, labels) is still drawn once per export: in the
+first spike, redrawing the labels for every frame (`CATextLayer`) cut the export to 1.5× real time.
+Scaling the video in the decoder instead of on the GPU did not help, because decoding is the limit.
 
 ### What made the web app faster (Chrome 155)
 
@@ -90,7 +106,10 @@ directly (Mac).
 - Mac folder scan: `cargo run --release -p teslacam-core --example scan_bench -- <TeslaCam folder>`
   (from `apps/mac`).
 - Mac sync and export: `just mac-fixtures && just mac-test` — the media crate's main-thread tests decode
-  the burned-in frame counters and assert 0 frames of spread, and time the export.
+  the burned-in frame counters and assert 0 frames of spread, and time the export (one test exports the
+  same event with both pipelines and requires the new one to be at least 2× faster).
+- Mac export comparison: `cargo run --release -p teslacam-media --example export_bench -- 3 full`
+  (from `apps/mac`, after `just mac-fixtures`) alternates both pipelines and prints their medians.
 - Web sync: `just web-e2e` — `tests/e2e/sync.spec.ts` asserts the spread of the burned-in counters and
   writes what it measured to `apps/web/.omo/evidence/teslacam-viewer/json/sync-metrics.json`
   (regenerate the clips with `apps/web/scripts/gen-sync-fixtures.sh`).
