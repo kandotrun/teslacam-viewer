@@ -46,14 +46,30 @@ that mattered.
 | Camera-to-camera sync while playing | corrected from `timeupdate` (~3.75 Hz) once drift exceeds 0.25 s, so cameras could be up to ~0.25–0.5 s apart | same mechanism | **0 frames** apart at 0.5×–4×, after seeks and across 60 s segment boundaries |
 | Expanding one camera | reloaded all six videos (15–55 ms of black) | no reload | no reload |
 | CPU while playing six cameras | not measured | not measured | 3.7–9.1 % of one core; 0 % paused |
-| Composite export of a 120 s event (1280 × 720 MP4) | WebCodecs ≈ 264 fps (≈ 14 s), on in-memory files | same path, overlay drawn once (+3–7 %) | 19–26 s (4.6–6.2× real time, `AVAssetExportSession`) |
+| Composite export of a 120 s event (1280 × 720 MP4) | WebCodecs ≈ 264 fps (≈ 14 s), on in-memory files | same path, overlay drawn once (+3–7 %) | **7.0–7.9 s** (≈ 490 fps, 15–17× real time); 19–26 s with `AVAssetExportSession` before |
 
 How the Mac app gets there: it walks the folder with plain `std::fs` and reads `event.json` files in
 parallel; VideoToolbox decodes in hardware and GPUI draws the decoded `IOSurface` frames directly
 (no copies); six `AVPlayer`s share one host clock and start together with `setRate:time:atHostTime:`
 after an exact seek. For comparison, six independently started players drifted up to 3,851 frames apart
-after seeks. Web export is currently faster than the Mac's `AVAssetExportSession` preset; a dedicated
-reader/writer pipeline is a possible follow-up.
+after seeks. The export decodes every camera with its own `AVAssetReader`, so the six hardware decoders
+run in parallel, composes each frame with Core Image on the GPU and encodes it with the hardware H.264
+encoder through `AVAssetWriter`, all on worker threads.
+
+### What made the Mac export faster
+
+Release build, the 120 s six-camera fixture event, three runs alternating with the previous pipeline so
+both saw the same machine load (load average 37–47, the GPU shared with other apps):
+
+| Change | Before | After |
+|---|---|---|
+| `AVAssetExportSession` (video composition + Core Animation overlay) → six `AVAssetReader`s, Core Image, `AVAssetWriter` | 22.5–27.4 s (median 24.6 s) | 7.0–7.9 s (median 7.4 s) |
+| Wait for each Core Image render → keep three frames on the GPU; run the export threads as user-initiated work | 8.1–21.3 s, depending on what else used the GPU | 7.0–7.9 s |
+| Decoding the six cameras alone (the floor of this pipeline) | — | 6.0 s |
+
+The static overlay (floor, rounded holes, wedges, car, labels) is still drawn once per export: in the
+first spike, redrawing the labels for every frame (`CATextLayer`) cut the export to 1.5× real time.
+Scaling the video in the decoder instead of on the GPU did not help, because decoding is the limit.
 
 ### What made the web app faster (Chrome 155)
 
@@ -84,7 +100,10 @@ directly (Mac).
 - Mac folder scan: `cargo run --release -p teslacam-core --example scan_bench -- <TeslaCam folder>`
   (from `apps/mac`).
 - Mac sync and export: `just mac-fixtures && just mac-test` — the media crate's main-thread tests decode
-  the burned-in frame counters and assert 0 frames of spread, and time the export.
+  the burned-in frame counters and assert 0 frames of spread, and time the export (one test exports the
+  same event with both pipelines and requires the new one to be at least 2× faster).
+- Mac export comparison: `cargo run --release -p teslacam-media --example export_bench -- 3 full`
+  (from `apps/mac`, after `just mac-fixtures`) alternates both pipelines and prints their medians.
 - The web and WebAssembly benchmarks were one-off harnesses run during development and are not in this
   repository; their numbers are recorded here.
 
