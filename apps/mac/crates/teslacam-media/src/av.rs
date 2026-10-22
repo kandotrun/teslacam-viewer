@@ -53,6 +53,14 @@ pub(crate) struct SendBox<T>(pub T);
 // SAFETY: see the type docs; every use hands the value over exactly once and keeps no other reference.
 unsafe impl<T> Send for SendBox<T> {}
 
+impl<T> SendBox<T> {
+    /// The value, on the receiving thread. (A closure that only destructured the box would capture
+    /// the inner value alone, which is not `Send`.)
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
 pub(crate) fn file_url(path: &Path) -> Retained<NSURL> {
     NSURL::fileURLWithPath(&NSString::from_str(&path.to_string_lossy()))
 }
