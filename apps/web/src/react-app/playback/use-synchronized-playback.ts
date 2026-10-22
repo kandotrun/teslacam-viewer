@@ -94,12 +94,22 @@ export function useSynchronizedPlayback(
   }, [coordinator, frameSync, runtime])
 
   const play = useCallback(async (): Promise<void> => {
+    // At the end of the event (the clock reached it, or every video stopped at the end of a clip shorter
+    // than its segment), play replays the last segment from its start. Leaving it to each ended <video>
+    // to restart itself raced with the end-of-event pause and could leave playback stopped.
+    const registered = [...runtime.registrations.values()]
+    const atClipEnd = (element: HTMLVideoElement): boolean =>
+      element.ended || (Number.isFinite(element.duration) && element.currentTime >= element.duration - 0.05)
+    const everyVideoEnded = registered.length > 0 && registered.every(({ element }) => atClipEnd(element))
+    if (durationSeconds > 0 && (runtime.elapsedSeconds >= durationSeconds || everyVideoEnded)) {
+      seek(locatePlaybackTime(event, runtime.elapsedSeconds).segmentIndex * 60)
+    }
     coordinator.start()
     const playable = cameraIds.filter((cameraId) => runtime.readyCameras.has(cameraId))
     setNoPlayableRequest(runtime, playable.length === 0)
     setMessage(playable.length === 0 ? noPlayableMessage : null)
     await coordinator.run(playable)
-  }, [coordinator, runtime])
+  }, [coordinator, durationSeconds, event, runtime, seek])
 
   const skip = useCallback((seconds: number): void => seek(runtime.elapsedSeconds + seconds), [runtime, seek])
 
@@ -186,6 +196,11 @@ export function useSynchronizedPlayback(
       }
       case 'ended': {
         if (runtime.sourceCamera !== cameraId) return
+        // `ended` is queued: one dispatched before a seek or a replay moved the video away from its end
+        // must not end the event again.
+        if (!element.ended) return
+        // Already paused at the end: seeking there again would only fire another `ended`.
+        if (!runtime.intended && runtime.elapsedSeconds >= durationSeconds) return
         const currentLocation = locatePlaybackTime(event, runtime.elapsedSeconds)
         const nextBoundary = (currentLocation.segmentIndex + 1) * 60
         if (nextBoundary < durationSeconds) {

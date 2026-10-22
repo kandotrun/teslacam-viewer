@@ -4,6 +4,12 @@ import { vi } from 'vitest'
 import type { TeslaCamEvent } from '../../teslacam/types'
 import { useSynchronizedPlayback } from './use-synchronized-playback'
 
+/** A video at the end of its media, as the browser reports it when `ended` fires. */
+function atEnd(element: HTMLVideoElement): HTMLVideoElement {
+  Object.defineProperty(element, 'ended', { configurable: true, value: true })
+  return element
+}
+
 function eventWithSegments(count: number): TeslaCamEvent {
   return {
     id: 'playback-event',
@@ -146,7 +152,7 @@ describe('useSynchronizedPlayback frame sync', () => {
     })
     await act(async () => Promise.resolve())
 
-    act(() => hook.result.current.handleVideoEvent('front', front.element, 'ended'))
+    act(() => hook.result.current.handleVideoEvent('front', atEnd(front.element), 'ended'))
 
     expect(hook.result.current.segmentIndex).toBe(1)
     expect(front.seeks()).not.toContain(0)
@@ -169,7 +175,7 @@ describe('useSynchronizedPlayback frame sync', () => {
     expect(hook.result.current.playing).toBe(true)
 
     act(() => {
-      hook.result.current.handleVideoEvent('front', front.element, 'ended')
+      hook.result.current.handleVideoEvent('front', atEnd(front.element), 'ended')
       hook.result.current.registerVideo('front', nextFront.element)
       hook.result.current.handleVideoEvent('front', nextFront.element, 'ready')
       hook.result.current.registerVideo('back', nextBack.element)

@@ -292,7 +292,10 @@ describe('segments', () => {
     const loads = vi.mocked(HTMLMediaElement.prototype.load).mock.calls.length
     vi.mocked(HTMLMediaElement.prototype.play).mockClear()
 
-    fireEvent.ended(firstCameraVideo(playing))
+    const source = firstCameraVideo(playing)
+    // jsdom does not play media, so mark the source as finished the way a browser does before `ended`.
+    Object.defineProperty(source, 'ended', { configurable: true, value: true })
+    fireEvent.ended(source)
 
     await waitFor(() => expect(screen.getAllByTestId('camera-video')).toEqual(preloaded))
     expect(preloaded.map((video) => video.dataset['buffer'])).toEqual(Array.from({ length: 6 }, () => 'active'))
