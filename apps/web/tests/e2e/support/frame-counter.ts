@@ -77,6 +77,8 @@ export type SpreadSummary = {
   readonly blank: number
   readonly maxSpread: number
   readonly medianSpread: number
+  /** 95th percentile: what the viewer sees but for the odd frame the browser drops or presents late. */
+  readonly p95Spread: number
   /** Share of samples where every camera shows the same frame. */
   readonly identical: number
 }
@@ -89,6 +91,7 @@ export function summarizeSpread(samples: readonly FrameSample[]): SpreadSummary 
     blank: spreads.length - measured.length,
     maxSpread: measured.at(-1) ?? Number.POSITIVE_INFINITY,
     medianSpread: measured.at(Math.floor(measured.length / 2)) ?? Number.POSITIVE_INFINITY,
+    p95Spread: measured.at(Math.floor(measured.length * 0.95)) ?? Number.POSITIVE_INFINITY,
     identical: measured.length === 0 ? 0 : measured.filter((spread) => spread === 0).length / measured.length,
   }
 }
