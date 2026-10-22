@@ -53,6 +53,14 @@ pub(crate) struct SendBox<T>(pub T);
 // SAFETY: see the type docs; every use hands the value over exactly once and keeps no other reference.
 unsafe impl<T> Send for SendBox<T> {}
 
+impl<T> SendBox<T> {
+    /// The value, on the receiving thread. (A closure that only destructured the box would capture
+    /// the inner value alone, which is not `Send`.)
+    pub fn into_inner(self) -> T {
+        self.0
+    }
+}
+
 pub(crate) fn file_url(path: &Path) -> Retained<NSURL> {
     NSURL::fileURLWithPath(&NSString::from_str(&path.to_string_lossy()))
 }
@@ -204,5 +212,41 @@ pub(crate) fn affine_parts(t: CGAffineTransform) -> [f64; 6] {
     [t.a, t.b, t.c, t.d, t.tx, t.ty]
 }
 
+/// `QOS_CLASS_USER_INITIATED` from `<sys/qos.h>`.
+const QOS_CLASS_USER_INITIATED: u32 = 0x19;
+
+unsafe extern "C" {
+    fn pthread_set_qos_class_self_np(qos_class: u32, relative_priority: i32) -> i32;
+}
+
+/// Runs the calling thread as user-initiated work: something the user waits for, like an export
+/// with its progress ring. A plain `std::thread` runs at the default class, which macOS puts behind
+/// other work on a busy machine (the export then took 2–3× longer).
+pub(crate) fn run_as_user_initiated() {
+    // SAFETY: only changes the scheduling class of the calling thread.
+    unsafe { pthread_set_qos_class_self_np(QOS_CLASS_USER_INITIATED, 0) };
+}
+
 /// Collects AVFoundation completion results on any queue for the main thread to drain.
 pub(crate) type Inbox<T> = std::sync::Arc<std::sync::Mutex<Vec<T>>>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    unsafe extern "C" {
+        fn qos_class_self() -> u32;
+    }
+
+    #[test]
+    fn worker_threads_can_run_as_user_initiated_work() {
+        let class = std::thread::spawn(|| {
+            run_as_user_initiated();
+            // SAFETY: reads the calling thread's class.
+            unsafe { qos_class_self() }
+        })
+        .join()
+        .unwrap();
+        assert_eq!(class, QOS_CLASS_USER_INITIATED);
+    }
+}

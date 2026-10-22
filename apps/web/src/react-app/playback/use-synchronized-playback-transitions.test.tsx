@@ -4,6 +4,12 @@ import { vi } from 'vitest'
 import type { TeslaCamEvent } from '../../teslacam/types'
 import { useSynchronizedPlayback } from './use-synchronized-playback'
 
+/** A video at the end of its media, as the browser reports it when `ended` fires. */
+function atEnd(element: HTMLVideoElement): HTMLVideoElement {
+  Object.defineProperty(element, 'ended', { configurable: true, value: true })
+  return element
+}
+
 function eventWithSegments(count: number): TeslaCamEvent {
   return {
     id: 'playback-event',
@@ -70,7 +76,7 @@ describe('useSynchronizedPlayback transitions', () => {
     })
     await act(async () => Promise.resolve())
     act(() => {
-      hook.result.current.handleVideoEvent('front', front, 'ended')
+      hook.result.current.handleVideoEvent('front', atEnd(front), 'ended')
       hook.result.current.handleVideoEvent('front', front, 'loading')
       hook.result.current.handleVideoEvent('front', front, 'ready')
     })
@@ -94,7 +100,7 @@ describe('useSynchronizedPlayback transitions', () => {
     })
     await act(async () => hook.result.current.play())
     act(() => {
-      hook.result.current.handleVideoEvent('front', front, 'ended')
+      hook.result.current.handleVideoEvent('front', atEnd(front), 'ended')
       hook.result.current.handleVideoEvent('front', front, 'loading')
       hook.result.current.handleVideoEvent('back', back, 'loading')
       front.play = vi.fn(async () => Promise.reject(new DOMException('', 'NotAllowedError')))
@@ -117,6 +123,74 @@ describe('useSynchronizedPlayback transitions', () => {
     expect(front.play).not.toHaveBeenCalled()
   })
 
+  it('replays the last segment from its start when play is pressed at the end of the event', async () => {
+    const front = video()
+    const back = video()
+    const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(2)))
+
+    act(() => {
+      hook.result.current.registerVideo('front', front)
+      hook.result.current.registerVideo('back', back)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+      hook.result.current.handleVideoEvent('back', back, 'ready')
+    })
+    act(() => hook.result.current.seek(119))
+    await act(async () => hook.result.current.play())
+    act(() => hook.result.current.handleVideoEvent('front', atEnd(front), 'ended'))
+    expect(hook.result.current.playing).toBe(false)
+    expect(hook.result.current.elapsedSeconds).toBe(120)
+
+    front.currentTime = 7
+    back.currentTime = 7
+    await act(async () => hook.result.current.play())
+
+    expect(hook.result.current.elapsedSeconds).toBe(60)
+    expect(front.currentTime).toBe(0)
+    expect(back.currentTime).toBe(0)
+    expect(hook.result.current.playing).toBe(true)
+  })
+
+  it('replays the segment from its start when every video stopped at the end of a short clip', async () => {
+    const front = video()
+    const back = video()
+    const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(1)))
+
+    act(() => {
+      hook.result.current.registerVideo('front', front)
+      hook.result.current.registerVideo('back', back)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+      hook.result.current.handleVideoEvent('back', back, 'ready')
+      hook.result.current.seek(2)
+    })
+    for (const element of [front, back]) Object.defineProperty(element, 'ended', { configurable: true, value: true })
+    await act(async () => hook.result.current.play())
+
+    expect(hook.result.current.elapsedSeconds).toBe(0)
+    expect(front.currentTime).toBe(0)
+    expect(back.currentTime).toBe(0)
+    expect(hook.result.current.playing).toBe(true)
+  })
+
+  it('ignores an ended event that arrives after play restarted the video', async () => {
+    const front = video()
+    const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(1)))
+
+    act(() => {
+      hook.result.current.registerVideo('front', front)
+      hook.result.current.handleVideoEvent('front', front, 'ready')
+      hook.result.current.seek(60)
+    })
+    await act(async () => hook.result.current.play())
+    expect(hook.result.current.playing).toBe(true)
+
+    // The browser queued this `ended` before play() moved the video back to the start.
+    Object.defineProperty(front, 'ended', { configurable: true, value: false })
+    act(() => hook.result.current.handleVideoEvent('front', front, 'ended'))
+
+    expect(hook.result.current.playing).toBe(true)
+    expect(hook.result.current.elapsedSeconds).toBe(0)
+  })
+
   it('keeps automatic playback active when one new segment rejects and another succeeds', async () => {
     const front = video()
     const back = video()
@@ -130,7 +204,7 @@ describe('useSynchronizedPlayback transitions', () => {
     })
     await act(async () => hook.result.current.play())
     act(() => {
-      hook.result.current.handleVideoEvent('front', front, 'ended')
+      hook.result.current.handleVideoEvent('front', atEnd(front), 'ended')
       hook.result.current.handleVideoEvent('front', front, 'loading')
       hook.result.current.handleVideoEvent('back', back, 'loading')
       front.play = vi.fn(async () => Promise.reject(new DOMException('', 'NotAllowedError')))

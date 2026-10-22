@@ -9,9 +9,10 @@
 //! # Threading
 //!
 //! AVFoundation playback objects are main-thread only. Every type that owns players or an export
-//! session takes an [`objc2::MainThreadMarker`] and is `!Send`. Probing files, composing clips and
-//! drawing the export overlay run on worker threads; their results are picked up by the owner's
-//! `tick` / `poll` method on the main thread, which also applies AVFoundation completion handlers.
+//! job takes an [`objc2::MainThreadMarker`] and is `!Send`. Probing files, composing clips, drawing
+//! the export overlay and the default export pipeline (decoding, compositing, encoding) run on
+//! worker threads; their results are picked up by the owner's `tick` / `poll` method on the main
+//! thread, which also applies AVFoundation completion handlers.
 //! Nothing in this crate blocks the main thread or pumps the run loop, except the explicit helpers in
 //! [`run_loop`] that exist for tests and command-line tools (never call them from a GPUI callback:
 //! they re-enter the app).
@@ -49,7 +50,7 @@ pub mod status;
 pub mod sync;
 pub mod timeline;
 
-pub use export::{CompositeExporter, ExportError, ExportJob, ExportState};
+pub use export::{CompositeExporter, ExportBackend, ExportError, ExportJob, ExportState};
 pub use frame::{KEEPALIVE_FRAMES, VideoFrame, host_now};
 pub use input::{CameraId, CameraMap, EventInput, SegmentInput};
 pub use playback::{EventPlayback, PlaybackEvent, RATE_RANGE};

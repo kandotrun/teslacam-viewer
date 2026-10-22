@@ -106,10 +106,12 @@ Measured on the development machine (Apple M4 Max, heavily loaded by other work 
 - CPU (release, 6 × 1280 × 960 @ 36 fps): playing 3.7–9.1 % of one core over 20 s windows (five
   runs), paused 0.0 %, welcome 0.1 %, an event whose every file is broken 0.0 %; RSS ~280 MB.
 - Export from the app: `TeslaCam-…-vehicle.mp4`, H.264 Main 1280 × 720, 30 fps, 3,600 frames, 120.0 s,
-  ~7.3 Mbit/s; the frame at 75 s shows `frame 2700` on all six cameras (75 × 36). Speed depends on
-  the load: one run finished inside a 55 s capture window (launch, scan and probe included), one run
-  during a load spike (load average 68) took 138.7 s; the media test measures 3.0× (full) and 5.2×
-  (gaps event) real time.
+  ~7.2 Mbit/s, a key frame every 2 s; the frame at 75 s shows `frame 2700` on all six cameras
+  (75 × 36). The export (six `AVAssetReader`s → Core Image → `AVAssetWriter`, see
+  `teslacam-media/src/export`) finished inside a 20 s capture window with launch, scan and probe
+  included, while the event kept playing (load average ~30). Release benchmark: 7.0–7.9 s for the
+  120 s event against 22.5–27.4 s with the previous `AVAssetExportSession` pipeline (load average
+  37–47); the debug-build media test measures 12–17× (full) and 12–16× (gaps event) real time.
 
 ## Known gaps
 
