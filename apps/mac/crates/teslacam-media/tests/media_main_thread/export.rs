@@ -10,8 +10,8 @@ use std::{
 
 use objc2::MainThreadMarker;
 use teslacam_media::{
-    CameraId, CameraMap, CompositeExporter, EventInput, ExportError, ExportJob, ExportState,
-    SegmentInput,
+    CameraId, CameraMap, CompositeExporter, EventInput, ExportBackend, ExportError, ExportJob,
+    ExportState, SegmentInput,
     layout::{ExportLayout, Rect},
     run_loop::pump_until,
 };
@@ -42,6 +42,14 @@ pub const TESTS: &[crate::Test] = &[
         "export_keeps_an_existing_file_until_encoding_starts",
         export_keeps_an_existing_file_until_encoding_starts,
     ),
+    (
+        "export_dropping_a_running_job_removes_its_partial_file",
+        export_dropping_a_running_job_removes_its_partial_file,
+    ),
+    (
+        "export_reader_writer_is_clearly_faster_than_the_export_session",
+        export_reader_writer_is_clearly_faster_than_the_export_session,
+    ),
 ];
 
 const W: usize = 1280;
@@ -63,21 +71,54 @@ fn run(job: &mut ExportJob, timeout: Duration) -> ExportState {
     job.state().clone()
 }
 
+/// One finished (or failed) export.
+struct Run {
+    output: PathBuf,
+    state: ExportState,
+    progress: Vec<f32>,
+    /// Wall-clock seconds from `start` until `poll` reported the end.
+    elapsed: f64,
+    /// The longest single `ExportJob::poll` call on the main thread.
+    longest_poll: Duration,
+}
+
+fn export_with(
+    exporter: &CompositeExporter,
+    event: &EventInput,
+    name: &str,
+    mtm: MainThreadMarker,
+) -> Run {
+    let output = fixtures::scratch().join(name);
+    let progress = Rc::new(RefCell::new(Vec::new()));
+    let sink = progress.clone();
+    let started = Instant::now();
+    let mut job = exporter.start(event, &output, move |p| sink.borrow_mut().push(p), mtm);
+    let mut longest_poll = Duration::ZERO;
+    let finished = pump_until(Duration::from_secs(300), || {
+        let polled = Instant::now();
+        let done = job.poll().is_done();
+        longest_poll = longest_poll.max(polled.elapsed());
+        done
+    });
+    assert!(finished, "export did not finish");
+    let elapsed = started.elapsed().as_secs_f64();
+    let progress = progress.borrow().clone();
+    Run {
+        output,
+        state: job.state().clone(),
+        progress,
+        elapsed,
+        longest_poll,
+    }
+}
+
 fn export(
     event: &EventInput,
     name: &str,
     mtm: MainThreadMarker,
 ) -> (PathBuf, ExportState, Vec<f32>, f64) {
-    let output = fixtures::scratch().join(name);
-    let progress = Rc::new(RefCell::new(Vec::new()));
-    let sink = progress.clone();
-    let started = Instant::now();
-    let mut job =
-        CompositeExporter::new().start(event, &output, move |p| sink.borrow_mut().push(p), mtm);
-    let state = run(&mut job, Duration::from_secs(300));
-    let elapsed = started.elapsed().as_secs_f64();
-    let progress = progress.borrow().clone();
-    (output, state, progress, elapsed)
+    let run = export_with(&CompositeExporter::new(), event, name, mtm);
+    (run.output, run.state, run.progress, run.elapsed)
 }
 
 #[derive(Debug, PartialEq)]
@@ -220,21 +261,50 @@ const FLOOR: [u8; 3] = [0xE9, 0xEB, 0xEE];
 const MISSING: [u8; 3] = [0x15, 0x18, 0x1D];
 
 fn export_full_event_is_1280x720_30fps_in_sync_and_fast(mtm: MainThreadMarker) {
-    let (output, state, progress, elapsed) = export(&fixtures::full_event(), "full.mp4", mtm);
+    let exporter = CompositeExporter::new();
+    assert_eq!(
+        exporter.backend(),
+        ExportBackend::ReaderWriter,
+        "the app exports with the reader/writer pipeline"
+    );
+    let run = export_with(&exporter, &fixtures::full_event(), "full.mp4", mtm);
+    let x_realtime = check_full_export(&run);
+    assert!(x_realtime >= 8.0, "export too slow: {x_realtime:.2}x");
+    println!(
+        "  longest poll {:.1} ms",
+        run.longest_poll.as_secs_f64() * 1e3
+    );
+    assert!(
+        run.longest_poll < Duration::from_millis(50),
+        "poll blocked the main thread for {:?}",
+        run.longest_poll
+    );
+    save_png(
+        &run.output,
+        61 * 30,
+        &fixtures::scratch().join("export-full-61s.png"),
+    );
+}
+
+/// The checks every export of the full fixture event must pass; returns its speed (× real time).
+fn check_full_export(run: &Run) -> f64 {
     let ExportState::Finished {
         path,
         duration,
         frames,
-    } = state
+    } = &run.state
     else {
-        panic!("{state:?}")
+        panic!("{:?}", run.state)
     };
+    let (output, duration, progress) = (&run.output, *duration, &run.progress);
     assert_eq!(path, output);
     assert!((duration - 120.0).abs() < 1e-3);
-    assert_eq!(frames, 3600);
-    let x_realtime = duration / elapsed;
-    println!("  exported {duration:.1} s in {elapsed:.2} s = {x_realtime:.2}x real time");
-    assert!(x_realtime >= 3.0, "export too slow: {x_realtime:.2}x");
+    assert_eq!(*frames, 3600);
+    let x_realtime = duration / run.elapsed;
+    println!(
+        "  exported {duration:.1} s in {:.2} s = {x_realtime:.2}x real time",
+        run.elapsed
+    );
 
     assert_eq!(progress.first(), Some(&0.0));
     assert_eq!(progress.last(), Some(&1.0));
@@ -244,10 +314,10 @@ fn export_full_event_is_1280x720_30fps_in_sync_and_fast(mtm: MainThreadMarker) {
     );
     assert!(progress.len() > 3, "too few progress reports: {progress:?}");
 
-    let probe = ffprobe(&output);
+    let probe = ffprobe(output);
     println!(
         "  {probe:?}, {} bytes",
-        std::fs::metadata(&output).unwrap().len()
+        std::fs::metadata(output).unwrap().len()
     );
     assert_eq!(
         probe,
@@ -263,7 +333,7 @@ fn export_full_event_is_1280x720_30fps_in_sync_and_fast(mtm: MainThreadMarker) {
     // Every 15th frame: all six slots show the same source frame, the one due at that output time.
     let layout = ExportLayout::contract();
     let (mut checked, mut lag_max) = (0, 0i64);
-    for (sample, grey) in grey_frames(&output, 15).iter().enumerate() {
+    for (sample, grey) in grey_frames(output, 15).iter().enumerate() {
         let index = sample as u64 * 15;
         let stamps: CameraMap<Option<Stamp>> =
             CameraMap::from_fn(|camera| slot_stamp(grey, &layout, camera));
@@ -288,11 +358,7 @@ fn export_full_event_is_1280x720_30fps_in_sync_and_fast(mtm: MainThreadMarker) {
     println!("  {checked} sampled frames in sync; max |due − shown| = {lag_max} source frames");
     assert_eq!(checked, 240);
     assert!(lag_max <= 1);
-    save_png(
-        &output,
-        61 * 30,
-        &fixtures::scratch().join("export-full-61s.png"),
-    );
+    x_realtime
 }
 
 fn export_shows_missing_tiles_only_while_a_camera_has_no_video(mtm: MainThreadMarker) {
@@ -539,4 +605,36 @@ fn export_keeps_an_existing_file_until_encoding_starts(mtm: MainThreadMarker) {
     let state = run(&mut job, Duration::from_secs(30));
     assert_eq!(state, ExportState::Failed(ExportError::Aborted));
     assert!(!output.exists(), "partial output left behind");
+}
+
+/// Dropping a job cannot wait for the encoder, but the partial file still goes away.
+fn export_dropping_a_running_job_removes_its_partial_file(mtm: MainThreadMarker) {
+    let output = fixtures::scratch().join("dropped.mp4");
+    let mut job = CompositeExporter::new().start(&fixtures::full_event(), &output, |_| {}, mtm);
+    assert!(pump_until(
+        Duration::from_secs(60),
+        || matches!(job.poll(), ExportState::Exporting { progress } if *progress > 0.05)
+    ));
+    drop(job);
+    assert!(
+        pump_until(Duration::from_secs(10), || !output.exists()),
+        "partial output left behind"
+    );
+}
+
+/// The timing comparison of the README: the same event through both pipelines, both checked for the
+/// same format, sync and frame count.
+fn export_reader_writer_is_clearly_faster_than_the_export_session(mtm: MainThreadMarker) {
+    let event = fixtures::full_event();
+    let session = CompositeExporter::new().with_backend(ExportBackend::ExportSession);
+    let session = export_with(&session, &event, "compare-session.mp4", mtm);
+    let session_speed = check_full_export(&session);
+    let writer = export_with(&CompositeExporter::new(), &event, "compare-writer.mp4", mtm);
+    let writer_speed = check_full_export(&writer);
+    let ratio = session.elapsed / writer.elapsed;
+    println!(
+        "  AVAssetExportSession {:.2} s ({session_speed:.1}x), reader/writer {:.2} s ({writer_speed:.1}x): {ratio:.2}x faster",
+        session.elapsed, writer.elapsed
+    );
+    assert!(ratio >= 2.0, "reader/writer only {ratio:.2}x faster");
 }
