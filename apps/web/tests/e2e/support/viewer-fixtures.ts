@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 
 import { expect, type BrowserContext, type Locator, type Page } from '@playwright/test'
 
+import { syncSegmentPaths } from './frame-counter'
+
 export const fixturePath = fileURLToPath(new URL('../fixtures/TeslaCam/RecentClips/2026-08-20_20-45-00-front.mp4', import.meta.url))
 export const sentryMetadataPath = fileURLToPath(new URL('../fixtures/TeslaCam/SentryClips/event-sentry/event.json', import.meta.url))
 export const sentryMediaPath = fileURLToPath(new URL('../fixtures/TeslaCam/SentryClips/event-sentry/sentry-autoplay-20s.mp4', import.meta.url))
@@ -15,7 +17,7 @@ export const viewports = [
   { name: '375x812', mode: 'phone', width: 375, height: 812 },
 ] as const
 
-type PickerVariant = 'full' | 'history' | 'export' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
+type PickerVariant = 'full' | 'history' | 'export' | 'sync' | 'missing' | 'corrupt' | 'wrong' | 'denied' | 'cancelled' | 'primitive'
 
 function colorChannels(color: string): readonly number[] {
   const hex = /^#([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/iu.exec(color)
@@ -45,11 +47,13 @@ export function contrastRatio(firstColor: string, secondColor: string): number {
 }
 
 export async function installPicker(context: BrowserContext, bytes: readonly number[], variant: PickerVariant): Promise<void> {
-  const [sentryMetadata, sentryMedia] = await Promise.all([
+  const [sentryMetadata, sentryMedia, syncMedia] = await Promise.all([
     readFile(sentryMetadataPath, 'utf8'),
     readFile(sentryMediaPath),
+    // Only the sync event needs the frame-counter clips; the other variants skip the bytes.
+    variant === 'sync' ? Promise.all(syncSegmentPaths.map((path) => readFile(path))) : [],
   ])
-  await context.addInitScript(({ mediaBytes, pickerVariant, cameraNames, metadataContents, sentryMediaBytes }) => {
+  await context.addInitScript(({ mediaBytes, pickerVariant, cameraNames, metadataContents, sentryMediaBytes, syncMediaBytes }) => {
     const media = new Uint8Array(mediaBytes)
     const sentryMedia = new Uint8Array(sentryMediaBytes)
     const file = (name: string, content: Uint8Array = media) => ({
@@ -87,6 +91,18 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
       ...clips('2026-08-20_20-10-08', cameraNames),
     ])
     const recent = directory('RecentClips', clips('2026-08-20_20-45-00', cameraNames))
+    // Files of the sync event open like files on a USB drive: each getFile() takes 150 ms.
+    const slowFile = (name: string, content: Uint8Array) => ({
+      kind: 'file',
+      name,
+      getFile: async () => new Promise<File>((resolve) => {
+        setTimeout(() => resolve(new File([content], name, { type: 'video/mp4' })), 150)
+      }),
+    })
+    const syncEvent = directory('event-sync', syncMediaBytes.flatMap((segmentBytes, index) => (
+      cameraNames.map((camera) => slowFile(`2026-08-20_20-5${index}-00-${camera}.mp4`, new Uint8Array(segmentBytes)))
+    )))
+    const syncRoot = directory('TeslaCam', [directory('SavedClips', [syncEvent])])
     const syntheticNoise = Array.from({ length: 253 }, (_, index) => index === 248
       ? {
           kind: 'file',
@@ -136,6 +152,8 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
             return historyRoot
           case 'export':
             return exportRoot
+          case 'sync':
+            return syncRoot
           case 'full':
           case 'missing':
             return fullRoot
@@ -148,6 +166,7 @@ export async function installPicker(context: BrowserContext, bytes: readonly num
     cameraNames: cameras,
     metadataContents: sentryMetadata,
     sentryMediaBytes: [...sentryMedia],
+    syncMediaBytes: syncMedia.map((segment) => [...segment]),
   })
 }
 

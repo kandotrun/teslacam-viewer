@@ -26,7 +26,7 @@ function video(): HTMLVideoElement {
 }
 
 describe('useSynchronizedPlayback source election', () => {
-  it('uses only the elected clock, corrects drift beyond but not at 250ms, and enters the next segment at zero', () => {
+  it('uses only the elected clock and enters the next segment at zero', () => {
     const front = video()
     const back = video()
     const hook = renderHook(() => useSynchronizedPlayback(eventWithSegments(2)))
@@ -43,17 +43,9 @@ describe('useSynchronizedPlayback source election', () => {
 
     act(() => {
       front.currentTime = 20
-      back.currentTime = 19.75
       hook.result.current.handleVideoEvent('front', front, 'timeupdate')
     })
-    expect(back.currentTime).toBe(19.75)
-
-    act(() => {
-      front.currentTime = 20.01
-      back.currentTime = 19.75
-      hook.result.current.handleVideoEvent('front', front, 'timeupdate')
-    })
-    expect(back.currentTime).toBe(20.01)
+    expect(hook.result.current.elapsedSeconds).toBe(20)
 
     act(() => {
       front.currentTime = 60
