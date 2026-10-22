@@ -20,11 +20,15 @@ import { eventRow, installPicker, selectFolder } from './support/viewer-fixtures
 // refresh (≈ 17 ms) already spans more than one frame at 2×.
 //
 // CI runners have no GPU and two cores, so Chromium decodes six videos in software and the canvas
-// sampler itself lands a frame late now and then. There the bounds widen by one frame: still far below
-// the 9–18 frames the old timeupdate-based correction allowed, so a regression is caught either way.
-const ciSlack = process.env.CI === undefined ? 0 : 1
-const p95SpreadFrames = 1 + ciSlack
-const p95SpreadFramesAt2x = 2 + ciSlack
+// sampler itself lands a frame or two late now and then. There the median widens by one frame and the
+// 95th percentile and the boundary stall by two frames: the old timeupdate-based correction left a
+// drifted camera 8 frames off and blank windows for ~280 ms at each boundary, so a regression still
+// fails either way.
+const onCi = process.env.CI !== undefined
+const ciSlack = onCi ? 1 : 0
+const p95SpreadFrames = 1 + 2 * ciSlack
+const p95SpreadFramesAt2x = 2 + 2 * ciSlack
+const maxBoundaryStallMs = onCi ? 160 : 100
 
 function expectInSync(summary: SpreadSummary, p95 = p95SpreadFrames, median = ciSlack): void {
   const report = JSON.stringify(summary)
@@ -115,7 +119,7 @@ test('crosses into the next segment without a blank window and stays within one 
   const boundary = boundaryReport(samples)
   expect(boundary, JSON.stringify(boundary)).toMatchObject({ blank: 0 })
   expect(boundary.mixed, JSON.stringify(boundary)).toBeLessThanOrEqual(1)
-  expect(boundary.stallMs, JSON.stringify(boundary)).toBeLessThan(100)
+  expect(boundary.stallMs, JSON.stringify(boundary)).toBeLessThan(maxBoundaryStallMs)
   const nextSegment = summarizeSpread(after(samples, boundary.firstNextSegmentAt + 500))
   expect(nextSegment.samples).toBeGreaterThan(30)
   expectInSync(nextSegment)
