@@ -17,8 +17,13 @@ updates:
       mac-minor-and-patch:
         update-types: [minor, patch]
     ignore:
-      # GPUI Kit pins an exact gpui-pre snapshot; upgrade it deliberately.
+      # GPUI Kit pins an exact gpui-pre snapshot; upgrade it deliberately. Only version updates are
+      # ignored, so security updates for it still arrive.
       - dependency-name: gpui-kit
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
   - package-ecosystem: github-actions
     directory: /
     schedule:
